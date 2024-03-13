@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "ArchivalAgreement0",
+    "Description": "Contrat 0",
+    "Status": "ACTIVE"
+  },
+  {
+    "Name": "ArchivalAgreement1",
+    "Description": "Contrat 1",
+    "Status": "ACTIVE"
+  },
+  {
+    "Name": "ArchivalAgreement2",
+    "Description": "Contrat 2",
+    "Status": "ACTIVE"
+  }
+]

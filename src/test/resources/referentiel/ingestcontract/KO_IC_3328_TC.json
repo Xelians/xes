@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "Contrat d'entrée avec LinkParentId",
+    "Identifier": "3328_IC",
+    "Description": "3328_IC",
+    "Status": "ACTIVE",
+    "LastUpdate": "2017-06-14",
+    "CreationDate": "1996-06-14",
+    "ActivationDate": "1996-06-14",
+    "DeactivationDate": "2018-06-04",
+    "LinkParentId": "TOBECOMPLETED",
+    "CheckParentLink": "ACTIVE"
+  }
+]

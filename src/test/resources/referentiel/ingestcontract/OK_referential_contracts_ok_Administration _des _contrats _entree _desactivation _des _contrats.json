@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "Test Mehdi",
+    "Description": "Contrat test itération 18 Mehdi",
+    "Status": "ACTIVE",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  },
+  {
+    "Name": "aName2",
+    "Description": "aDescription of the contract",
+    "Status": "ACTIVE",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  }
+]

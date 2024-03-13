@@ -1,0 +1,49 @@
+[
+  {
+    "Name": "DOC005",
+    "CreationDate": "2019-12-10",
+    "Status": "ACTIVE",
+    "Mappings": [
+      {
+        "Src": "MyExtTag1",
+        "Dst": "Text001"
+      },
+      {
+        "Src": "Writer.DeathPlace.Geogname",
+        "Dst": "Text003"
+      },
+      {
+        "Src": "Writer.DeathPlace.Address",
+        "Dst": "Text004"
+      },
+      {
+        "Src": "Writer.DeathPlace.Zip",
+        "Dst": "Long001"
+      },
+      {
+        "Src": "Writer.BirthPlace.City",
+        "Dst": "Text006"
+      },
+      {
+        "Src": "Writer.BirthPlace.Region",
+        "Dst": "Text007"
+      },
+      {
+        "Src": "Writer.BirthPlace.Country",
+        "Dst": "Text008"
+      },
+      {
+        "Src": "Writer.DeathPlace.PostalCode",
+        "Dst": "Keyword003"
+      },
+      {
+        "Src": "Writer.BirthDate",
+        "Dst": "Date001"
+      },
+      {
+        "Src": "Writer.Age",
+        "Dst": "Long002"
+      }
+    ]
+  }
+]

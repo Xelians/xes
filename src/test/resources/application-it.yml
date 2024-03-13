@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: eSafe (Integration)
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  # Indexing properties
+  indexing:
+    threads: 32
+  # Batchs (delay in milli-sec)
+  batch:
+    backup:
+      operation:
+        fixedDelay: 100
+        initialDelay: 200
+    clean:
+      cron: 0 0 3 * * ?
+    retry:
+      fixedDelay: 900000
+      initialDelay: 1000
+    secure:
+      fixedDelay: PT0.2S
+      initialDelay: PT0.1S
+    servernode:
+      fixedDelay: 1000
+      initialDelay: 0
+    store:
+      operation:
+        fixedDelay: 100
+        initialDelay: 200
+  # JWT Authentification (sec)
+  jwt:
+    accessTokenExpiration: 2
+    refreshTokenExpiration: 300

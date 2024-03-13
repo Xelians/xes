@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Contrat d'accès - Vitam",
+    "Description": "Contrat permettant de faire des opérations pour tous les services producteurs et sur tous les usages",
+    "Identifier": "testrecette",
+    "Status": "ACTIVE",
+    "OriginatingAgencies": [],
+    "DataObjectVersion": [],
+    "LastUpdate": "2017-08-04",
+    "CreationDate": "2009-06-14",
+    "WritingPermission": true,
+    "EveryOriginatingAgency": true,
+    "EveryDataObjectVersion": true
+  }
+]

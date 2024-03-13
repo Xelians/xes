@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Contrat Identifier0 - ne declarant aucun usage",
+    "Description": "Contrat permettant de faire des opérations de lecture et d'écriture sur le producteur Identifier0, mais ne définissant aucun usage",
+    "Identifier": "testrecette",
+    "Status": "ACTIVE",
+    "OriginatingAgencies": [
+      "Identifier0"
+    ],
+    "DataObjectVersion": [],
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10",
+    "WritingPermission": true
+  }
+]

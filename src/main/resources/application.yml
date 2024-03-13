@@ -1,0 +1,143 @@
+spring:
+  threads:
+    virtual:
+      enabled: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+      enabled: true
+  application:
+    name: eSafe (Prod)
+  datasource:
+    driverClassName: org.postgresql.Driver
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: create-drop
+      validator:
+        apply_to_ddl: true
+  sql:
+    init:
+      mode: always
+  mvc:
+    throw-exception-if-no-handler-found: true
+
+elasticsearch:
+  host: localhost
+  password: elastic
+  port: 9200
+  username: elastic
+
+# Actuator config
+# We keep readiness and liveness checks on the server servlet.
+# Management servlet can continue to answer whereas server's one don't.
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: db
+          additional-path: "server:/readyz"
+        liveness:
+          additional-path: "server:/livez"
+      probes:
+        enabled: true
+        add-additional-paths: true
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  info:
+    git:
+      mode: full
+
+## Properties specific to app (functional properties)
+app:
+  # JWT Authentification (seconds)
+  jwt:
+    accessTokenExpiration: 900
+    refreshTokenExpiration: 36000
+    secret: Voiciungrandmotdepassecomposede1065765caracteresIlestdonctressolide
+  # Processing properties
+  processing:
+    threads: 0
+  # Indexing properties
+  indexing:
+    threads: 16
+  # Tenant encryption (seconds)
+  tenant:
+    encryption:
+      expiration: 0
+      secret: Voici un petit mot de passe composé de @10453265 caractères !! Il est donc super solide car de plus j'ai ajouté des caractères spéciaux comme des $ & des \#. J'adore!
+  # Dip export properties (byte)
+  dipexport:
+    maxSize: 1_000_000_000
+  # Storage properties
+  storage:
+    offer:
+      # File system Offers
+      fs:
+        - capacity: SMALL
+          name: FS01
+          node: node1
+          root: fs01
+        - capacity: MEDIUM
+          name: FS02
+          node: node2
+          root: fs02
+      # S3 Offers
+      s3:
+        - accessKeyId: hvA0vo3Nu8yruvQ3_
+          concurrency: 32
+          endpoint: http://192.168.1.82:9000
+          name: minio01
+          region: US_EAST_1
+          secretAccessKey: VYo8QiN40bd4PKyC
+  batch:
+    backup:
+      operation:
+        fixedDelay: 300000
+        initialDelay: 300000
+    clean:
+      cron: 0 0 3 * * ?
+      running: 48   # Delay in hours before updating operations with init and run status to error
+      succeeded: 48 # Delay in hours before deleting successful operations from database
+      failed: 168   # Delay in hours before deleting failed operations from database
+  retry:
+    fixedDelay: 900000
+    initialDelay: 1000
+  secure:
+    fixedDelay: PT3600S
+    initialDelay: PT60S
+  servernode:
+    fixedDelay: 60000
+    initialDelay: 0
+  store:
+    operation:
+      fixedDelay: 2000
+      initialDelay: 1000
+
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+
+logging:
+  level:
+    fr:
+      xelians: INFO
+    org:
+      springframework: ERROR
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+  file:
+    name: target/application.log
+  request:
+    path-to-ignore: /actuator,/v3/api-docs,/swagger-ui,/readyz,/livez
+

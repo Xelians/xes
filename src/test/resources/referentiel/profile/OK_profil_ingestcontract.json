@@ -1,0 +1,46 @@
+[
+  {
+    "Identifier": "Format_RNG",
+    "Name": "Format_RNG profil",
+    "Description": "Ce fichier est un rng",
+    "Status": "ACTIVE",
+    "Format": "RNG",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  },
+  {
+    "Identifier": "Format_RNG1",
+    "Name": "Format_RNG profil 1",
+    "Description": "Ce fichier est un rng",
+    "Status": "ACTIVE",
+    "Format": "RNG",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  },
+  {
+    "Identifier": "Format_RNG2",
+    "Name": "Format_RNG profil 2",
+    "Description": "Ce fichier est un rng",
+    "Status": "ACTIVE",
+    "Format": "RNG",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  },
+  {
+    "Identifier": "My Archival Profile",
+    "Name": "Format_RNG profil My Archival Profile",
+    "Description": "Ce fichier est un rng",
+    "Status": "ACTIVE",
+    "Format": "RNG",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
+  }
+]

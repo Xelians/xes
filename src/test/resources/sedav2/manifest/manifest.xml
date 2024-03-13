@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ArchiveTransfer xmlns="fr:gouv:culture:archivesdefrance:seda:v2.1">
+    <Comment>My Archive Transfer</Comment>
+    <Date>2021-09-19T10:45:41</Date>
+    <MessageIdentifier>MSG001</MessageIdentifier>
+    <Signature>
+        <Format>org.afnor.signformat.PKCS-7</Format>
+    </Signature>
+    <ArchivalAgreement>My Archival Agreement</ArchivalAgreement>
+    <CodeListVersions>
+        <ReplyCodeListVersion>Reply Codes</ReplyCodeListVersion>
+        <FileFormatCodeListVersion>Pronom Codes</FileFormatCodeListVersion>
+    </CodeListVersions>
+    <DataObjectPackage>
+        <DataObjectGroup id="ID2">
+            <PhysicalDataObject id="ID3">
+                <DataObjectVersion>Master</DataObjectVersion>
+                <PhysicalId>physical-0001</PhysicalId>
+            </PhysicalDataObject>
+        </DataObjectGroup>
+        <DataObjectGroup id="ID5">
+            <PhysicalDataObject id="ID6">
+                <PhysicalId>physical-0002</PhysicalId>
+            </PhysicalDataObject>
+            <BinaryDataObject id="ID7">
+                <Uri>
+                    Content/cacebe5e55051daaa6868e0ea958b57d0ec381e9ecdce42f81c256ac56455e6749a59033166c9379043f6a903fa2f85857341e5c592dc194cd9b94c7ac9090ad_1632041141106_helloworld_1.pdf
+                </Uri>
+                <MessageDigest algorithm="SHA-512">
+                    cacebe5e55051daaa6868e0ea958b57d0ec381e9ecdce42f81c256ac56455e6749a59033166c9379043f6a903fa2f85857341e5c592dc194cd9b94c7ac9090ad
+                </MessageDigest>
+                <Size>837</Size>
+                <FormatIdentification>
+                    <FormatLitteral>Portable Document Format</FormatLitteral>
+                    <FormatId>pdf</FormatId>
+                </FormatIdentification>
+                <FileInfo>
+                    <Filename>MyFile.pdf</Filename>
+                    <CreatingApplicationName>PdfBox</CreatingApplicationName>
+                    <LastModified>2021-09-19T10:45:41</LastModified>
+                </FileInfo>
+            </BinaryDataObject>
+        </DataObjectGroup>
+        <DataObjectGroup id="ID9">
+            <PhysicalDataObject id="ID10">
+                <PhysicalId>physical-0001</PhysicalId>
+            </PhysicalDataObject>
+            <BinaryDataObject id="ID11">
+                <Uri>
+                    Content/5db70c021b023f5ccccc7f13d87a76525ccce4b75533cd8b75c6f2b1ec0e6e16657ecd23d9ce56e3fdeb57918dfe63fef04c61b5b3159b38a09b28d2e6736de3_1632041141107_helloworld_2.pdf
+                </Uri>
+                <MessageDigest algorithm="SHA-512">
+                    5db70c021b023f5ccccc7f13d87a76525ccce4b75533cd8b75c6f2b1ec0e6e16657ecd23d9ce56e3fdeb57918dfe63fef04c61b5b3159b38a09b28d2e6736de3
+                </MessageDigest>
+                <Size>837</Size>
+                <FormatIdentification>
+                    <FormatId>pdf</FormatId>
+                </FormatIdentification>
+            </BinaryDataObject>
+        </DataObjectGroup>
+        <DescriptiveMetadata>
+            <ArchiveUnit id="ID1">
+                <Management>
+                    <StorageRule>
+                        <Rule>RuleName s1</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName s2</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName s3</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <PreventInheritance>false</PreventInheritance>
+                        <FinalAction>Copy</FinalAction>
+                    </StorageRule>
+                    <AppraisalRule>
+                        <Rule>RuleName a1</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName a2</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName a3</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <PreventInheritance>true</PreventInheritance>
+                        <FinalAction>Destroy</FinalAction>
+                    </AppraisalRule>
+                    <AccessRule>
+                        <Rule>AccessRule</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                    </AccessRule>
+                    <DisseminationRule>
+                        <Rule>RuleName d1</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName d2</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName d3</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <RefNonRuleId>RuleName d4</RefNonRuleId>
+                        <RefNonRuleId>RuleName d5</RefNonRuleId>
+                    </DisseminationRule>
+                    <ReuseRule>
+                        <Rule>RuleName r1</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName r2</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <Rule>RuleName r3</Rule>
+                        <StartDate>2021-09-19</StartDate>
+                        <RefNonRuleId>RuleName r4</RefNonRuleId>
+                        <RefNonRuleId>RuleName r5</RefNonRuleId>
+                    </ReuseRule>
+                    <LogBook>
+                        <Event>
+                            <EventIdentifier>MyIdentifier1</EventIdentifier>
+                            <EventTypeCode>MyTypeCode1</EventTypeCode>
+                            <EventType>MyType1</EventType>
+                            <EventDateTime>2021-09-19T10:45:41</EventDateTime>
+                            <EventDetail>MyDetails1</EventDetail>
+                            <Outcome>MyOutcome1</Outcome>
+                            <OutcomeDetail>MyOutcomeDetail1</OutcomeDetail>
+                            <EventDetailData>MyDetailsData1</EventDetailData>
+                        </Event>
+                        <Event>
+                            <EventIdentifier>MyIdentifier2</EventIdentifier>
+                            <EventTypeCode>MyTypeCode2</EventTypeCode>
+                            <EventType>MyType2</EventType>
+                            <EventDateTime>2021-09-19T10:45:41</EventDateTime>
+                            <EventDetail>MyDetails2</EventDetail>
+                            <Outcome>MyOutcome2</Outcome>
+                            <OutcomeDetail>MyOutcomeDetail2</OutcomeDetail>
+                            <EventDetailData>MyDetailsData2</EventDetailData>
+                        </Event>
+                        <Event>
+                            <EventIdentifier>MyIdentifier3</EventIdentifier>
+                            <EventTypeCode>MyTypeCode3</EventTypeCode>
+                            <EventType>MyType3</EventType>
+                            <EventDateTime>2021-09-19T10:45:41</EventDateTime>
+                            <EventDetail>MyDetails3</EventDetail>
+                            <Outcome>MyOutcome3</Outcome>
+                            <OutcomeDetail>MyOutcomeDetail3</OutcomeDetail>
+                            <EventDetailData>MyDetailsData3</EventDetailData>
+                        </Event>
+                    </LogBook>
+                    <UpdateOperation>
+                        <ArchiveUnitIdentifierKey>
+                            <MetadataName>CleDeRattachement</MetadataName>
+                            <MetadataValue>ValeurDeRattachement</MetadataValue>
+                        </ArchiveUnitIdentifierKey>
+                    </UpdateOperation>
+                </Management>
+                <Content>
+                    <Title>MyTitle1</Title>
+                    <SystemId>000001</SystemId>
+                    <CustodialHistory>
+                        <CustodialHistoryItem when="2021-09-19T10:45:41">My Message1
+                        </CustodialHistoryItem>
+                        <CustodialHistoryItem when="2021-09-19T10:45:41">My Message2
+                        </CustodialHistoryItem>
+                    </CustodialHistory>
+                    <DocumentType>DOC001</DocumentType>
+                    <Tag>MyValue13</Tag>
+                    <Keyword>
+                        <KeywordContent>MyValue11</KeywordContent>
+                        <KeywordReference>MyKey11</KeywordReference>
+                    </Keyword>
+                    <Keyword>
+                        <KeywordContent>MyValue12</KeywordContent>
+                        <KeywordReference>MyKey12</KeywordReference>
+                    </Keyword>
+                    <OriginatingAgency xmlns:ns3="http://www.w3.org/2001/XMLSchema-instance"
+                                       ns3:type="OrganizationWithIdType">
+                        <Identifier>AG002</Identifier>
+                        <OrganizationDescriptiveMetadata>
+                            <Name>My Transfer Agency</Name>
+                            <Address>Rue de la Jarry - Vincennes</Address>
+                        </OrganizationDescriptiveMetadata>
+                    </OriginatingAgency>
+                    <SubmissionAgency xmlns:ns3="http://www.w3.org/2001/XMLSchema-instance"
+                                      ns3:type="OrganizationWithIdType">
+                        <Identifier>AG001</Identifier>
+                        <OrganizationDescriptiveMetadata>
+                            <Name>My Archive Agency</Name>
+                        </OrganizationDescriptiveMetadata>
+                    </SubmissionAgency>
+                    <Addressee>
+                        <FirstName>Marc</FirstName>
+                        <FullName>Lavolle</FullName>
+                        <BirthDate>2021-09-19</BirthDate>
+                        <BirthPlace>
+                            <Geogname>GEOName</Geogname>
+                            <Address>19 Holliday Street</Address>
+                            <PostalCode>94300</PostalCode>
+                            <City>NY</City>
+                            <Region>Oregon</Region>
+                            <Country>USA</Country>
+                        </BirthPlace>
+                        <Function>Jedi</Function>
+                        <Activity>Sword</Activity>
+                    </Addressee>
+                    <Source>My Source1</Source>
+                </Content>
+                <DataObjectReference>
+                    <DataObjectGroupReferenceId>ID2</DataObjectGroupReferenceId>
+                </DataObjectReference>
+                <ArchiveUnit id="ID4">
+                    <ArchiveUnitProfile>My Archive Unit Profile 2</ArchiveUnitProfile>
+                    <Management>
+                        <AccessRule>
+                            <Rule>RuleName 1</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <Rule>RuleName 2</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <Rule>RuleName 3</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <RefNonRuleId>RuleName 4</RefNonRuleId>
+                            <RefNonRuleId>RuleName 5</RefNonRuleId>
+                        </AccessRule>
+                        <ClassificationRule>
+                            <Rule>RuleName 1</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <Rule>RuleName 2</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <Rule>RuleName 3</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <ClassificationAudience>EveryOne</ClassificationAudience>
+                            <RefNonRuleId>RuleName 4</RefNonRuleId>
+                            <RefNonRuleId>RuleName 5</RefNonRuleId>
+                            <ClassificationLevel>TOP SECRET</ClassificationLevel>
+                            <ClassificationOwner>Captain Deviller</ClassificationOwner>
+                            <ClassificationReassessingDate>2021-09-19
+                            </ClassificationReassessingDate>
+                        </ClassificationRule>
+                    </Management>
+                    <Content>
+                        <Title>MyTitle2</Title>
+                        <SystemId>000002</SystemId>
+                        <DocumentType>DOC002</DocumentType>
+                        <Version>Version2</Version>
+                        <Tag>MyValue23</Tag>
+                        <Keyword>
+                            <KeywordContent>MyValue21</KeywordContent>
+                            <KeywordReference>MyKey21</KeywordReference>
+                        </Keyword>
+                        <Keyword>
+                            <KeywordContent>MyValue22</KeywordContent>
+                            <KeywordReference>MyKey22</KeywordReference>
+                        </Keyword>
+                        <AuthorizedAgent>
+                            <FirstName>Jacques</FirstName>
+                            <BirthName>Jacky Ho</BirthName>
+                            <FullName>Terner</FullName>
+                            <GivenName>Joe</GivenName>
+                            <Gender>Male</Gender>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <Geogname>LND</Geogname>
+                                <Address>MyAddress</Address>
+                                <PostalCode>98765</PostalCode>
+                                <City>London</City>
+                                <Region>Sussex</Region>
+                                <Country>England</Country>
+                            </BirthPlace>
+                            <DeathDate>2021-09-19</DeathDate>
+                            <DeathPlace>
+                                <Geogname>PRS</Geogname>
+                                <Address>MyAddress</Address>
+                                <PostalCode>75012</PostalCode>
+                                <City>Paris</City>
+                                <Region>Seine</Region>
+                                <Country>France</Country>
+                            </DeathPlace>
+                            <Nationality>French</Nationality>
+                            <Identifier>JH</Identifier>
+                            <Function>BOSS</Function>
+                            <Activity>Controller</Activity>
+                            <Position>High</Position>
+                            <Role>SmallBoss</Role>
+                            <Mandate>Mandataire</Mandate>
+                        </AuthorizedAgent>
+                        <Writer>
+                            <FirstName>Emmanuel</FirstName>
+                            <FullName>Deviller</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>Paris</City>
+                                <Country>France</Country>
+                            </BirthPlace>
+                            <Function>CTO</Function>
+                            <Activity>Developper</Activity>
+                        </Writer>
+                        <Writer>
+                            <FirstName>Baptiste</FirstName>
+                            <FullName>Nichele</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>Baden-Baden</City>
+                                <Country>Germany</Country>
+                            </BirthPlace>
+                            <Function>Expert</Function>
+                            <Activity>Consultant</Activity>
+                        </Writer>
+                        <Addressee>
+                            <FirstName>Marc</FirstName>
+                            <FullName>Lavolle</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>NY</City>
+                                <Country>USA</Country>
+                            </BirthPlace>
+                            <Function>Jedi</Function>
+                            <Activity>Sword</Activity>
+                        </Addressee>
+                        <Recipient>
+                            <FirstName>Tom</FirstName>
+                            <FullName>Johns</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>NY</City>
+                                <Country>USA</Country>
+                            </BirthPlace>
+                            <Function>Guerrier</Function>
+                            <Activity>Sword</Activity>
+                        </Recipient>
+                        <Transmitter>
+                            <FirstName>Jacques</FirstName>
+                            <FullName>Garel</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>Madrid</City>
+                                <Country>Espagne</Country>
+                            </BirthPlace>
+                            <Function>Magicien</Function>
+                            <Activity>Lance</Activity>
+                        </Transmitter>
+                        <Sender>
+                            <FirstName>Ben</FirstName>
+                            <FullName>Targatien</FullName>
+                            <BirthDate>2021-09-19</BirthDate>
+                            <BirthPlace>
+                                <City>Londres</City>
+                                <Country>Royaume-Uni</Country>
+                            </BirthPlace>
+                            <Function>Voleur</Function>
+                            <Activity>Dague</Activity>
+                        </Sender>
+                        <Gps>
+                            <GpsAltitude>60</GpsAltitude>
+                            <GpsLatitude>48.8534</GpsLatitude>
+                            <GpsLongitude>2.3488</GpsLongitude>
+                        </Gps>
+                        <MyExtTag1 attr1="val1" attr12="val12">MyExtValue1</MyExtTag1>
+                        <MyExtTag2 attr2="val2">
+                            <MyExtTag3>MyExtValue3</MyExtTag3>
+                        </MyExtTag2>
+                        <MyExtTag4>MyValue</MyExtTag4>
+                    </Content>
+                    <DataObjectReference>
+                        <DataObjectGroupReferenceId>ID5</DataObjectGroupReferenceId>
+                    </DataObjectReference>
+                </ArchiveUnit>
+                <ArchiveUnit id="ID8">
+                    <Management>
+                        <AppraisalRule>
+                            <Rule>RuleName 31</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <Rule>RuleName 32</Rule>
+                            <StartDate>2021-09-19</StartDate>
+                            <PreventInheritance>true</PreventInheritance>
+                            <FinalAction>Keep</FinalAction>
+                        </AppraisalRule>
+                    </Management>
+                    <Content>
+                        <Title>MyTitle3</Title>
+                        <SystemId>000003</SystemId>
+                        <DocumentType>DOC003</DocumentType>
+                        <Tag>MyValue13</Tag>
+                        <Keyword>
+                            <KeywordContent>MyValue11</KeywordContent>
+                            <KeywordReference>MyKey11</KeywordReference>
+                        </Keyword>
+                        <RelatedObjectReference>
+                            <Replaces>
+                                <DataObjectReference>
+                                    <DataObjectGroupReferenceId>ID5</DataObjectGroupReferenceId>
+                                </DataObjectReference>
+                            </Replaces>
+                            <Requires>
+                                <ArchiveUnitRefId>ID1</ArchiveUnitRefId>
+                            </Requires>
+                            <IsPartOf>
+                                <ExternalReference>ExternalRef</ExternalReference>
+                            </IsPartOf>
+                            <References>
+                                <RepositoryArchiveUnitPID>RepoArcUnitPid</RepositoryArchiveUnitPID>
+                            </References>
+                        </RelatedObjectReference>
+                        <Signature>
+                            <Signer>
+                                <FirstName>Marc</FirstName>
+                                <FullName>Lavolle</FullName>
+                                <BirthDate>2021-09-19</BirthDate>
+                                <BirthPlace>
+                                    <City>NY</City>
+                                    <Country>USA</Country>
+                                </BirthPlace>
+                                <SigningTime>2021-09-19T10:45:41</SigningTime>
+                                <Function>Jedi</Function>
+                                <Activity>Sword</Activity>
+                                <Mandate>Signer</Mandate>
+                            </Signer>
+                            <Validator>
+                                <FirstName>Marc</FirstName>
+                                <FullName>Lavolle</FullName>
+                                <BirthDate>2021-09-19</BirthDate>
+                                <BirthPlace>
+                                    <City>NY</City>
+                                    <Country>USA</Country>
+                                </BirthPlace>
+                                <ValidationTime>2021-09-19T10:45:41</ValidationTime>
+                                <Function>Jedi</Function>
+                                <Activity>Sword</Activity>
+                                <Mandate>Validator</Mandate>
+                            </Validator>
+                            <ReferencedObject>
+                                <SignedObjectId>ID9</SignedObjectId>
+                                <SignedObjectDigest algorithm="SHA-512"/>
+                            </ReferencedObject>
+                        </Signature>
+                    </Content>
+                    <DataObjectReference>
+                        <DataObjectGroupReferenceId>ID9</DataObjectGroupReferenceId>
+                    </DataObjectReference>
+                </ArchiveUnit>
+            </ArchiveUnit>
+        </DescriptiveMetadata>
+        <ManagementMetadata>
+            <ArchivalProfile>My Archival Profile</ArchivalProfile>
+            <ServiceLevel>My Service Level</ServiceLevel>
+            <LegalStatus>Public Archive</LegalStatus>
+            <OriginatingAgencyIdentifier>OriginatingAgencyId</OriginatingAgencyIdentifier>
+            <SubmissionAgencyIdentifier>SubmissionAgencyId</SubmissionAgencyIdentifier>
+        </ManagementMetadata>
+    </DataObjectPackage>
+    <ArchivalAgency>
+        <Identifier>AG001</Identifier>
+        <OrganizationDescriptiveMetadata>
+            <Name>My Archive Agency</Name>
+        </OrganizationDescriptiveMetadata>
+    </ArchivalAgency>
+    <TransferringAgency>
+        <Identifier>AG002</Identifier>
+        <OrganizationDescriptiveMetadata>
+            <Name>My Transfer Agency</Name>
+        </OrganizationDescriptiveMetadata>
+    </TransferringAgency>
+</ArchiveTransfer>

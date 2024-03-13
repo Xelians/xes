@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "Contrat Identifier0 - tout usage et ecriture",
+    "Description": "Contrat permettant de faire des opérations de lecture et d'écriture sur le producteur Identifier0 et sur tous les usages",
+    "Identifier": "testrecette",
+    "Status": "ACTIVE",
+    "OriginatingAgencies": [
+      "Identifier0"
+    ],
+    "DataObjectVersion": [
+      "BinaryMaster",
+      "Dissemination"
+    ],
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10",
+    "WritingPermission": true
+  }
+]

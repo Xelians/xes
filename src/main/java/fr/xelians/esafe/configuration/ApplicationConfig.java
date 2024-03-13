@@ -1,0 +1,63 @@
+/*
+ * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
+ * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ */
+
+package fr.xelians.esafe.configuration;
+
+import fr.xelians.esafe.common.filter.LoggingFilter;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.web.filter.ShallowEtagHeaderFilter;
+
+@Configuration
+@EnableScheduling
+@EnableJpaRepositories("fr.xelians.esafe")
+@EntityScan("fr.xelians.esafe")
+public class ApplicationConfig {
+
+  // Trim properties values
+  @Bean
+  public static PropertySourcesPlaceholderConfigurer createPropertyConfigurer() {
+    PropertySourcesPlaceholderConfigurer propertyConfigurer =
+        new PropertySourcesPlaceholderConfigurer();
+    propertyConfigurer.setTrimValues(true);
+    return propertyConfigurer;
+  }
+
+  @Bean
+  @Profile("!openapi-gen")
+  public TaskScheduler taskScheduler() {
+    // Allow several scheduled threads (default is 1)
+    return new ConcurrentTaskScheduler(new ScheduledThreadPoolExecutor(10));
+  }
+
+  /**
+   * The filter adds an ETag header to all GET responses containing a hash value of the resource’s
+   * content
+   */
+  // @Bean
+  public ShallowEtagHeaderFilter shallowEtagHeaderFilter() {
+    return new ShallowEtagHeaderFilter();
+  }
+
+  @Bean
+  public LoggingFilter logFilter(
+      final @Value("${logging.request.path-to-ignore}") String[] pathsToIgnore) {
+    LoggingFilter filter = new LoggingFilter(pathsToIgnore);
+    filter.setIncludeQueryString(true);
+    filter.setIncludePayload(true);
+    filter.setMaxPayloadLength(Integer.MAX_VALUE);
+    filter.setIncludeHeaders(true);
+    return filter;
+  }
+}

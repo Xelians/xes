@@ -1,0 +1,15 @@
+[
+  {
+    "Identifier": "Contrat d'accès Vitam",
+    "Name": "Contrat d'accès Vitam",
+    "Description": "Contrat permettant de faire des opérations pour tous les services producteurs et sur tous les usages",
+    "Status": "ACTIVE",
+    "EveryOriginatingAgency": true,
+    "EveryDataObjectVersion": true,
+    "LastUpdate": "1989-03-16",
+    "CreationDate": "1988-06-14",
+    "ActivationDate": "1990-03-17",
+    "DeactivationDate": "2089-03-16",
+    "WritingPermission": true
+  }
+]

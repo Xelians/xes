@@ -1,0 +1,42 @@
+[
+  {
+    "Name": "Ingest contract profile xsd",
+    "Description": "aDescription of the contract 1",
+    "Status": "ACTIVE",
+    "ArchiveProfiles": [
+      "Format_RNG"
+    ]
+  },
+  {
+    "Identifier": "My Archival Agreement",
+    "Name": "Ingest contract profile rng",
+    "Description": "aDescription of the contract 1",
+    "Status": "ACTIVE",
+    "ArchiveProfiles": [
+      "Format_RNG",
+      "My Archival Profile"
+    ]
+  },
+  {
+    "Identifier": "IC-000001",
+    "Name": "Ingest contract deux profiles",
+    "Description": "aDescription of the contract 1",
+    "Status": "ACTIVE",
+    "ArchiveProfiles": [
+      "Format_RNG1",
+      "Format_RNG2"
+    ]
+  },
+  {
+    "Identifier": "IC-000004",
+    "Name": "Ingest contract deux profiles ok",
+    "Description": "aDescription of the contract 1",
+    "Status": "ACTIVE",
+    "ArchiveProfiles": [
+      "Format_RNG1",
+      "Format_RNG2",
+      "Matrice",
+      "MatriceOld"
+    ]
+  }
+]

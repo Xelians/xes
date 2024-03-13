@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: eSafe (Integration)
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  # Batchs (delay in milli-sec)
+  batch:
+    backup:
+      operation:
+        fixedDelay: 1000
+        initialDelay: 2000
+    clean:
+      cron: 0 0 3 * * ?
+    retry:
+      fixedDelay: 900000
+      initialDelay: 1000
+    secure:
+      fixedDelay: PT0.2S
+      initialDelay: PT0.2S
+    servernode:
+      fixedDelay: 1000
+      initialDelay: 0
+    store:
+      operation:
+        fixedDelay: 1000
+        initialDelay: 2000
+  # JWT Authentification (sec)
+  jwt:
+    accessTokenExpiration: 600
+    refreshTokenExpiration: 6000

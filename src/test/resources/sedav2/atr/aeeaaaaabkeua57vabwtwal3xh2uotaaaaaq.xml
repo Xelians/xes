@@ -1,0 +1,50 @@
+<ArchiveTransferReply xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="fr:gouv:culture:archivesdefrance:seda:v2.1"
+                      xsi:schemaLocation="fr:gouv:culture:archivesdefrance:seda:v2.1 seda-vitam-2.1-main.xsd">
+    <Date>2021-09-06T09:24:43.126+02:00</Date>
+    <MessageIdentifier>aeeaaaaabkeua57vabwtwal3xh2uotaaaaaq</MessageIdentifier>
+    <ArchivalAgreement>IC-000004</ArchivalAgreement>
+    <CodeListVersions>
+        <ReplyCodeListVersion></ReplyCodeListVersion>
+        <MessageDigestAlgorithmCodeListVersion></MessageDigestAlgorithmCodeListVersion>
+        <FileFormatCodeListVersion></FileFormatCodeListVersion>
+    </CodeListVersions>
+    <DataObjectPackage>
+        <DescriptiveMetadata/>
+        <ManagementMetadata/>
+    </DataObjectPackage>
+    <ReplyCode>KO</ReplyCode>
+    <Operation>
+        <Event>
+            <EventTypeCode>STP_OBJ_STORING</EventTypeCode>
+            <EventType>Processus d'écriture et d'indexation des objets sur les offres de stockage
+            </EventType>
+            <EventDateTime>2021-09-06T07:21:43.636</EventDateTime>
+            <Outcome>FATAL</Outcome>
+            <OutcomeDetail>STP_OBJ_STORING.FATAL</OutcomeDetail>
+            <OutcomeDetailMessage>Erreur technique lors du processus d'écriture et d'indexation des
+                objets sur les
+                offres de stockage
+            </OutcomeDetailMessage>
+        </Event>
+        <Event>
+            <EventTypeCode>UNIT_METADATA_INDEXATION</EventTypeCode>
+            <EventType>Indexation des métadonnées des unités archivistiques</EventType>
+            <EventDateTime>2021-09-06T07:21:43.636</EventDateTime>
+            <Outcome>FATAL</Outcome>
+            <OutcomeDetail>UNIT_METADATA_INDEXATION.FATAL</OutcomeDetail>
+            <OutcomeDetailMessage>Erreur technique lors de l'indexation des métadonnées de l'unité
+                archivistique Detail=
+                FATAL:1000
+            </OutcomeDetailMessage>
+        </Event>
+    </Operation>
+    <MessageRequestIdentifier>fswzkbbsytdqoxtvbqcxxnqrjjcldjrm</MessageRequestIdentifier>
+    <GrantDate>2021-09-06T09:24:43.126+02:00</GrantDate>
+    <ArchivalAgency>
+        <Identifier>Identifier1</Identifier>
+    </ArchivalAgency>
+    <TransferringAgency>
+        <Identifier>Identifier1</Identifier>
+    </TransferringAgency>
+</ArchiveTransferReply>

@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Contrat_Entrée_Par-Defaut",
+    "Description": "Contrat mauvais format date",
+    "Identifier": "testrecette",
+    "Status": "ACTIVE",
+    "OriginatingAgencies": [],
+    "DataObjectVersion": [],
+    "LastUpdate": "2017-08-04",
+    "CreationDate": "tom",
+    "WritingPermission": true,
+    "EveryOriginatingAgency": true,
+    "EveryDataObjectVersion": true
+  }
+]

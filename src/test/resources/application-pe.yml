@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: eSafe (Perfs)
+  datasource:
+    driverClassName: org.postgresql.Driver
+    password: password
+    url: jdbc:postgresql://192.168.1.42:5432/
+    username: postgres
+  sql:
+    init:
+      mode: always
+
+elasticsearch:
+  host: 192.168.1.66
+  password: 1cLKKWfXKUFDP_8x7u5b
+  port: 9200
+  username: elastic
+
+app:
+  # JWT Authentification (sec)
+  jwt:
+    accessTokenExpiration: 900
+    refreshTokenExpiration: 432000
+  processing:
+    threads: 0
+  # Batchs (delay in ms)
+  batch:
+    backup:
+      operation:
+        fixedDelay: 2000
+        initialDelay: 2000
+    clean:
+      cron: 0 0 3 * * ?
+    retry:
+      fixedDelay: 900000
+      initialDelay: 2000
+    secure:
+      fixedDelay: PT3600S
+      initialDelay: PT60S
+    servernode:
+      fixedDelay: 60000
+      initialDelay: 0
+    store:
+      operation:
+        fixedDelay: 2000
+        initialDelay: 2000
+  storage:
+    offer:
+      fs:
+        - capacity: MEDIUM
+          concurrency: 4
+          name: FS01
+          node: node1
+          root: fs01
+      s3:
+        - accessKeyId: hvA0vo3Nu8yruvQ3
+          cpuConcurrency: 32
+          endpoint: http://192.168.1.153:9000
+          name: minio01
+          region: US_EAST_1
+          secretAccessKey: VYo8QiN40bd4PKyC

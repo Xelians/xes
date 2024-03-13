@@ -1,0 +1,32 @@
+[
+  {
+    "Identifier": "contract_for_filter_on_HoldRules",
+    "Name": "contract_for_filter_on_HoldRules",
+    "Status": "ACTIVE",
+    "EveryOriginatingAgency": true,
+    "EveryDataObjectVersion": true,
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10",
+    "WritingPermission": true,
+    "RuleCategoryToFilter": [
+      "HoldRule"
+    ]
+  },
+  {
+    "Identifier": "contract_for_adding_filter_on_HoldRules",
+    "Name": "contract_for_adding_filter_on_HoldRules",
+    "Status": "ACTIVE",
+    "EveryOriginatingAgency": true,
+    "EveryDataObjectVersion": true,
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10",
+    "WritingPermission": true,
+    "RuleCategoryToFilter": [
+      "AppraisalRule"
+    ]
+  }
+]
