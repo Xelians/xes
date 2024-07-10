@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -9,7 +10,6 @@ import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import fr.xelians.esafe.organization.domain.role.TenantRole;
@@ -60,7 +60,6 @@ class ArchiveExportIT extends BaseIT {
     ArchiveTransfer[] sips = new ArchiveTransfer[10];
     Arrays.fill(sips, 0, sips.length, sip);
     Scenario.uploadSips(restClient, tenant, tmpDir, sips);
-    Utils.sleep(1000);
 
     // Update in order to create an LFC
     String updateQuery =

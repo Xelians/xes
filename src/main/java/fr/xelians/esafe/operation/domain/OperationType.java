@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation.domain;
@@ -11,66 +12,66 @@ import lombok.Getter;
 public enum OperationType {
 
   // Archive Operations
-  INGEST_ARCHIVE(false),
-  INGEST_FILING(false),
-  INGEST_HOLDING(false),
+  INGEST_ARCHIVE(false, "PROCESS_SIP_UNITARY"),
+  INGEST_FILING(false, "FILINGSCHEME"),
+  INGEST_HOLDING(false, "HOLDINGSCHEME"),
 
-  UPDATE_ARCHIVE(true),
-  UPDATE_ARCHIVE_RULES(true),
-  RECLASSIFY_ARCHIVE(true),
-  ELIMINATE_ARCHIVE(true),
+  UPDATE_ARCHIVE(true, "MASS_UPDATE_UNIT_DESC"),
+  UPDATE_ARCHIVE_RULES(true, "MASS_UPDATE_UNIT_RULE"),
+  RECLASSIFY_ARCHIVE(true, "RECLASSIFICATION"),
+  ELIMINATE_ARCHIVE(true, "ELIMINATION_ACTION"),
 
-  PROBATIVE_VALUE(false),
-  EXPORT_ARCHIVE(false),
-  TRANSFER_ARCHIVE(false),
+  PROBATIVE_VALUE(false, "EXPORT_PROBATIVE_VALUE"),
+  EXPORT_ARCHIVE(false, "EXPORT_DIP"),
+  TRANSFER_ARCHIVE(false, "ARCHIVE_TRANSFER"),
 
-  SECURING(false),
+  TRACEABILITY(false, "STP_OP_SECURISATION"),
 
   // Search Engine Operations
-  REBUILD_SEARCH_ENGINE(false),
-  RESET_INDEX(false),
-  RESET_INDEX_CHUNK(false),
+  REBUILD_SEARCH_ENGINE(false, "REBUILD_SEARCH_ENGINE"),
+  RESET_INDEX(false, "RESET_INDEX"),
+  RESET_INDEX_CHUNK(false, "RESET_INDEX_CHUNK"),
 
   // Referential Operations
-  CREATE_AGENCY(false),
-  UPDATE_AGENCY(false),
-  CREATE_ONTOLOGY(false),
-  UPDATE_ONTOLOGY(false),
-  CREATE_ACCESSCONTRACT(false),
-  UPDATE_ACCESSCONTRACT(false),
-  CREATE_INGESTCONTRACT(false),
-  UPDATE_INGESTCONTRACT(false),
-  CREATE_PROFILE(false),
-  UPDATE_PROFILE(false),
-  CREATE_RULE(false),
-  UPDATE_RULE(false),
+  CREATE_AGENCY(false, "CREATE_AGENCY"),
+  UPDATE_AGENCY(false, "UPDATE_AGENCY"),
+  CREATE_ONTOLOGY(false, "CREATE_ONTOLOGY"),
+  UPDATE_ONTOLOGY(false, "UPDATE_ONTOLOGY"),
+  CREATE_ACCESSCONTRACT(false, "CREATE_ACCESSCONTRACT"),
+  UPDATE_ACCESSCONTRACT(false, "UPDATE_ACCESSCONTRACT"),
+  CREATE_INGESTCONTRACT(false, "vCREATE_INGESTCONTRACT"),
+  UPDATE_INGESTCONTRACT(false, "UPDATE_INGESTCONTRACT"),
+  CREATE_PROFILE(false, "CREATE_PROFILE"),
+  UPDATE_PROFILE(false, "UPDATE_PROFILE"),
+  CREATE_RULE(false, "CREATE_RULE"),
+  UPDATE_RULE(false, "UPDATE_RULE"),
 
   // Orga
-  CREATE_ROLE(false),
-  UPDATE_ROLE(false),
-  CREATE_USER(false),
-  UPDATE_USER(false),
-  CREATE_ORGANIZATION(false),
-  UPDATE_ORGANIZATION(false),
-  CREATE_TENANT(false),
-  UPDATE_TENANT(false),
+  CREATE_ROLE(false, "CREATE_ROLE"),
+  UPDATE_ROLE(false, "UPDATE_ROLE"),
+  CREATE_USER(false, "CREATE_USER"),
+  UPDATE_USER(false, "UPDATE_USER"),
+  CREATE_ORGANIZATION(false, "CREATE_ORGANIZATION"),
+  UPDATE_ORGANIZATION(false, "UPDATE_ORGANIZATION"),
+  CREATE_TENANT(false, "CREATE_TENANT"),
+  UPDATE_TENANT(false, "UPDATE_TENANT"),
 
   // External
-  EXTERNAL(false),
+  EXTERNAL(false, "EXTERNAL"),
 
   // Offer Operations
-  ADD_OFFER(false),
-  ADD_OFFER_CHUNK(false),
-  DELETE_OFFER(false),
+  ADD_OFFER(false, "ADD_OFFER"),
+  ADD_OFFER_CHUNK(false, "ADD_OFFER_CHUNK"),
+  DELETE_OFFER(false, "DELETE_OFFER"),
 
   // Audit operations
-  CHECK_COHERENCY(false),
-  CHECK_TENANT_COHERENCY(false),
+  CHECK_COHERENCY(false, "CHECK_LOGBOOK_OP_SECURISATION"),
+  CHECK_TENANT_COHERENCY(false, "CHECK_TENANT_COHERENCY"),
 
-  REPAIR_COHERENCY(false),
+  REPAIR_COHERENCY(false, "REPAIR_COHERENCY"),
 
-  AUDIT(false),
-  SYNC(false);
+  AUDIT(false, "AUDIT"),
+  SYNC(false, "SYNC");
 
   // TODO : a étudier
   //  FULL_EXCLUSIVE : interdit l'ajout de toutes les tasks sur le threadPoolExecutor (ie.
@@ -80,7 +81,14 @@ public enum OperationType {
   //  NONE_EXCLUSIVE : autorise toutes les taches à être ajoutées (ie. ie_INGEST)
   private final boolean isExclusive;
 
-  OperationType(boolean isExclusive) {
+  private final String info;
+
+  OperationType(boolean isExclusive, String info) {
     this.isExclusive = isExclusive;
+    this.info = info;
+  }
+
+  public static boolean isIngest(OperationType type) {
+    return type == INGEST_ARCHIVE || type == INGEST_HOLDING || type == INGEST_FILING;
   }
 }

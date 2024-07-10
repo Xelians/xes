@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.utils;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.search.domain.field.Field;
+import fr.xelians.esafe.search.domain.field.UndefinedField;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,8 +53,14 @@ public final class FieldUtils {
             Field field = Field.create(path, value.asText(), true);
             fields.put(field.getName(), field);
           }
-        } else if (PROPERTIES.equals(key) || FIELDS.equals(key)) {
+        } else if (PROPERTIES.equals(key)) {
           // "properties" or "fields" must not exist in mapping...
+          if (!path.startsWith(Field.EXT)) {
+            Field field = new UndefinedField(path);
+            fields.put(field.getName(), field);
+          }
+          visitFields(value, path, fields);
+        } else if (FIELDS.equals(key)) {
           visitFields(value, path, fields);
         } else {
           visitFields(value, path.isEmpty() ? key : path + "." + key, fields);

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.exception.functional;
@@ -16,14 +17,6 @@ public class ManifestException extends FunctionalException {
 
   public ManifestException(String title, String message, Throwable cause) {
     super(title, message, URI.create(ABOUT_BLANK), cause);
-  }
-
-  public ManifestException(String title, String message, int code, URI type) {
-    super(title, message, type);
-  }
-
-  public ManifestException(String title, String message, int code, URI type, Throwable cause) {
-    super(title, message, type, cause);
   }
 
   @Override

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.testcommon;
@@ -25,6 +26,7 @@ import fr.xelians.esafe.common.utils.PageResult;
 import fr.xelians.esafe.common.utils.UnitUtils;
 import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.operation.dto.OperationResult;
@@ -60,6 +62,8 @@ public final class RestClient {
     OperationStatus.OK,
     OperationStatus.FATAL
   };
+
+  private static final MediaType TEXT_PLAIN_UTF8 = MediaType.valueOf("text/plain; charset=UTF-8");
 
   private static final int RETRY = 10;
 
@@ -105,6 +109,11 @@ public final class RestClient {
   private RestTemplate createRestTemplate() {
     final var restTemplate = new RestTemplate();
     restTemplate.setRequestFactory(createJdkHttpFactory());
+    // Configure UTF-8 in content type instead of the following
+    //    List<HttpMessageConverter<?>> converters = restTemplate.getMessageConverters();
+    //    converters.removeIf(
+    //        httpMessageConverter -> httpMessageConverter instanceof StringHttpMessageConverter);
+    //    converters.addFirst(new StringHttpMessageConverter(StandardCharsets.UTF_8));
     return restTemplate;
   }
 
@@ -502,25 +511,49 @@ public final class RestClient {
     }
   }
 
-  // Logbook Operation
-  public ResponseEntity<LogbookOperationDto> getLogbookOperation(long tenant, String requestId) {
-    return getLogbookOperation(tenant, Long.parseLong(requestId));
+  // Accession register
+  public ResponseEntity<SearchResult<JsonNode>> searchAccessionRegisterDetails(
+      long tenant, String query) {
+    String url = server + ADMIN_EXTERNAL + V1 + ACCESSION_REGISTER_DETAILS;
+    return httpClient()
+        .post(url)
+        .tenant(tenant)
+        .body(query)
+        .execute(new ParameterizedTypeReference<>() {});
   }
 
-  public ResponseEntity<LogbookOperationDto> getLogbookOperation(long tenant, long operationId) {
-    String url = server + LOGBOOK_EXTERNAL + V2 + LOGBOOK_OPERATIONS + "/{operationId}";
+  public ResponseEntity<SearchResult<JsonNode>> searchAccessionRegisterSummary(
+      long tenant, String query) {
+    String url = server + ADMIN_EXTERNAL + V1 + ACCESSION_REGISTER_SUMMARY;
+    return httpClient()
+        .post(url)
+        .tenant(tenant)
+        .body(query)
+        .execute(new ParameterizedTypeReference<>() {});
+  }
+
+  // Vitam Logbook Operation
+  public ResponseEntity<VitamLogbookOperationDto> getVitamLogbookOperation(
+      long tenant, String operationId) {
+    return getVitamLogbookOperation(tenant, Long.parseLong(operationId));
+  }
+
+  public ResponseEntity<VitamLogbookOperationDto> getVitamLogbookOperation(
+      long tenant, long operationId) {
+    String url = server + LOGBOOK_EXTERNAL + V1 + LOGBOOK_OPERATIONS + "/{operationId}";
     return httpClient()
         .get(url)
         .tenant(tenant)
         .param("operationId", operationId)
-        .execute(LogbookOperationDto.class);
+        .execute(VitamLogbookOperationDto.class);
   }
 
-  public ResponseEntity<SearchResult<JsonNode>> searchLogbookOperation(long tenant, String query) {
-    return searchLogbook(new ParameterizedTypeReference<>() {}, tenant, query);
+  public ResponseEntity<SearchResult<JsonNode>> searchVitamLogbookOperation(
+      long tenant, String query) {
+    return searchVitamLogbook(new ParameterizedTypeReference<>() {}, tenant, query);
   }
 
-  private <T> ResponseEntity<SearchResult<T>> searchLogbook(
+  private <T> ResponseEntity<SearchResult<T>> searchVitamLogbook(
       ParameterizedTypeReference<SearchResult<T>> responseType, long tenant, String query) {
     String url = server + LOGBOOK_EXTERNAL + V1 + LOGBOOK_OPERATIONS_SEARCH;
     return httpClient().get(url).tenant(tenant).body(query).execute(responseType);
@@ -546,6 +579,26 @@ public final class RestClient {
         .accessContract(accessContract)
         .param("unitId", unitId)
         .execute(JsonNode.class);
+  }
+
+  // Standard Logbook Operation
+  public ResponseEntity<LogbookOperationDto> getLogbookOperation(long tenant, String operationId) {
+    String url = server + LOGBOOK_EXTERNAL + V2 + LOGBOOK_OPERATIONS + "/{operationId}";
+    return httpClient()
+        .get(url)
+        .tenant(tenant)
+        .param("operationId", operationId)
+        .execute(LogbookOperationDto.class);
+  }
+
+  public ResponseEntity<SearchResult<LogbookOperationDto>> searchLogbookOperation(
+      long tenant, String query) {
+    String url = server + LOGBOOK_EXTERNAL + V2 + LOGBOOK_OPERATIONS_SEARCH;
+    return httpClient()
+        .post(url)
+        .tenant(tenant)
+        .body(query)
+        .execute(new ParameterizedTypeReference<>() {});
   }
 
   // Vitam Operation
@@ -608,7 +661,7 @@ public final class RestClient {
 
   public OperationStatusDto waitForOperationStatus(
       long tenant, String operationId, int sec, OperationStatus... expectedStatus) {
-    for (int j = 0; j < sec * 10; j++) {
+    for (int j = 0; j < sec * 5; j++) {
       ResponseEntity<OperationStatusDto> response = getOperationStatus(tenant, operationId);
       OperationStatusDto operationStatus = response.getBody();
 
@@ -619,7 +672,7 @@ public final class RestClient {
       if (Arrays.stream(expectedStatus).anyMatch(status -> operationStatus.status() == status)) {
         return operationStatus;
       }
-      Utils.sleep(100); // Avoid VM exit - update with Operation
+      Utils.sleep(200); // Avoid VM exit - update with Operation
     }
 
     throw new TimeOutException(
@@ -700,7 +753,7 @@ public final class RestClient {
     String csv = Files.readString(csvPath, StandardCharsets.UTF_8);
     String url = server + ADMIN_EXTERNAL + V1 + RULES;
     return httpClient()
-        .contentType(MediaType.TEXT_PLAIN)
+        .contentType(TEXT_PLAIN_UTF8)
         .post(url)
         .tenant(tenant)
         .body(csv)
@@ -709,11 +762,7 @@ public final class RestClient {
 
   public ResponseEntity<String> getCsvRules(long tenant) {
     String url = server + ADMIN_EXTERNAL + V1 + RULES + "/csv";
-    return httpClient()
-        .get(url)
-        .tenant(tenant)
-        .contentType(MediaType.TEXT_PLAIN)
-        .execute(String.class);
+    return httpClient().get(url).tenant(tenant).contentType(TEXT_PLAIN_UTF8).execute(String.class);
   }
 
   public ResponseEntity<RuleDto> getRuleByIdentifier(long tenant, String identifier) {
@@ -808,6 +857,15 @@ public final class RestClient {
         .get(url)
         .tenant(tenant)
         .params(params)
+        .execute(new ParameterizedTypeReference<>() {});
+  }
+
+  public ResponseEntity<ProfileDto> getProfileByIdentifier(long tenant, String identifier) {
+    String url = server + ADMIN_EXTERNAL + V1 + PROFILES + "/{identifier}";
+    return httpClient()
+        .get(url)
+        .tenant(tenant)
+        .param("identifier", identifier)
         .execute(new ParameterizedTypeReference<>() {});
   }
 
@@ -1030,7 +1088,7 @@ public final class RestClient {
     String csv = Files.readString(csvPath, StandardCharsets.UTF_8);
     String url = server + ADMIN_EXTERNAL + V1 + AGENCIES;
     return httpClient()
-        .contentType(MediaType.TEXT_PLAIN)
+        .contentType(TEXT_PLAIN_UTF8)
         .post(url)
         .tenant(tenant)
         .body(csv)

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation.service;
@@ -13,11 +14,11 @@ import fr.xelians.esafe.admin.domain.scanner.iterator.securing.SecuringLbkIterat
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.Hash;
 import fr.xelians.esafe.common.utils.HashUtils;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.logbook.service.LogbookService;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.domain.StorageAction;
 import fr.xelians.esafe.operation.entity.OperationDb;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
@@ -52,7 +53,7 @@ public class SecuringService {
     try {
       secureNum = storageService.getStorageLog(tenant).incSecureNumber();
       byte[] checksum = writeLbk(tenant, operations, secureNum, offers, hash);
-      operations.forEach(operationService::secureAndsave);
+      operations.forEach(operationService::updateSecured);
 
       operation.setProperty01(String.valueOf(secureNum));
       operation.addAction(StorageAction.create(CREATE, secureNum, lbk, hash, checksum));
@@ -94,7 +95,7 @@ public class SecuringService {
     return checksum;
   }
 
-  public void index(OperationDb operation, List<OperationSe> operations) {
+  public void index(OperationDb operation, List<LogbookOperation> operations) {
     try {
       logbookService.bulkIndex(operations);
       logbookService.index(operation);
@@ -108,8 +109,8 @@ public class SecuringService {
     }
   }
 
-  public void deleteOpe(List<String> offers, List<OperationSe> operations) {
-    for (OperationSe operation : operations) {
+  public void deleteOpe(List<String> offers, List<LogbookOperation> operations) {
+    for (LogbookOperation operation : operations) {
       storageService.deleteObjectQuietly(
           offers, operation.getTenant(), operation.getId(), StorageObjectType.ope);
     }
@@ -120,7 +121,7 @@ public class SecuringService {
     List<String> offers = tenantDb.getStorageOffers();
     long lbkId = Long.parseLong(operation.getProperty01());
 
-    List<OperationSe> ops = new ArrayList<>();
+    List<LogbookOperation> ops = new ArrayList<>();
     try (LbkIterator it = new SecuringLbkIterator(tenantDb, storageService, lbkId)) {
       while (it.hasNext()) {
         ops.add(it.next());

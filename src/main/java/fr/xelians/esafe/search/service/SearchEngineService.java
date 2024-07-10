@@ -1,11 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.search.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.ErrorCause;
 import co.elastic.clients.elasticsearch._types.ExpandWildcard;
 import co.elastic.clients.elasticsearch._types.Refresh;
@@ -14,15 +16,18 @@ import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 import co.elastic.clients.elasticsearch.indices.*;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import fr.xelians.esafe.archive.domain.search.search.SearchAfterSpliterator;
 import fr.xelians.esafe.archive.domain.search.search.StreamRequest;
 import fr.xelians.esafe.common.entity.searchengine.DocumentSe;
+import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.search.domain.dsl.bucket.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
@@ -81,58 +86,57 @@ public class SearchEngineService {
     }
   }
 
-  public Map<String, List<Bucket>> getFacets(Map<String, Aggregate> aggregations) {
-    Map<String, List<Bucket>> bucketsMap = new HashMap<>();
-    aggregations.forEach(
-        (k, v) -> {
-          final List<Bucket> buckets = bucketsMap.computeIfAbsent(k, key -> new ArrayList<>());
-          if (v.isSterms()) {
-            v.sterms()
-                .buckets()
-                .array()
-                .forEach(
-                    bk -> buckets.add(new StringBucket(bk.docCount(), bk.key().stringValue())));
-          } else if (v.isLterms()) {
-            v.lterms()
-                .buckets()
-                .array()
-                .forEach(bk -> buckets.add(new LongBucket(bk.docCount(), bk.key())));
-          } else if (v.isDterms()) {
-            v.dterms()
-                .buckets()
-                .array()
-                .forEach(bk -> buckets.add(new DoubleBucket(bk.docCount(), bk.key())));
-          } else if (v.isDateRange()) {
-            v.dateRange()
-                .buckets()
-                .array()
-                .forEach(
-                    bk ->
-                        buckets.add(
-                            new DateRangeBucket(
-                                bk.docCount(), bk.fromAsString(), bk.toAsString(), bk.key())));
-          } else if (v.isFilters()) {
-            v.filters()
-                .buckets()
-                .keyed()
-                .forEach((n, b) -> buckets.add(new StringBucket(b.docCount(), n)));
-          }
-        });
-    return bucketsMap;
+  public static <T, R> List<R> getResults(HitsMetadata<T> hits, Function<? super T, R> mapper) {
+    return hits.hits().stream()
+        .map(co.elastic.clients.elasticsearch.core.search.Hit::source)
+        .map(mapper)
+        .toList();
+  }
+
+  public static List<Facet> getFacets(Map<String, Aggregate> aggregations) {
+    return aggregations.entrySet().stream()
+        .map(e -> new Facet(e.getKey(), createBuckets(e.getValue())))
+        .toList();
+  }
+
+  private static List<Bucket> createBuckets(Aggregate aggregate) {
+    if (aggregate.isSterms()) {
+      return aggregate.sterms().buckets().array().stream()
+          .map(bk -> new Bucket(bk.key().stringValue(), bk.docCount()))
+          .toList();
+    } else if (aggregate.isLterms()) {
+      return aggregate.lterms().buckets().array().stream()
+          .map(bk -> new Bucket(String.valueOf(bk.key()), bk.docCount()))
+          .toList();
+    } else if (aggregate.isDterms()) {
+      return aggregate.dterms().buckets().array().stream()
+          .map(bk -> new Bucket(String.valueOf(bk.key()), bk.docCount()))
+          .toList();
+    } else if (aggregate.isDateRange()) {
+      return aggregate.dateRange().buckets().array().stream()
+          .map(bk -> new Bucket(bk.key(), bk.docCount()))
+          .toList();
+    } else if (aggregate.isFilters()) {
+      return aggregate.filters().buckets().keyed().entrySet().stream()
+          .map(e -> new Bucket(e.getKey(), e.getValue().docCount()))
+          .toList();
+    }
+    throw new InternalException(
+        "Failed to create facet buckets", String.format("Unknown '%s' aggregate", aggregate));
   }
 
   // Document methods
-  public <T extends DocumentSe> void index(String index, T docClass) throws IOException {
-    esClient.index(b -> b.index(index).id(String.valueOf(docClass.getId())).document(docClass));
+  public <T extends DocumentSe> void index(String name, T doc) throws IOException {
+    esClient.index(b -> b.index(name).id(String.valueOf(doc.getId())).document(doc));
   }
 
-  public <T extends DocumentSe> void bulkIndex(String index, List<T> docsClass) throws IOException {
+  public <T extends DocumentSe> void bulkIndex(String name, List<T> docs) throws IOException {
     List<BulkOperation> bulkList =
-        docsClass.stream()
+        docs.stream()
             .map(
                 doc ->
                     new BulkOperation.Builder()
-                        .index(b -> b.index(index).id(String.valueOf(doc.getId())).document(doc))
+                        .index(b -> b.index(name).id(String.valueOf(doc.getId())).document(doc))
                         .build())
             .toList();
 
@@ -147,18 +151,18 @@ public class SearchEngineService {
               .orElse(UNKNOWN_REASON);
       throw new IOException(
           String.format(
-              "Failed to bulk index documents in index '%s' - Caused by: %s", index, reason));
+              "Failed to bulk index documents in index '%s' - Caused by: %s", name, reason));
     }
   }
 
-  public <T extends DocumentSe> void bulkIndexRefresh(String index, List<T> docsClass)
+  public <T extends DocumentSe> void bulkIndexRefresh(String name, List<T> docs)
       throws IOException {
     List<BulkOperation> bulkList =
-        docsClass.stream()
+        docs.stream()
             .map(
                 doc ->
                     new BulkOperation.Builder()
-                        .index(b -> b.index(index).id(String.valueOf(doc.getId())).document(doc))
+                        .index(b -> b.index(name).id(String.valueOf(doc.getId())).document(doc))
                         .build())
             .toList();
 
@@ -173,17 +177,17 @@ public class SearchEngineService {
               .orElse(UNKNOWN_REASON);
       throw new IOException(
           String.format(
-              "Failed to bulk index documents in index '%s' - Caused by: %s", index, reason));
+              "Failed to bulk index documents in index '%s' - Caused by: %s", name, reason));
     }
   }
 
-  public void bulkDelete(String index, List<Long> ids) throws IOException {
+  public void bulkDelete(String name, List<Long> ids) throws IOException {
     List<BulkOperation> bulkList =
         ids.stream()
             .map(
                 id ->
                     new BulkOperation.Builder()
-                        .delete(d -> d.index(index).id(id.toString()))
+                        .delete(d -> d.index(name).id(id.toString()))
                         .build())
             .toList();
 
@@ -198,17 +202,17 @@ public class SearchEngineService {
               .orElse(UNKNOWN_REASON);
       throw new IOException(
           String.format(
-              "Failed to bulk delete documents in index '%s' - Caused by: %s", index, reason));
+              "Failed to bulk delete documents in index '%s' - Caused by: %s", name, reason));
     }
   }
 
-  public void bulkDeleteRefresh(String index, List<Long> ids) throws IOException {
+  public void bulkDeleteRefresh(String name, List<Long> ids) throws IOException {
     List<BulkOperation> bulkList =
         ids.stream()
             .map(
                 id ->
                     new BulkOperation.Builder()
-                        .delete(d -> d.index(index).id(id.toString()))
+                        .delete(d -> d.index(name).id(id.toString()))
                         .build())
             .toList();
 
@@ -223,63 +227,57 @@ public class SearchEngineService {
               .orElse(UNKNOWN_REASON);
       throw new IOException(
           String.format(
-              "Failed to bulk delete documents in index '%s' - Caused by: %s", index, reason));
+              "Failed to bulk delete documents in index '%s' - Caused by: %s", name, reason));
     }
   }
 
   // Index methods
-  public void createIndex(String index, String alias, String mapping) throws IOException {
-    log.info("Create index {} with alias {} ", index, alias);
+  public void createIndex(String name, String alias, String mapping) throws IOException {
+    log.info("Create index {} with alias {} ", name, alias);
 
-    BooleanResponse indexExists =
-        esClient.indices().exists(existsBuilder -> existsBuilder.index(index));
-    if (indexExists.value()) {
-      throw new IOException(String.format("Failed to create already existent index '%s'", index));
-    }
-
-    indexExists = esClient.indices().exists(e -> e.index(alias));
-    if (indexExists.value()) {
-      log.info("CreateIndex() - Index {} exists", alias);
-      DeleteIndexResponse deleteIndex = esClient.indices().delete(d -> d.index(alias));
-      if (!deleteIndex.acknowledged()) {
-        throw new IOException(String.format("Failed to delete index %s", alias));
-      }
-      log.info("CreateIndex() - Index {} deleted", alias);
-
-      //      throw new IOException(String.format("Failed to create already existent index '%s'",
-      // alias));
+    if (indexExists(name)) {
+      throw new IOException(String.format("Failed to create already existent index '%s'", name));
     }
 
     BooleanResponse aliasExists = esClient.indices().existsAlias(e -> e.name(alias));
     if (aliasExists.value()) {
       throw new IOException(
           String.format(
-              "Failed to create index '%s' with already existent alias '%s'", index, alias));
+              "Failed to create index '%s' with already existent alias '%s'", name, alias));
     }
 
+    // Create the index
     CreateIndexResponse createIndex =
         esClient
             .indices()
-            .create(
-                createBuilder ->
-                    createBuilder
-                        .index(index)
-                        .aliases(alias, ab -> ab.isWriteIndex(true))
-                        .mappings(builder -> builder.withJson(new StringReader(mapping))));
+            .create(ib -> ib.index(name).mappings(mb -> mb.withJson(new StringReader(mapping))));
     // .settings(s -> s.numberOfShards("2").numberOfReplicas("2"))
-
+    // .aliases(alias, ab -> ab.isWriteIndex(true))
     if (!createIndex.acknowledged()) {
-      throw new IOException(String.format("Failed to create index '%s'", index));
+      throw new IOException(
+          String.format("Failed to create index '%s with alias '%s'", name, alias));
+    }
+
+    // Add alias to new Index (we add the alias after creating the index to avoid weird error)
+    PutAliasResponse putAlias =
+        esClient.indices().putAlias(p -> p.index(name).name(alias).isWriteIndex(true));
+    if (!putAlias.acknowledged()) {
+      throw new IOException(
+          String.format("Failed to assign alias '%s' to index '%s'", alias, name));
     }
 
     log.info("Create index {} done", createIndex.index());
   }
 
-  public void deleteIndexWithPrefix(String index) throws IOException {
+  public boolean indexExists(String name) throws IOException {
+    return esClient.indices().exists(e -> e.index(name)).value();
+  }
+
+  public void deleteIndexWithPrefix(String prefix) throws IOException {
     //  TODO be sure to delete only user index
     //  GetIndexResponse getIndex = esClient.indices().get(g -> g.index("_all"));
     GetIndexResponse getIndex =
-        esClient.indices().get(g -> g.index(index + "*").expandWildcards(ExpandWildcard.All));
+        esClient.indices().get(g -> g.index(prefix + "*").expandWildcards(ExpandWildcard.All));
 
     List<String> indexList = new ArrayList<>(getIndex.result().keySet());
     if (!indexList.isEmpty()) {
@@ -287,23 +285,22 @@ public class SearchEngineService {
       if (!deleteIndex.acknowledged()) {
         throw new IOException(String.format("Failed to delete all index %s", indexList));
       }
-      log.info("deleteIndexWithPrefix() - Index {} - {} deleted", index, indexList);
+      log.info("deleteIndexWithPrefix() - Index {} - {} deleted", prefix, indexList);
     } else {
-      log.info("deleteIndexWithPrefix() - Index {} is empty", index);
+      log.info("deleteIndexWithPrefix() - Index {} is empty", prefix);
     }
   }
 
-  public void deleteIndex(String index) throws IOException {
-    BooleanResponse indexExists = esClient.indices().exists(e -> e.index(index));
+  public void deleteIndex(String name) throws IOException {
 
-    if (indexExists.value()) {
-      DeleteIndexResponse deleteIndex = esClient.indices().delete(d -> d.index(index));
+    if (indexExists(name)) {
+      DeleteIndexResponse deleteIndex = esClient.indices().delete(d -> d.index(name));
       if (!deleteIndex.acknowledged()) {
-        throw new IOException(String.format("Failed to delete index %s", index));
+        throw new IOException(String.format("Failed to delete index %s", name));
       }
-      log.info("deleteIndex() - Index {} deleted", index);
+      log.info("deleteIndex() - Index {} deleted", name);
     } else {
-      log.info("deleteIndex() - Index {} does not exist", index);
+      log.info("deleteIndex() - Index {} does not exist", name);
     }
   }
 
@@ -337,7 +334,6 @@ public class SearchEngineService {
         throw new IOException(
             String.format("Failed to close index '%s' with index '%s'", alias, indexList));
       }
-      // Do not delete index (wait a few day before!)
       log.info("removeAlias() - Old index {} closed", indexList);
 
       // Remove alias from index
@@ -353,24 +349,54 @@ public class SearchEngineService {
     }
   }
 
-  public void moveAliasTo(String alias, String indexName) throws IOException {
-    log.info("moveAliasTo() - Alias: {} - indexName: {}", alias, indexName);
+  public void moveAliasTo(String alias, String name) throws IOException {
+    log.info("moveAliasTo() - Alias: {} - Index: {}", alias, name);
 
     removeAlias(alias);
 
     // Add alias to new Index
     PutAliasResponse putAliasResponse =
-        esClient.indices().putAlias(p -> p.index(indexName).name(alias).isWriteIndex(true));
+        esClient.indices().putAlias(p -> p.index(name).name(alias).isWriteIndex(true));
     if (!putAliasResponse.acknowledged()) {
       throw new IOException(
-          String.format("Failed to assign alias '%s' to index '%s'", alias, indexName));
+          String.format("Failed to assign alias '%s' to index '%s'", alias, name));
     }
 
-    log.info("moveAliasTo() - add Alias {} to Index {} done", alias, indexName);
+    log.info("moveAliasTo() - add Alias {} to Index {} done", alias, name);
   }
 
-  public void refresh(String index) throws IOException {
-    esClient.indices().refresh(r -> r.index(index));
+  // Any index changes, such as indexing or deleting documents, are written to disk during a Lucene
+  // commit. However, Lucene commits are expensive operations, so they cannot be performed after
+  // every change to the index.
+  // In ES, each shard records every indexing operation in a transaction log called translog that
+  // is fsynced after every request. When a document is indexed, it is added to the memory buffer
+  // and written in the translog. Periodically, a flush performs a Lucene commit and reset the
+  // translog. Thus, a translog contains all non flushed operations that could be replayed
+  // in case of a crash. Note. The translog is an ES feature and is not part of Lucene.
+
+  // A refresh causes documents in the memory buffer to be converted into an in-memory
+  // segment which then becomes searchable. Refresh does not commit the data to make it durable.
+  public void refresh(String name) throws IOException {
+    esClient.indices().refresh(r -> r.index(name));
+  }
+
+  // An ES flush performs a Lucene commit, which includes writing the memory segments to disk
+  // using fsync, then purging the old translog and starting a new translog.
+  public void flush(String name) throws IOException {
+    esClient.indices().flush(r -> r.index(name));
+  }
+
+  public Set<String> getIndicesByAlias(String alias) throws IOException {
+    try {
+      GetAliasResponse aliasResponse = esClient.indices().getAlias(g -> g.name(alias));
+      return aliasResponse.result().keySet();
+    } catch (ElasticsearchException e) {
+      if (e.response().status() == 404) {
+        return Collections.emptySet();
+      } else {
+        throw e;
+      }
+    }
   }
 }
 

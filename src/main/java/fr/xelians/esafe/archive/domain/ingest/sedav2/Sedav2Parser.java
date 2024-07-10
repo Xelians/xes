@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.ingest.sedav2;
@@ -68,7 +69,7 @@ public class Sedav2Parser extends AbstractManifestParser {
 
   public static final String IMPLEMENTATION_VERSION = "5.2";
 
-  private final ArchiveTransfer archiveTransfert = new ArchiveTransfer();
+  private final ArchiveTransfer archiveTransfer = new ArchiveTransfer();
   private final ArrayList<ArchiveUnit> referrerUnits = new ArrayList<>();
   private final ArrayList<ArchiveUnit> archiveUnits = new ArrayList<>();
   private final HashMap<Long, ArchiveUnit> rootUnits = new HashMap<>();
@@ -85,6 +86,9 @@ public class Sedav2Parser extends AbstractManifestParser {
 
   public Sedav2Parser(IngestService ingestService, OperationDb operation) {
     super(ingestService, operation);
+    archiveTransfer.setTenant(operation.getTenant());
+    archiveTransfer.setOperationId(operation.getId());
+    archiveTransfer.setCreated(operation.getCreated());
   }
 
   private static UnitType getUnitType(OperationType operationType) {
@@ -114,8 +118,8 @@ public class Sedav2Parser extends AbstractManifestParser {
   }
 
   @Override
-  public ArchiveTransfer getArchiveTransfert() {
-    return archiveTransfert;
+  public ArchiveTransfer getArchiveTransfer() {
+    return archiveTransfer;
   }
 
   @Override
@@ -140,14 +144,14 @@ public class Sedav2Parser extends AbstractManifestParser {
       if (nextEvent.isStartElement()) {
         StartElement startElement = nextEvent.asStartElement();
         switch (startElement.getName().getLocalPart()) {
-          case MESSAGE_IDENTIFIER -> archiveTransfert.setMessageIdentifier(readText(reader, 512));
+          case MESSAGE_IDENTIFIER -> archiveTransfer.setMessageIdentifier(readText(reader, 512));
           case COMMENT ->
           // Note. We don't support multiple comments. We only take the last one.
-          archiveTransfert.setComment(readText(reader, 4096));
+          archiveTransfer.setComment(readText(reader, 4096));
           case ARCHIVAL_AGREEMENT -> {
             String agreement = readText(reader, 512);
             checkArchivalAgreement(agreement);
-            archiveTransfert.setArchivalAgreement(agreement);
+            archiveTransfer.setArchivalAgreement(agreement);
           }
           case DATA_OBJECT_GROUP -> {
             assertTrue(
@@ -182,7 +186,7 @@ public class Sedav2Parser extends AbstractManifestParser {
             // ArchivalAgency => Service Producteur
             Agency sp = getAgency(reader);
             checkAgency(sp.identifier());
-            archiveTransfert.setArchivalAgency(sp);
+            archiveTransfer.setArchivalAgency(sp);
           }
           case TRANSFERRING_AGENCY -> {
             // TODO Si le SUBMISSION_AGENCY_IDENTIFIER n'est pas défini dans l'ArchiveUnit
@@ -191,7 +195,7 @@ public class Sedav2Parser extends AbstractManifestParser {
             // (et à ses enfants)
             Agency sv = getAgency(reader);
             checkAgency(sv.identifier()); // is it necessary ?
-            archiveTransfert.setTransferringAgency(sv);
+            archiveTransfer.setTransferringAgency(sv);
           }
         }
       } else if (nextEvent.isEndElement()) {
@@ -207,7 +211,7 @@ public class Sedav2Parser extends AbstractManifestParser {
   private void closeArchiveTransfer() throws IOException {
 
     // Check Service Provider
-    Agency sp = archiveTransfert.getArchivalAgency();
+    Agency sp = archiveTransfer.getArchivalAgency();
     assertNotNull(
         sp, CLOSE_ARCHIVE_TRANSFER_FAILED, "Archival agency is not defined in archive transfer");
 
@@ -316,10 +320,27 @@ public class Sedav2Parser extends AbstractManifestParser {
       XMLEvent nextEvent = reader.nextEvent();
       if (nextEvent.isStartElement()) {
         StartElement startElement = nextEvent.asStartElement();
-        if (startElement.getName().getLocalPart().equals(ARCHIVAL_PROFILE)) {
-          archivalProfile = readText(reader, 512);
-          managementMetadata.setArchivalProfile(archivalProfile);
+        String localPart = startElement.getName().getLocalPart();
+
+        switch (localPart) {
+          case ARCHIVAL_PROFILE -> {
+            archivalProfile = readText(reader, 512);
+            managementMetadata.setArchivalProfile(archivalProfile);
+          }
+          case "AcquisitionInformation" -> {
+            String acquisitionInformation = readText(reader, 512);
+            managementMetadata.setAcquisitionInformation(acquisitionInformation);
+          }
+          case "ServiceLevel" -> {
+            String serviceLevel = readText(reader, 512);
+            managementMetadata.setServiceLevel(serviceLevel);
+          }
+          case "LegalStatus" -> {
+            String legalStatus = readText(reader, 512);
+            managementMetadata.setLegalStatus(legalStatus);
+          }
         }
+
       } else if (nextEvent.isEndElement()) {
         EndElement endElement = nextEvent.asEndElement();
         if (endElement.getName().getLocalPart().equals(MANAGEMENT_METADATA)) {
@@ -696,7 +717,7 @@ public class Sedav2Parser extends AbstractManifestParser {
 
     for (var physicalDataObject : dog.getPhysicalDataObjects()) {
       Qualifiers qualifiers = qMap.computeIfAbsent("PhysicalDataObject", k -> new Qualifiers());
-      qualifiers.setQualifier("PhysicalDataObject");
+      qualifiers.setQualifier(PhysicalQualifier.PhysicalMaster.toString());
       qualifiers.incNbc();
       ObjectVersion version = getObjectVersion(physicalDataObject);
       qualifiers.getVersions().add(version);

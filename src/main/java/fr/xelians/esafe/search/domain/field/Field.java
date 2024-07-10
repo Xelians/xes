@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.search.domain.field;
@@ -17,8 +18,8 @@ public abstract class Field {
 
   public static final String EXT = "_ext";
 
-  private final String name;
-  private final boolean isStandard;
+  protected final String name;
+  protected final boolean isStandard;
 
   /**
    * Instantiates a new Field.

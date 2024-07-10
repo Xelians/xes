@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.testcommon;
@@ -36,26 +37,32 @@ public class Scenario {
   // Create referentials,
   public static void createScenario01(RestClient restClient, long tenant, UserDto userDto) {
 
-    ResponseEntity<?> response =
-        restClient.createOntologies(tenant, DtoFactory.createOntologyDto(1));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    for (int i = 1; i <= 2; i++) {
+      ResponseEntity<?> response =
+          restClient.createOntologies(tenant, DtoFactory.createOntologyDto(i));
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
-    response = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(1));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      response = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(i));
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
-    IngestContractDto ingestContractDto = DtoFactory.createIngestContractDto(1);
-    response = restClient.createIngestContract(tenant, ingestContractDto);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      IngestContractDto ingestContractDto = DtoFactory.createIngestContractDto(i);
+      response = restClient.createIngestContract(tenant, ingestContractDto);
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
-    AccessContractDto accessContractDto = DtoFactory.createAccessContractDto(1);
-    response = restClient.createAccessContract(tenant, accessContractDto);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      AccessContractDto accessContractDto = DtoFactory.createAccessContractDto(i);
+      response = restClient.createAccessContract(tenant, accessContractDto);
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
-    userDto.getAccessContracts().add(new TenantContract(tenant, accessContractDto.getIdentifier()));
-    userDto.getIngestContracts().add(new TenantContract(tenant, ingestContractDto.getIdentifier()));
+      userDto
+          .getAccessContracts()
+          .add(new TenantContract(tenant, accessContractDto.getIdentifier()));
+      userDto
+          .getIngestContracts()
+          .add(new TenantContract(tenant, ingestContractDto.getIdentifier()));
 
-    response = restClient.updateUser(userDto);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      response = restClient.updateUser(userDto);
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    }
   }
 
   // Create referentials and rules

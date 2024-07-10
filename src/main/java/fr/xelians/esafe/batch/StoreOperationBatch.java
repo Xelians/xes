@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.batch;
@@ -53,7 +54,7 @@ public class StoreOperationBatch {
     try {
       // TODO affecter 1 thread par Tenant et ne pas bloquer les autres tenants si une thread n'a
       // pas fini
-      if (serverNodeService.hasFeature(NodeFeature.STORE_OPERATION)) {
+      if (serverNodeService.hasFeature(NodeFeature.STORE)) {
         Collection<List<OperationDb>> groupList =
             operationService.findByStatus(OperationStatus.STORE, OperationStatus.INDEX).stream()
                 .collect(groupingBy(OperationDb::getTenant))
@@ -80,7 +81,7 @@ public class StoreOperationBatch {
         case ELIMINATE_ARCHIVE -> eliminateArchive(operation);
         case INGEST_ARCHIVE, INGEST_FILING, INGEST_HOLDING -> unitIngestService.indexOperation(
             operation);
-        case SECURING -> indexSecuring(operation);
+        case TRACEABILITY -> indexSecuring(operation);
         case EXTERNAL,
             CREATE_ACCESSCONTRACT,
             UPDATE_ACCESSCONTRACT,

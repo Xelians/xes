@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.entity;
@@ -15,7 +16,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(
+    name = "profile",
     uniqueConstraints = {
       @UniqueConstraint(
           name = "unique_profile_tenant_identifier",
@@ -24,7 +27,6 @@ import lombok.Setter;
           name = "unique_profile_tenant_name",
           columnNames = {"tenant", "name"})
     })
-@Entity
 public class ProfileDb extends AbstractReferentialDb {
 
   private ProfileFormat format;

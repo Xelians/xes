@@ -1,15 +1,16 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.domain.scanner.addoffer;
 
 import fr.xelians.esafe.admin.domain.scanner.OperationProcessor;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.operation.domain.ActionType;
 import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.domain.StorageAction;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.storage.domain.hashset.StorageObjectSet;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +24,7 @@ public class AddOfferProcessor implements OperationProcessor {
   }
 
   @Override
-  public void process(OperationSe operation) {
+  public void process(LogbookOperation operation) {
     OperationType type = operation.getType();
     if (type == OperationType.INGEST_ARCHIVE
         || type == OperationType.INGEST_HOLDING

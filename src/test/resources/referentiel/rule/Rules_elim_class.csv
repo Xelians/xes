@@ -221,6 +221,6 @@ STO-00055,StorageRule,Allocation temporaire d’invalidité (dossier individuel 
 STO-00056,StorageRule,Notification du taux d’IPP (dossier individuel d’agent public),L’échéance est calculée à compter de la date du document,10,YEAR
 STO-00057,StorageRule,Recours hiérarchique et recours gracieux (dossier individuel d’agent public),L’échéance est calculée à compter de la date du document,10,YEAR
 HOL-00001,HoldRule,Règle de gel d'un an,"Gel pour une durée définie d'1 an",,
-HOL-00002,HoldRule,Règle de gel sans durée,"Gel pour une indéfinie",1,Year
+HOL-00002,HoldRule,Règle de gel sans durée,"Gel pour une durée indéfinie",,
 HOL-00003,HoldRule,Règle de gel décennale,"Gel pour une durée définie de 10 an",10,Year
 HOL-00004,HoldRule,Règle de gel illimitée,"Gel pour une durée définie illimitée",unlimited,Year

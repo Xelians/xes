@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +36,7 @@ class ArchiveProbativeValueIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
@@ -42,7 +44,7 @@ class ArchiveProbativeValueIT extends BaseIT {
   @BeforeEach
   void beforeEach() {}
 
-  // @Test
+  @Test
   void probativeComplexSipTest(@TempDir Path tmpDir) throws IOException, ParsingException {
     Long tenant = nextTenant();
 
@@ -58,7 +60,6 @@ class ArchiveProbativeValueIT extends BaseIT {
     ArchiveTransfer[] sips = new ArchiveTransfer[10];
     Arrays.fill(sips, 0, sips.length, sip);
     Scenario.uploadSips(restClient, tenant, tmpDir, sips);
-    Utils.sleep(1000);
 
     // Update in order to create an LFC
     String updateQuery =
@@ -68,7 +69,7 @@ class ArchiveProbativeValueIT extends BaseIT {
                    "$query": [
                      {
                        "$match": { "Title": "MyTitle2" },
-                       "$depth": 1
+                       "$depth": 5
                      }
                    ],
                    "$filter": {},
@@ -86,14 +87,14 @@ class ArchiveProbativeValueIT extends BaseIT {
     assertEquals(OperationStatus.OK, operation.status(), TestUtils.getBody(r2));
 
     // Wait for securing
-    Utils.sleep(3000);
+    Utils.sleep(2000);
 
     probativeComplexSip(tenant, tmpDir);
   }
 
-  private void probativeComplexSip(Long tenant, Path tmpDir) throws IOException {
+  private void probativeComplexSip(Long tenant, Path tmpDir) {
 
-    String exportQuery =
+    String query =
         """
                 {
                   "dslQuery": {
@@ -123,7 +124,7 @@ class ArchiveProbativeValueIT extends BaseIT {
                 }
                 """;
 
-    ResponseEntity<String> r2 = restClient.probativeValue(tenant, acIdentifier, exportQuery);
+    ResponseEntity<String> r2 = restClient.probativeValue(tenant, acIdentifier, query);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
     String requestId = r2.getHeaders().getFirst(X_REQUEST_ID);
 

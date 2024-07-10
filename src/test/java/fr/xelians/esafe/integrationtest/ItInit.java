@@ -1,10 +1,12 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
 
+import fr.xelians.esafe.testcommon.ClamAVContainer;
 import fr.xelians.esafe.testcommon.MinioContainer;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -32,22 +34,28 @@ public class ItInit implements ApplicationContextInitializer<ConfigurableApplica
   public static final String PDF = RESOURCES + "/pdf/";
 
   // TestContainers
+  private static final ClamAVContainer clamav;
   private static final PostgreSQLContainer<?> postgres;
   private static final ElasticsearchContainer elastic;
   private static final MinioContainer minio;
 
   private static final String POSTGRES_IMAGE = "postgres:16.0-alpine";
   private static final String ELASTIC_IMAGE =
-      "docker.elastic.co/elasticsearch/elasticsearch:8.11.0";
+      "docker.elastic.co/elasticsearch/elasticsearch:8.13.0";
 
   // Init Tests containers
   static {
     LogManager.getLogManager().getLogger("").setLevel(Level.OFF);
 
+    clamav = createClamAVContainer();
     postgres = createPostgreslContainer();
     elastic = createElasticSearchContainer();
     minio = createMinioContainer();
-    Startables.deepStart(elastic, postgres, minio).join();
+    Startables.deepStart(elastic, clamav, postgres, minio).join();
+  }
+
+  private static ClamAVContainer createClamAVContainer() {
+    return new ClamAVContainer().withReuse(false);
   }
 
   private static MinioContainer createMinioContainer() {
@@ -70,8 +78,8 @@ public class ItInit implements ApplicationContextInitializer<ConfigurableApplica
 
   @Override
   public void initialize(ConfigurableApplicationContext ctx) {
-    // Does not work ?
-    // ctx.getBeanFactory().setConversionService(new ApplicationConversionService());
+    TestPropertyValues.of("antivirus.name=ClamAV", "antivirus.hosts=" + clamav.getHostAddress())
+        .applyTo(ctx.getEnvironment());
 
     String[] tokens = elastic.getHttpHostAddress().split(":");
     TestPropertyValues.of(

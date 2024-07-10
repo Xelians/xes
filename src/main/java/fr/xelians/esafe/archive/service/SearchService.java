@@ -1,12 +1,12 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
 
-import static co.elastic.clients.elasticsearch.core.search.TotalHitsRelation.*;
-
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch.core.GetRequest;
@@ -43,15 +43,15 @@ import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.json.JsonService;
 import fr.xelians.esafe.common.utils.JsonUtils;
-import fr.xelians.esafe.common.utils.Key;
 import fr.xelians.esafe.common.utils.StreamContent;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.referential.domain.RuleType;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.service.OntologyService;
-import fr.xelians.esafe.search.domain.dsl.bucket.Bucket;
-import fr.xelians.esafe.search.domain.field.Field;
+import fr.xelians.esafe.search.domain.dsl.bucket.Facet;
+import fr.xelians.esafe.search.domain.dsl.parser.NamedField;
+import fr.xelians.esafe.search.domain.field.*;
 import fr.xelians.esafe.search.service.SearchEngineService;
 import fr.xelians.esafe.storage.domain.dao.StorageDao;
 import fr.xelians.esafe.storage.service.StorageService;
@@ -170,68 +170,55 @@ public class SearchService {
   }
 
   public SearchResult<JsonNode> searchUnits(
-      Long tenant, AccessContractDb accessContract, SearchQuery searchQuery, Converter converter)
+      Long tenant, AccessContractDb accessContract, SearchQuery query, Converter converter)
       throws IOException {
 
-    log.info("Search query: {}", searchQuery);
+    log.info("Search query: {}", query);
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(accessContract, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
-    Assert.notNull(searchQuery, QUERY_MUST_BE_NOT_NULL);
+    Assert.notNull(query, QUERY_MUST_BE_NOT_NULL);
 
     OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
-    SearchParser searchParser = SearchParser.create(tenant, accessContract, ontologyMapper);
+    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
 
     try {
-      SearchRequest searchRequest = searchParser.createRequest(searchQuery);
-      log.info("Search JSON query: {}", JsonUtils.toJson(searchRequest));
-      SearchResponse<JsonNode> response = searchEngineService.search(searchRequest, JsonNode.class);
+      SearchRequest request = parser.createRequest(query);
+      SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
 
-      HitsMetadata<JsonNode> hits = response.hits();
-      TotalHits totalHits = hits.total();
-      Long total = totalHits == null ? null : getTotal(totalHits);
-      Integer offset = searchRequest.from();
-      Integer limit = searchRequest.size();
-      Hits hit = new Hits(offset, limit, hits.hits().size(), total);
+      HitsMetadata<JsonNode> hitsMeta = response.hits();
+      Hits hit = Hits.create(request, hitsMeta);
 
       List<JsonNode> nodes =
-          hits.hits().stream()
+          hitsMeta.hits().stream()
               .map(co.elastic.clients.elasticsearch.core.search.Hit::source)
               .filter(Objects::nonNull)
               .map(converter::convert)
               .toList();
 
-      Map<String, List<Bucket>> facets = searchEngineService.getFacets(response.aggregations());
-      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, searchQuery);
+      List<Facet> facets = SearchEngineService.getFacets(response.aggregations());
+      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, query);
 
     } catch (JsonProcessingException ex) {
       throw new BadRequestException(
-          "Search request failed", String.format("Failed to parse query '%s'", searchQuery), ex);
+          "Search request failed", String.format("Failed to parse query '%s'", query), ex);
     }
   }
 
   public SearchResult<JsonNode> searchWithInheritedRules(
-      Long tenant, AccessContractDb accessContract, SearchQuery searchQuery) throws IOException {
+      Long tenant, AccessContractDb accessContract, SearchQuery query) throws IOException {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(accessContract, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
-    Assert.notNull(searchQuery, QUERY_MUST_BE_NOT_NULL);
+    Assert.notNull(query, QUERY_MUST_BE_NOT_NULL);
 
     OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
-    SearchParser searchParser = SearchParser.create(tenant, accessContract, ontologyMapper);
+    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
 
     try {
-      // Request
-      SearchRequest searchRequest = searchParser.createWithInheritedRulesRequest(searchQuery);
-      log.info("Search JSON query: {}", JsonUtils.toJson(searchRequest));
+      SearchRequest request = parser.createWithInheritedRulesRequest(query);
+      SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
 
-      // Search units
-      SearchResponse<JsonNode> response = searchEngineService.search(searchRequest, JsonNode.class);
-
-      HitsMetadata<JsonNode> hits = response.hits();
-      TotalHits totalHits = hits.total();
-      Long total = totalHits == null ? null : getTotal(totalHits);
-      Integer offset = searchRequest.from();
-      Integer limit = searchRequest.size();
-      Hits hit = new Hits(offset, limit, hits.hits().size(), total);
+      HitsMetadata<JsonNode> hitsMeta = response.hits();
+      Hits hit = Hits.create(request, hitsMeta);
 
       // Search parents
       List<JsonNode> nodes = new ArrayList<>();
@@ -239,40 +226,42 @@ public class SearchService {
       List<JsonNode> nodeList = new ArrayList<>();
 
       List<JsonNode> srcNodes =
-          hits.hits().stream()
+          hitsMeta.hits().stream()
               .map(co.elastic.clients.elasticsearch.core.search.Hit::source)
               .toList();
       for (JsonNode node : srcNodes) {
         nodeList.add(node);
         node.get("_us").forEach(v -> parentSet.add(v.asLong()));
         if (parentSet.size() > 1000) {
-          searchParent(tenant, accessContract, parentSet, nodeList, nodes);
+          searchParent(tenant, accessContract, ontologyMapper, parentSet, nodeList, nodes);
           parentSet.clear();
           nodeList.clear();
         }
       }
       if (!nodeList.isEmpty()) {
-        searchParent(tenant, accessContract, parentSet, nodeList, nodes);
+        searchParent(tenant, accessContract, ontologyMapper, parentSet, nodeList, nodes);
       }
 
-      Map<String, List<Bucket>> facets = searchEngineService.getFacets(response.aggregations());
-      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, searchQuery);
+      List<Facet> facets = SearchEngineService.getFacets(response.aggregations());
+      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, query);
 
     } catch (JsonProcessingException ex) {
       throw new BadRequestException(
-          "Search request failed", String.format("Failed to parse query '%s'", searchQuery), ex);
+          "Search request failed", String.format("Failed to parse query '%s'", query), ex);
     }
   }
 
   private void searchParent(
       Long tenant,
       AccessContractDb accessContract,
+      OntologyMapper ontologyMapper,
       Set<Long> parentSet,
       List<JsonNode> nodeList,
       List<JsonNode> nodes)
       throws IOException {
 
-    SearchRequest searchRequest = createParentsRequest(tenant, accessContract, parentSet);
+    SearchRequest searchRequest =
+        createParentsRequest(tenant, accessContract, ontologyMapper, parentSet);
     SearchResponse<ArchiveUnit> response =
         searchEngineService.search(searchRequest, ArchiveUnit.class);
 
@@ -288,7 +277,7 @@ public class SearchService {
   }
 
   private SearchRequest createParentsRequest(
-      Long tenant, AccessContractDb accessContract, Set<Long> ids) {
+      Long tenant, AccessContractDb accessContract, OntologyMapper ontologyMapper, Set<Long> ids) {
 
     ObjectNode idNode = JsonNodeFactory.instance.objectNode();
     ArrayNode idsNode = idNode.putArray("#id");
@@ -311,7 +300,6 @@ public class SearchService {
     SearchQuery searchQuery =
         SearchQuery.builder().queryNode(andNode).projectionNode(projectionNode).build();
 
-    OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
     SearchParser searchParser = SearchParser.create(tenant, accessContract, ontologyMapper);
     return searchParser.createRequest(searchQuery);
   }
@@ -320,13 +308,8 @@ public class SearchService {
       throws JsonProcessingException {
     ArchiveUnit childUnit = JsonService.toArchiveUnit(childNode);
     InheritedRules childInheritedRules = createInheritedRules();
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.AppraisalRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.AccessRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.ReuseRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.StorageRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.DisseminationRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.ClassificationRule);
-    addInheritedRule(childInheritedRules, childUnit, parentMap, RuleType.HoldRule);
+    Arrays.stream(RuleType.values())
+        .forEach(ruleType -> addInheritedRule(childInheritedRules, childUnit, parentMap, ruleType));
     return JsonService.toJson(childInheritedRules);
   }
 
@@ -352,21 +335,23 @@ public class SearchService {
 
       paths.add(parentId.toString());
       Management parentMgt = parentUnit.getManagement();
-      AbstractRules parentRules = parentMgt.getRules(ruleType);
-      if (parentRules != null) {
-        for (Rule parentRule : parentRules.getRules()) {
-          InheritedRule inheritedRule =
-              createInheritedRule(parentUnit, parentId, parentRule, paths);
-          childInheritedRules.getRules(ruleType).getRules().add(inheritedRule);
-        }
-        if (parentRules instanceof FinalActionRule faRule) {
-          InheritedProperty inheritedProperty =
-              createInheritedProperty(parentUnit, parentId, faRule, paths);
-          if (inheritedProperty != null) {
-            childInheritedRules.getRules(ruleType).getProperties().add(inheritedProperty);
+      if (parentMgt != null) {
+        AbstractRules parentRules = parentMgt.getRules(ruleType);
+        if (parentRules != null) {
+          for (Rule parentRule : parentRules.getRules()) {
+            InheritedRule inheritedRule =
+                createInheritedRule(parentUnit, parentId, parentRule, paths);
+            childInheritedRules.getRules(ruleType).getRules().add(inheritedRule);
           }
+          if (parentRules instanceof FinalActionRule faRule) {
+            InheritedProperty inheritedProperty =
+                createInheritedProperty(parentUnit, parentId, faRule, paths);
+            if (inheritedProperty != null) {
+              childInheritedRules.getRules(ruleType).getProperties().add(inheritedProperty);
+            }
+          }
+          if (parentRules.getRuleInheritance().getPreventInheritance() == Boolean.TRUE) return;
         }
-        if (parentRules.getRuleInheritance().getPreventInheritance() == Boolean.TRUE) return;
       }
     }
   }
@@ -411,11 +396,6 @@ public class SearchService {
     ObjectNode storageNode = JsonNodeFactory.instance.objectNode();
     storageNode.put("strategyId", "default");
     return storageNode;
-  }
-
-  // Return max result plus 1 if the result overflows
-  private static Long getTotal(TotalHits totalHits) {
-    return totalHits.relation() == Eq ? totalHits.value() : totalHits.value() + 1;
   }
 
   public Stream<JsonNode> searchStream(
@@ -577,11 +557,10 @@ public class SearchService {
       Long tenant, AccessContractDb accessContract, SearchQuery query, Long id) throws IOException {
 
     OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
-    SearchParser searchParser = SearchParser.create(tenant, accessContract, ontologyMapper);
+    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
 
-    SearchRequest searchRequest = searchParser.createRequest(query);
-    log.info("Search JSON query: {}", JsonUtils.toJson(searchRequest));
-    SearchResponse<JsonNode> response = searchEngineService.search(searchRequest, JsonNode.class);
+    SearchRequest request = parser.createRequest(query);
+    SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
 
     HitsMetadata<JsonNode> hits = response.hits();
     TotalHits total = hits.total();
@@ -597,7 +576,7 @@ public class SearchService {
   // and is able to get the relevant document even when the document is not yet fully indexed.
   // EXT_KEYS are excluded because extended fields are present in the extends attribute of
   // ArchiveUnit
-  public ArchiveUnit getArchiveUnit(Long tenant, Long id) throws IOException {
+  public ArchiveUnit getLinkedArchiveUnit(Long tenant, Long id) throws IOException {
     GetRequest request =
         new GetRequest.Builder()
             .index(ArchiveUnitIndex.ALIAS)
@@ -616,15 +595,14 @@ public class SearchService {
   }
 
   // For internal use only
-  public ArchiveUnit getArchiveUnit(Long tenant, Key<String, String> key) throws IOException {
+  public ArchiveUnit getLinkedArchiveUnit(Long tenant, NamedField namedField, FieldValue fieldValue)
+      throws IOException {
 
+    // Create query
+    Field field = namedField.field();
+    TermQuery keyQuery = TermQuery.of(t -> t.field(field.getFullName()).value(fieldValue));
     TermQuery tenantQuery =
         TermQuery.of(t -> t.field(TENANT_FIELD).value(v -> v.longValue(tenant)));
-
-    String keywords = key.key1() + ":" + key.key2();
-    TermQuery keyQuery =
-        TermQuery.of(t -> t.field(KEYWORDS_FIELD).value(v -> v.stringValue(keywords)));
-
     BoolQuery boolQuery =
         BoolQuery.of(b -> b.must(keyQuery._toQuery()).filter(tenantQuery._toQuery()));
 
@@ -638,7 +616,6 @@ public class SearchService {
     SearchResponse<ArchiveUnit> response = searchEngineService.search(request, ArchiveUnit.class);
 
     int size = response.hits().hits().size();
-
     if (size == 1) {
       return response.hits().hits().getFirst().source();
     }
@@ -646,11 +623,12 @@ public class SearchService {
     if (size > 1) {
       throw new BadRequestException(
           "Too many archive units found",
-          String.format("Found more that one archive unit with key: %s", key));
+          String.format("Found more that one archive unit with key: %s", field.getFullName()));
     }
 
     throw new NotFoundException(
-        "Archive Unit not found", String.format("Failed to find archive unit with key: %s", key));
+        "Archive Unit not found",
+        String.format("Failed to find archive unit with key: %s", field.getFullName()));
   }
 
   // For internal use only. This request is looking for the document internal
@@ -759,7 +737,7 @@ public class SearchService {
 
   public boolean existsById(Long tenant, Long id) throws IOException {
     try {
-      getArchiveUnit(tenant, id);
+      getLinkedArchiveUnit(tenant, id);
       return true;
     } catch (NotFoundException ex) {
       return false;

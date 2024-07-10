@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.dto;
@@ -16,18 +17,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
-public class CustomLocalDateTimeDeserializer extends StdDeserializer<LocalDateTime> {
+public class LocalDateTimeDeserializer extends StdDeserializer<LocalDateTime> {
 
   private static final DateTimeFormatter ALTERNATIVE_DATE_FORMATTER =
       new DateTimeFormatterBuilder().appendPattern("d[d]/M[M]/yyyy").toFormatter();
   private static final DateTimeFormatter ALTERNATIVE_DATE_TIME_FORMATTER =
       new DateTimeFormatterBuilder().appendPattern("d[d]/M[M]/yyyy HH:mm:ss").toFormatter();
 
-  public CustomLocalDateTimeDeserializer() {
+  public LocalDateTimeDeserializer() {
     this(null);
   }
 
-  public CustomLocalDateTimeDeserializer(Class<?> vc) {
+  public LocalDateTimeDeserializer(Class<?> vc) {
     super(vc);
   }
 

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.dto;
@@ -8,7 +9,6 @@ package fr.xelians.esafe.referential.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.common.constant.DefaultValue;
 import fr.xelians.esafe.referential.domain.Status;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.HashSet;
 import lombok.EqualsAndHashCode;
@@ -47,7 +47,6 @@ public class AccessContractDto extends AbstractReferentialDto {
   @JsonProperty("WritingPermission")
   private Boolean writingPermission = DefaultValue.WRITING_PERMISSION;
 
-  @NotNull
   @JsonProperty("WritingRestrictedDesc")
   private Boolean writingRestrictedDesc = DefaultValue.WRITING_RESTRICTED_DESC;
 

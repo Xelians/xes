@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
@@ -32,10 +33,10 @@ import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
 import fr.xelians.esafe.common.utils.*;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.logbook.service.LogbookService;
 import fr.xelians.esafe.operation.domain.*;
 import fr.xelians.esafe.operation.entity.OperationDb;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
@@ -79,7 +80,7 @@ public class ProbativeValueService {
 
   public static final String CHECK_PROBATIVE_FAILED = "Check probative value failed";
 
-  private static final Hash HASH = Hash.values()[0];
+  private static final Hash HASH = Hash.VALUES[0];
   public static final String ATR = "_atr_";
 
   private final ProcessingService processingService;
@@ -250,41 +251,43 @@ public class ProbativeValueService {
               String.format("Binary object with version '%s' does not exist", binaryVersion));
         }
 
-        BinaryObjectDetail detail = new BinaryObjectDetail();
-        report.getBinaryObjectDetails().add(detail);
-        detail.setBinaryObjectId(ov.getId());
-        detail.setDataObjectVersion(ov.getDataObjectVersion());
-        detail.setAlgorithm(HashUtils.getHash(ov.getAlgorithm()));
-        detail.setBinaryObjectSize(ov.getSize());
-        detail.setOperationId(ov.getOperationId());
-        detail.setStatus(ReportStatus.OK);
+        BinaryObjectDetail boDetail = new BinaryObjectDetail();
+        report.getBinaryObjectDetails().add(boDetail);
+        boDetail.setBinaryObjectId(ov.getId());
+        boDetail.setDataObjectVersion(ov.getDataObjectVersion());
+        boDetail.setAlgorithm(HashUtils.getHash(ov.getAlgorithm()));
+        boDetail.setBinaryObjectSize(ov.getSize());
+        boDetail.setOperationId(ov.getOperationId());
+        boDetail.setStatus(ReportStatus.OK);
 
-        // Compare he computed binary object and the stored binary object digest from archive unit
-        byte[] boChecksum = getChecksum(report, detail, storageDao, tenantDb, ov);
-        checkBinaryObjectChecksum(report, detail, boChecksum, ov);
+        // Compare the computed binary object and the stored binary object digest from archive unit
+        byte[] boChecksum = getChecksum(report, boDetail, storageDao, tenantDb, ov);
+        checkBinaryObjectChecksum(report, boDetail, boChecksum, ov);
 
-        // Get operationId (multiple ov can refer to the same operation)
+        // Get operationId (many ov can refer to the same operation)
         Long operationId = ov.getOperationId();
 
         // Update maps if operation was not already processed
         if (!storageAtrMap.containsKey(operationId + ATR + HASH)) {
-          byte[] atrBytes = getAtr(report, detail, storageDao, tenantDb, operationId);
+          byte[] atrBytes = getAtr(report, boDetail, storageDao, tenantDb, operationId);
           updateMaps(atrBytes, operationId, storageAtrMap, bdorMap);
 
-          // Get secure number from operation (multiple operations can refer to the same number)
+          // Get secure number (ie. the logbook operation id) from operation
+          // Note. many operations can refer to the same secure number
           Long lbkId = getSecureNumber(tenantDb, operationId);
+
           Set<Long> ops = lbkOperationsMap.computeIfAbsent(lbkId, l -> new HashSet<>());
           ops.add(operationId);
         }
 
         // Compare the binary object digest from atr with archive unit version
-        checkBinaryObjectChecksum(report, detail, bdorMap, ov);
+        checkBinaryObjectChecksum(report, boDetail, bdorMap, ov);
       }
     }
   }
 
   private static Integer parseVersion(String version) {
-    if (version.equalsIgnoreCase("LAST")) {
+    if ("LAST".equalsIgnoreCase(version)) {
       return null;
     }
     if (Utils.isPositiveInteger(version)) {
@@ -295,16 +298,19 @@ public class ProbativeValueService {
   }
 
   private static void checkBinaryObjectChecksum(
-      ProbativeValueReport report, BinaryObjectDetail detail, byte[] boChecksum, ObjectVersion ov) {
+      ProbativeValueReport report,
+      BinaryObjectDetail boDetail,
+      byte[] boChecksum,
+      ObjectVersion ov) {
 
     String boDigest = HashUtils.encodeHex(boChecksum);
-    detail.setStorageBinaryObjectChecksum(boDigest);
-    detail.setUnitBinaryObjectChecksum(ov.getMessageDigest());
+    boDetail.setStorageBinaryObjectChecksum(boDigest);
+    boDetail.setUnitBinaryObjectChecksum(ov.getMessageDigest());
 
     if (!boDigest.equals(ov.getMessageDigest())) {
       report.setStatus(ReportStatus.KO);
-      detail.setStatus(ReportStatus.KO);
-      detail.setStatusDetail("Unit and storage checksums are not equal");
+      boDetail.setStatus(ReportStatus.KO);
+      boDetail.setStatusDetail("Unit and storage checksums are not equal");
     }
   }
 
@@ -316,7 +322,7 @@ public class ProbativeValueService {
       throws IOException {
 
     // We compute all hashes in order to avoid reloading the ATR object from offer
-    Arrays.stream(Hash.values())
+    Arrays.stream(Hash.VALUES)
         .forEach(
             hash ->
                 storageAtrMap.put(operationId + ATR + hash, HashUtils.checksum(hash, atrBytes)));
@@ -407,9 +413,10 @@ public class ProbativeValueService {
     return data;
   }
 
+  // get checksum from storage offer
   private static byte[] getChecksum(
       ProbativeValueReport report,
-      BinaryObjectDetail detail,
+      BinaryObjectDetail boDetail,
       StorageDao storageDao,
       TenantDb tenantDb,
       ObjectVersion ov)
@@ -429,8 +436,8 @@ public class ProbativeValueService {
           checksum = cs;
         } else if (!Arrays.equals(checksum, cs)) {
           report.setStatus(ReportStatus.KO);
-          detail.setStatus(ReportStatus.KO);
-          detail.setStatusDetail("Checksums are not equal on all offers");
+          boDetail.setStatus(ReportStatus.KO);
+          boDetail.setStatusDetail("Checksums are not equal on all offers");
           return cs;
         }
       }
@@ -466,7 +473,7 @@ public class ProbativeValueService {
     detail.setOperationId(operationId);
     detail.setStatus(ReportStatus.OK);
 
-    for (Hash hash : Hash.values()) {
+    for (Hash hash : Hash.VALUES) {
       String key = operationId + ATR + hash;
       byte[] lbkAtrChecksum = lbkAtrMap.get(key);
       if (lbkAtrChecksum != null) {
@@ -502,7 +509,7 @@ public class ProbativeValueService {
 
     try (LbkIterator it = new ProbativeLbkIterator(tenantDb, storageService, lbkId)) {
       while (it.hasNext()) {
-        OperationSe operation = it.next();
+        LogbookOperation operation = it.next();
         if (operation.getType() == OperationType.INGEST_ARCHIVE) {
           for (StorageAction storageAction : operation.getStorageActions()) {
             if (storageAction.getType() == StorageObjectType.atr) {
@@ -519,8 +526,9 @@ public class ProbativeValueService {
   }
 
   private Long getSecureNumber(TenantDb tenantDb, Long operationId) throws IOException {
-    OperationSe operationSe = logbookService.getOperationSe(tenantDb.getId(), operationId);
-    Long secureNumber = operationSe.getSecureNumber();
+    LogbookOperation logbookOperation =
+        logbookService.getOperationSe(tenantDb.getId(), operationId);
+    Long secureNumber = logbookOperation.getSecureNumber();
     if (secureNumber == null) {
       throw new BadRequestException(
           CHECK_PROBATIVE_FAILED,
@@ -544,7 +552,7 @@ public class ProbativeValueService {
       SearchResponse<ArchiveUnit> response =
           searchEngineService.search(exportRequest, ArchiveUnit.class);
 
-      // TODO check if result overflows
+      // TODO check if detail overflows
       List<ArchiveUnit> units = response.hits().hits().stream().map(Hit::source).toList();
       return new ProbativeValueResult<>(units, probativeQuery.usages(), probativeQuery.version());
 

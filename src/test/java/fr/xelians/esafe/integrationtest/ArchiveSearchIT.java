@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -15,10 +16,7 @@ import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import fr.xelians.esafe.organization.dto.UserDto;
-import fr.xelians.esafe.search.domain.dsl.bucket.Bucket;
-import fr.xelians.esafe.search.domain.dsl.bucket.DateRangeBucket;
-import fr.xelians.esafe.search.domain.dsl.bucket.LongBucket;
-import fr.xelians.esafe.search.domain.dsl.bucket.StringBucket;
+import fr.xelians.esafe.search.domain.dsl.bucket.*;
 import fr.xelians.esafe.testcommon.RestClient;
 import fr.xelians.esafe.testcommon.Scenario;
 import fr.xelians.esafe.testcommon.SipFactory;
@@ -31,7 +29,6 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import nu.xom.Builder;
 import nu.xom.Element;
 import nu.xom.Nodes;
@@ -124,6 +121,10 @@ class ArchiveSearchIT extends BaseIT {
                            "$depth": 1
                          }
                        ],
+                       "$filter": {
+                         "$limit": 100,
+                         "$orderby": { "#score": -1, "#id": 1 }
+                       },
                        "$filter": {},
                        "$projection": {}
                     }
@@ -413,7 +414,7 @@ class ArchiveSearchIT extends BaseIT {
                      }
                    ],
                    "$filter": {},
-                   "$projection": { "$fields": { "#management.AppraisalRule.Rules": 1 }}
+                   "$projection": { "$fields": { "#management.AppraisalRule.Rules": 1 , "#management.HoldRule.Rules": 1 }}
                 }
                 """;
 
@@ -423,6 +424,7 @@ class ArchiveSearchIT extends BaseIT {
 
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
+
     assertEquals(10, searchResult.results().size(), TestUtils.getBody(response));
     assertEquals(1, searchResult.results().getFirst().size(), TestUtils.getBody(response));
   }
@@ -441,7 +443,7 @@ class ArchiveSearchIT extends BaseIT {
                      }
                    ],
                    "$filter": {},
-                    "$projection": { "$fields": { "Directeur": 1 }}
+                    "$projection": { "$fields": { "Directeur.Nom": 1 }}
                 }
                 """;
 
@@ -557,8 +559,14 @@ class ArchiveSearchIT extends BaseIT {
     String appraisalDate = cir.get("AppraisalRule").get("MaxEndDate").asText();
     assertTrue(DateUtils.isLocalDate(appraisalDate), TestUtils.getBody(response));
 
+    String appraisalOrigin = cir.get("AppraisalRule").get("InheritanceOrigin").asText();
+    assertEquals("INHERITED", appraisalOrigin, TestUtils.getBody(response));
+
     String accessDate = cir.get("AccessRule").get("MaxEndDate").asText();
     assertTrue(DateUtils.isLocalDate(accessDate), TestUtils.getBody(response));
+
+    String accessOrigin = cir.get("AccessRule").get("InheritanceOrigin").asText();
+    assertEquals("LOCAL", accessOrigin, TestUtils.getBody(response));
   }
 
   @Test
@@ -837,6 +845,37 @@ class ArchiveSearchIT extends BaseIT {
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
     assertEquals(1, searchResult.results().size(), TestUtils.getBody(response));
+  }
+
+  @Test
+  void queryEmptyInOperatorTest() {
+
+    String query =
+        """
+                     {
+                       "$roots": [],
+                       "$query": [
+                         {
+                            "$and": [
+                              {"$in": { "Version": [] }} ,
+                              {"$in": { "Directeur.Nom": [ "Deviller"], "$type": "DOCTYPE-000001" }},
+                              {"$in": { "Directeur.Age": [ 78 ], "$type": "DOCTYPE-000001" }},
+                              {"$in": { "Code": [ 94000 ], "$type": "DOCTYPE-000001" }}
+                              ]
+                         }
+                       ],
+                       "$filter": {},
+                       "$projection": {"$fields": { "Title": 1}}
+                    }
+                    """;
+
+    ResponseEntity<SearchResult<JsonNode>> response =
+        restClient.searchArchive(tenant, acIdentifier, query);
+    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+
+    SearchResult<JsonNode> searchResult = response.getBody();
+    assertNotNull(searchResult);
+    assertEquals(0, searchResult.results().size(), TestUtils.getBody(response));
   }
 
   @Test
@@ -1123,29 +1162,32 @@ class ArchiveSearchIT extends BaseIT {
 
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
+    List<Facet> facets = response.getBody().facets();
 
-    Map<String, List<Bucket>> facets = response.getBody().facets();
+    for (Facet facet : facets) {
+      if ("Facet01".equals(facet.name())) {
+        List<Bucket> buckets01 = facet.buckets();
+        assertEquals(5, buckets01.size());
+        for (Bucket bucket : buckets01) {
+          assertEquals(1, bucket.count(), TestUtils.getBody(response));
+          assertTrue(unitIds.contains(Long.parseLong(bucket.value())), TestUtils.getBody(response));
+        }
+      } else if ("Facet02".equals(facet.name())) {
+        List<Bucket> buckets02 = facet.buckets();
+        assertEquals(1, buckets02.size());
+        Bucket bucket = buckets02.getFirst();
+        assertEquals(20, bucket.count(), TestUtils.getBody(response));
+        assertEquals("DOCTYPE-000001", bucket.value(), TestUtils.getBody(response));
 
-    List<Bucket> buckets01 = facets.get("Facet01");
-    assertEquals(5, buckets01.size());
-    for (Bucket bucket : buckets01) {
-      StringBucket lb = (StringBucket) bucket;
-      assertEquals(1, lb.getDocCount(), TestUtils.getBody(response));
-      assertTrue(unitIds.contains(Long.parseLong(lb.getKey())), TestUtils.getBody(response));
-    }
-
-    List<Bucket> buckets02 = facets.get("Facet02");
-    assertEquals(1, buckets02.size());
-    StringBucket sb = (StringBucket) buckets02.getFirst();
-    assertEquals(20, sb.getDocCount(), TestUtils.getBody(response));
-    assertEquals("DOCTYPE-000001", sb.getKey(), TestUtils.getBody(response));
-
-    List<Bucket> buckets03 = facets.get("Facet03");
-    assertEquals(5, buckets03.size());
-    for (Bucket bucket : buckets03) {
-      LongBucket lb = (LongBucket) bucket;
-      assertEquals(1, lb.getDocCount(), TestUtils.getBody(response));
-      assertTrue(lb.getKey() > 11 && lb.getKey() < 34, TestUtils.getBody(response));
+      } else if ("Facet03".equals(facet.name())) {
+        List<Bucket> buckets03 = facet.buckets();
+        assertEquals(5, buckets03.size());
+        for (Bucket bucket : buckets03) {
+          assertEquals(1, bucket.count(), TestUtils.getBody(response));
+          long age = Long.parseLong(bucket.value());
+          assertTrue(age > 11 && age < 34, TestUtils.getBody(response));
+        }
+      }
     }
   }
 
@@ -1178,7 +1220,7 @@ class ArchiveSearchIT extends BaseIT {
                                  { "$from": "2021", "$to": "2022" },
                                  { "$from": "2022", "$to": "2023" },
                                  { "$from": "2023", "$to": "2024" },
-                                 { "$from": "2024", "$to": "2025" }
+                                 { "$from": "2024" }
                              ]
                         }
                       }
@@ -1193,18 +1235,17 @@ class ArchiveSearchIT extends BaseIT {
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
 
-    Map<String, List<Bucket>> facets = response.getBody().facets();
-
-    List<Bucket> buckets01 = facets.get("Facet01");
+    List<Facet> facets = response.getBody().facets();
+    List<Bucket> buckets01 = facets.getFirst().buckets();
+    assertEquals("Facet01", facets.getFirst().name(), TestUtils.getBody(response));
     assertEquals(6, buckets01.size(), TestUtils.getBody(response));
 
     for (Bucket bucket : buckets01) {
-      DateRangeBucket drb = (DateRangeBucket) bucket;
-      switch (drb.getKey()) {
+      switch (bucket.value()) {
         case "2019-2020", "2020-2021", "2024-2025" -> assertEquals(
-            0, drb.getDocCount(), TestUtils.getBody(response));
+            0, bucket.count(), TestUtils.getBody(response));
         case "2021-2022", "2022-2023", "2023-2024" -> assertEquals(
-            10, drb.getDocCount(), TestUtils.getBody(response));
+            10, bucket.count(), TestUtils.getBody(response));
       }
     }
   }
@@ -1330,20 +1371,22 @@ class ArchiveSearchIT extends BaseIT {
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
 
-    Map<String, List<Bucket>> facets = response.getBody().facets();
+    List<Facet> facets = response.getBody().facets();
+    for (Facet facet : facets) {
+      if ("Facet01".equals(facet.name())) {
+        List<Bucket> buckets01 = facet.buckets();
+        assertEquals(2, buckets01.size(), TestUtils.getBody(response));
+        assertEquals(10, buckets01.getFirst().count(), TestUtils.getBody(response));
+        assertEquals("Titres1", buckets01.getFirst().value(), TestUtils.getBody(response));
+        assertEquals(20, buckets01.get(1).count(), TestUtils.getBody(response));
+        assertEquals("Titres2", buckets01.get(1).value(), TestUtils.getBody(response));
 
-    List<Bucket> buckets01 = facets.get("Facet01");
-    assertEquals(2, buckets01.size(), TestUtils.getBody(response));
-    assertEquals(10, buckets01.getFirst().getDocCount(), TestUtils.getBody(response));
-    assertEquals(
-        "Titres1", ((StringBucket) buckets01.getFirst()).getKey(), TestUtils.getBody(response));
-    assertEquals(20, buckets01.get(1).getDocCount(), TestUtils.getBody(response));
-    assertEquals(
-        "Titres2", ((StringBucket) buckets01.get(1)).getKey(), TestUtils.getBody(response));
-
-    List<Bucket> buckets02 = facets.get("Facet02");
-    assertEquals(1, buckets02.size(), TestUtils.getBody(response));
-    assertEquals(10, buckets02.getFirst().getDocCount(), TestUtils.getBody(response));
+      } else if ("Facet02".equals(facet.name())) {
+        List<Bucket> buckets02 = facet.buckets();
+        assertEquals(1, buckets02.size(), TestUtils.getBody(response));
+        assertEquals(10, buckets02.getFirst().count(), TestUtils.getBody(response));
+      }
+    }
   }
 
   @Test
@@ -1384,11 +1427,12 @@ class ArchiveSearchIT extends BaseIT {
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
 
-    Map<String, List<Bucket>> facets = response.getBody().facets();
+    List<Facet> facets = response.getBody().facets();
 
-    List<Bucket> buckets01 = facets.get("collections");
+    List<Bucket> buckets01 = facets.getFirst().buckets();
+    assertEquals("collections", facets.getFirst().name(), TestUtils.getBody(response));
     assertEquals(2, buckets01.size(), TestUtils.getBody(response));
-    assertEquals(0, buckets01.getFirst().getDocCount(), TestUtils.getBody(response));
+    assertEquals(0, buckets01.getFirst().count(), TestUtils.getBody(response));
   }
 
   @Test
@@ -1429,10 +1473,14 @@ class ArchiveSearchIT extends BaseIT {
                           "$range": {
                             "#management.AppraisalRule.Rules.StartDate": {
                               "$gte": "2000-01-01",
-                              "$lte": "2024-12-31"
+                              "$lte": "2024-12-31T22:59:59.999Z"
                             }
                           }
-                        }
+                        },
+                        {"$gt":{"#management.HoldRule.Rules.EndDate":"2024-03-25"}},
+                        {"$and":[
+                          {"$not":[{"$exists":"#management.HoldRule.Rules"}]},
+                          {"$not":[{"$exists":"#management.HoldRule.Rules.EndDate"}]}]}
                       ]
                     }
                   ]
@@ -1454,12 +1502,12 @@ class ArchiveSearchIT extends BaseIT {
                     "$field": "#management.AppraisalRule.Rules.StartDate",
                     "$format": "yyyy",
                     "$ranges": [
-                      { "$from": "2000", "$to": "2020" },
+                      { "$to": "2020" },
                       { "$from": "2020", "$to": "2021" },
                       { "$from": "2021", "$to": "2022" },
                       { "$from": "2022", "$to": "2023" },
                       { "$from": "2023", "$to": "2024" },
-                      { "$from": "2024", "$to": "2099" }
+                      { "$from": "2024" }
                     ]
                   }
                 }
@@ -1474,18 +1522,17 @@ class ArchiveSearchIT extends BaseIT {
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
 
-    Map<String, List<Bucket>> facets = response.getBody().facets();
-
-    List<Bucket> buckets01 = facets.get("duaStartDate");
+    List<Facet> facets = response.getBody().facets();
+    List<Bucket> buckets01 = facets.getFirst().buckets();
+    assertEquals("duaStartDate", facets.getFirst().name(), TestUtils.getBody(response));
     assertEquals(6, buckets01.size(), TestUtils.getBody(response));
-    assertEquals(10, buckets01.getFirst().getDocCount(), TestUtils.getBody(response));
+    assertEquals(10, buckets01.getFirst().count(), TestUtils.getBody(response));
 
     for (Bucket bucket : buckets01) {
-      DateRangeBucket drb = (DateRangeBucket) bucket;
-      switch (drb.getKey()) {
-        case "2000-2020" -> assertEquals(10, drb.getDocCount(), TestUtils.getBody(response));
+      switch (bucket.value()) {
+        case "2000-2020" -> assertEquals(10, bucket.count(), TestUtils.getBody(response));
         case "2020-2021", "2024-2099", "2021-2022", "2022-2023", "2023-2024" -> assertEquals(
-            0, drb.getDocCount(), TestUtils.getBody(response));
+            0, bucket.count(), TestUtils.getBody(response));
       }
     }
   }

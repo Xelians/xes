@@ -1,16 +1,18 @@
 spring:
   application:
     name: eSafe (Integration)
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
 
 app:
-  # Indexing properties
   indexing:
     threads: 32
+    on-start:
+      reset: true
+      create-if-missing: true
   # Batchs (delay in milli-sec)
   batch:
+    accession:
+      fixedDelay: PT0.5S
+      initialDelay: PT0.1S
     backup:
       operation:
         fixedDelay: 100
@@ -21,7 +23,7 @@ app:
       fixedDelay: 900000
       initialDelay: 1000
     secure:
-      fixedDelay: PT0.2S
+      fixedDelay: PT0.5S
       initialDelay: PT0.1S
     servernode:
       fixedDelay: 1000

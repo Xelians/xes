@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.search;
@@ -60,7 +61,8 @@ public final class ArchiveUnitSpecialFields {
         Map.entry("#format", "_qualifiers.versions.FormatIdentification.FormatId"),
         Map.entry("#mimetype", "_qualifiers.versions.FormatIdentification.MimeType"),
         Map.entry("#type", "DocumentType"),
-        Map.entry("#full_search", "_fullSearch"));
+        Map.entry("#full_search", "_fullSearch"),
+        Map.entry("#score", "_score"));
   }
 
   // Query supported special fields - Unsupported fields : #nbunits

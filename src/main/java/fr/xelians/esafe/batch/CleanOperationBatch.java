@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.batch;
@@ -53,7 +54,7 @@ public class CleanOperationBatch {
   @Scheduled(cron = "${app.batch.clean.cron:0 0 3 * * ?}")
   public void run() {
 
-    if (serverNodeService.hasFeature(NodeFeature.CLEAN_OPERATION)) {
+    if (serverNodeService.hasFeature(NodeFeature.CLEAN)) {
 
       // An application crash during INIT or RUN phase can yield dangling operations in database
       LocalDateTime runningDate = LocalDateTime.now().minusHours(runningHours);
@@ -61,15 +62,12 @@ public class CleanOperationBatch {
       updateOperation(RUN, runningDate, ERROR_COMMIT, "Run Timeout");
 
       // Remove succeeded and secured operations
-      LocalDateTime securedDate = LocalDateTime.now().minusHours(succeededHours);
-      deleteSecuredOperation(OK, securedDate);
+      LocalDateTime succeededDate = LocalDateTime.now().minusHours(succeededHours);
+      deleteSucceededOperations(succeededDate);
 
       // Remove not recoverable error operations
       LocalDateTime failedDate = LocalDateTime.now().minusHours(failedHours);
-      deleteFailedOperation(ERROR_INIT, failedDate);
-      deleteFailedOperation(ERROR_CHECK, failedDate);
-      deleteFailedOperation(ERROR_COMMIT, failedDate);
-      deleteFailedOperation(FATAL, failedDate);
+      deleteFailedOperations(failedDate);
     }
   }
 
@@ -82,20 +80,21 @@ public class CleanOperationBatch {
     }
   }
 
-  private void deleteSecuredOperation(OperationStatus status, LocalDateTime date) {
+  private void deleteSucceededOperations(LocalDateTime date) {
     try {
-      operationService.deleteSecuredOperations(status, date);
+      operationService.deleteOperations(OK, date);
     } catch (Exception ex) {
       log.error("Delete secured operation error", ex);
     }
   }
 
-  private void deleteFailedOperation(OperationStatus status, LocalDateTime date) {
-    try {
-      operationService.findIdByStatusAndDate(status, date).forEach(this::deleteOperation);
-    } catch (Exception ex) {
-      log.error("Delete failed operation error", ex);
-    }
+  private void deleteFailedOperations(LocalDateTime date) {
+    for (var status : FAILED_STATUS)
+      try {
+        operationService.findIdByStatusAndDate(status, date).forEach(this::deleteOperation);
+      } catch (Exception ex) {
+        log.error("Delete failed operation error", ex);
+      }
   }
 
   private void deleteOperation(Long operationId) {

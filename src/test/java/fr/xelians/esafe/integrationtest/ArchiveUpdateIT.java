@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -138,9 +139,6 @@ class ArchiveUpdateIT extends BaseIT {
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
 
-    // Wait for Indexation
-    Utils.sleep(1000);
-
     String searchQuery =
         """
                  {
@@ -162,21 +160,15 @@ class ArchiveUpdateIT extends BaseIT {
 
     SearchResult<JsonNode> searchResult = r2.getBody();
     assertNotNull(searchResult);
-    List<JsonNode> results = searchResult.results();
-    assertEquals(10, results.size(), TestUtils.getBody(r2));
-    assertEquals("MyTitle1", results.getFirst().get("Title").asText());
-    assertEquals("Patched Description v666", results.getFirst().get("Description").asText());
 
+    List<JsonNode> results = searchResult.results();
+    JsonNode first = results.getFirst();
+    assertEquals(10, results.size(), TestUtils.getBody(r2));
+    assertEquals("MyTitle1", first.get("Title").asText());
+    assertEquals("Patched Description v666", first.get("Description").asText());
     assertEquals(
         "APPRAISALRULE-000004",
-        results
-            .getFirst()
-            .get("#management")
-            .get("AppraisalRule")
-            .get("Rules")
-            .get(0)
-            .get("Rule")
-            .asText(),
+        first.get("#management").get("AppraisalRule").get("Rules").get(0).get("Rule").asText(),
         TestUtils.getBody(r2));
   }
 
@@ -206,9 +198,6 @@ class ArchiveUpdateIT extends BaseIT {
     OperationStatusDto ope =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
-
-    // Wait for Indexation
-    Utils.sleep(1000);
 
     String searchQuery =
         """
@@ -261,7 +250,6 @@ class ArchiveUpdateIT extends BaseIT {
 
     OperationStatusDto ope =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
-
     assertEquals(OperationStatus.ERROR_CHECK, ope.status(), ope.message());
     assertTrue(ope.message().contains("Failed to patch"));
   }
@@ -301,9 +289,6 @@ class ArchiveUpdateIT extends BaseIT {
     OperationStatusDto ope =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
-
-    // Wait for Indexation
-    Utils.sleep(1000);
 
     String searchQuery =
         """
@@ -378,9 +363,6 @@ class ArchiveUpdateIT extends BaseIT {
     OperationStatusDto ope =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
-
-    // Wait for Indexation
-    Utils.sleep(1000);
 
     String searchQuery =
         """
@@ -463,9 +445,6 @@ class ArchiveUpdateIT extends BaseIT {
     OperationDto ope = restClient.waitForOperation(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r2));
 
-    // Wait for Indexation
-    Utils.sleep(1000);
-
     ResponseEntity<SearchResult<JsonNode>> r3 =
         restClient.searchArchive(tenant, acIdentifier, searchQuery);
     assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
@@ -476,10 +455,11 @@ class ArchiveUpdateIT extends BaseIT {
       JsonNode unit = units.get(i);
       JsonNode patchedUnit = patchedUnits.get(i);
 
-      List<Long> opIds = JsonUtils.toLongs(unit.get("#operations"));
+      List<String> opIds = JsonUtils.toStrings(unit.get("#operations"));
       opIds.add(ope.id());
 
-      assertEquals(opIds, JsonUtils.toLongs(patchedUnit.get("#operations")));
+      assertEquals(opIds, JsonUtils.toStrings(patchedUnit.get("#operations")));
+      assertEquals(unit.get("#id").asLong(), patchedUnit.get("#id").asLong());
       assertEquals(unit.get("#version").asInt() + 1, patchedUnit.get("#version").asInt());
       assertEquals(unit.get("#lifecycles").size() + 1, patchedUnit.get("#lifecycles").size());
       assertEquals(1, patchedUnit.get("#lifecycles").get(0).get("#lfc_version").asInt());
@@ -604,9 +584,6 @@ class ArchiveUpdateIT extends BaseIT {
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
 
-    // Wait for Indexation
-    Utils.sleep(1000);
-
     String searchQuery =
         """
                  {
@@ -720,9 +697,6 @@ class ArchiveUpdateIT extends BaseIT {
     OperationStatusDto ope =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, ope.status(), TestUtils.getBody(r1));
-
-    // Wait for Indexation
-    Utils.sleep(1000);
 
     String searchQuery =
         """

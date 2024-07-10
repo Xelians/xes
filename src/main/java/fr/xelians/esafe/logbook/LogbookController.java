@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.logbook;
@@ -14,6 +15,7 @@ import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.archive.service.SearchService;
 import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.logbook.service.LogbookService;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
@@ -39,43 +41,57 @@ public class LogbookController {
   private final SearchService searchService;
   private final AccessContractService accessContractService;
 
-  // Logbook
+  // Vitam Logbook
   @Operation(summary = "Get operation indexed in the logbook")
   @GetMapping(V1 + LOGBOOK_OPERATIONS + "/{operationId}")
-  public SearchResult<JsonNode> searchLogbookOperation(
+  public VitamLogbookOperationDto getVitamLogbookOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
       throws IOException {
-
-    return logbookService.searchLogbookOperation(tenant, operationId);
+    return logbookService.getVitamLogbookOperationDto(tenant, operationId);
   }
 
+  @Operation(summary = "Search for one operation indexed in the logbook")
+  @PostMapping(V1 + LOGBOOK_OPERATIONS + "/{operationId}")
+  public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperation(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
+      throws IOException {
+    return logbookService.searchVitamLogbookOperationDto(tenant, operationId);
+  }
+
+  @Operation(summary = "Search for operations indexed in the logbook", hidden = true)
+  @GetMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
+  public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperationsWithGet(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
+      throws IOException {
+    return logbookService.searchVitamLogbookOperationDtos(tenant, query);
+  }
+
+  @Operation(summary = "Search for operations indexed in the logbook")
+  @PostMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
+  public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperations(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
+      throws IOException {
+    return logbookService.searchVitamLogbookOperationDtos(tenant, query);
+  }
+
+  // Standard Logbook
   @Operation(summary = "Get operation indexed in the logbook")
   @GetMapping(V2 + LOGBOOK_OPERATIONS + "/{operationId}")
   public LogbookOperationDto getLogbookOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
       throws IOException {
-
     return logbookService.getLogbookOperationDto(tenant, operationId);
   }
 
-  @Operation(summary = "Search for operations indexed in the logbook with (GET)", hidden = true)
-  @GetMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
-  public SearchResult<JsonNode> searchLogbookOperationsWithGet(
-      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
-      throws IOException {
-
-    return logbookService.searchLogbookOperations(tenant, query);
-  }
-
   @Operation(summary = "Search for operations indexed in the logbook")
-  @PostMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
-  public SearchResult<JsonNode> searchLogbookOperations(
+  @PostMapping(V2 + LOGBOOK_OPERATIONS_SEARCH)
+  public SearchResult<LogbookOperationDto> searchLogbookOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
       throws IOException {
-
-    return logbookService.searchLogbookOperations(tenant, query);
+    return logbookService.searchLogbookOperationDtos(tenant, query);
   }
 
+  // Lifecycles
   @Operation(summary = "Search for the given unit life cycles with (GET)", hidden = true)
   @GetMapping(V1 + LOGBOOK_UNIT_LIFECYCLES)
   public JsonNode getLogbookUnitLifecycles(

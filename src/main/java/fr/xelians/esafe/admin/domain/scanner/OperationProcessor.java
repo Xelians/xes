@@ -1,16 +1,17 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.domain.scanner;
 
-import fr.xelians.esafe.operation.entity.OperationSe;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import java.io.IOException;
 
 public interface OperationProcessor {
 
-  void process(OperationSe operation) throws IOException;
+  void process(LogbookOperation operation) throws IOException;
 
   void finish() throws IOException;
 }

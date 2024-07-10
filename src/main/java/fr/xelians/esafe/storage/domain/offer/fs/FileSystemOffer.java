@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.storage.domain.offer.fs;
@@ -159,8 +160,12 @@ public class FileSystemOffer extends AbstractStorageOffer {
     }
 
     Path path = getOfferPath(tenant, id, type);
+
     BoundedInputStream bis =
-        new BoundedInputStream(new BufferedInputStream(Files.newInputStream(path)), end + 1);
+        BoundedInputStream.builder()
+            .setInputStream(new BufferedInputStream(Files.newInputStream(path)))
+            .setMaxCount(end + 1)
+            .get();
     bis.skipNBytes(start);
     return new StorageInputStream(end + 1 - start, bis);
   }
@@ -190,12 +195,12 @@ public class FileSystemOffer extends AbstractStorageOffer {
   public void putStorageObjects(Long tenant, List<StorageObject> storageObjects)
       throws IOException {
     for (StorageObjectId storageObject : storageObjects) {
-      if (storageObject instanceof PathStorageObject pso) {
-        putStorageObject(pso.getPath(), tenant, pso.getId(), pso.getType());
-      } else if (storageObject instanceof ByteStorageObject bso) {
-        putStorageObject(bso.getBytes(), tenant, bso.getId(), bso.getType());
-      } else {
-        throw new InternalException(
+      switch (storageObject) {
+        case PathStorageObject pso -> putStorageObject(
+            pso.getPath(), tenant, pso.getId(), pso.getType());
+        case ByteStorageObject bso -> putStorageObject(
+            bso.getBytes(), tenant, bso.getId(), bso.getType());
+        default -> throw new InternalException(
             "Failed to put storage objects",
             String.format("Not supported StorageObjectId '%s'", storageObject.getId()));
       }

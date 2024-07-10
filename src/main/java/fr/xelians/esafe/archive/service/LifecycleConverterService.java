@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
@@ -12,8 +13,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import fr.xelians.esafe.common.exception.technical.InternalException;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.logbook.domain.search.LogbookIndex;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.search.service.SearchEngineService;
 import java.io.IOException;
 import java.util.*;
@@ -34,7 +35,7 @@ public class LifecycleConverterService {
 
     ArrayNode anode = JsonNodeFactory.instance.arrayNode();
     JsonNode lfcNodes = srcNode.get("_lifeCycles");
-    Map<Long, OperationSe> operations = getUnitOperationMap(tenant, srcNode, lfcNodes);
+    Map<Long, LogbookOperation> operations = getUnitOperationMap(tenant, srcNode, lfcNodes);
     String unitId = srcNode.get("_unitId").asText();
     String sp = srcNode.get("_sp").asText();
     addFirstUnitLfc(anode, sp, unitId, srcNode, operations);
@@ -55,7 +56,7 @@ public class LifecycleConverterService {
     ArrayNode anode = JsonNodeFactory.instance.arrayNode();
     JsonNode bdoNodes = srcNode.get("BinaryDataObjects");
     if (bdoNodes != null && !bdoNodes.isEmpty()) {
-      Map<Long, OperationSe> operations = getObjectOperationMap(tenant, bdoNodes);
+      Map<Long, LogbookOperation> operations = getObjectOperationMap(tenant, bdoNodes);
       String sp = srcNode.get("_sp").asText();
       addObjectLfc(anode, sp, bdoNodes, operations);
     }
@@ -83,7 +84,7 @@ public class LifecycleConverterService {
     return contextNode;
   }
 
-  private Map<Long, OperationSe> getObjectOperationMap(Long tenant, JsonNode bdoNodes)
+  private Map<Long, LogbookOperation> getObjectOperationMap(Long tenant, JsonNode bdoNodes)
       throws IOException {
     Set<String> opis = new HashSet<>();
     for (JsonNode bdoNode : bdoNodes) {
@@ -93,10 +94,10 @@ public class LifecycleConverterService {
   }
 
   private void addObjectLfc(
-      ArrayNode anode, String sp, JsonNode bdoNodes, Map<Long, OperationSe> operations) {
+      ArrayNode anode, String sp, JsonNode bdoNodes, Map<Long, LogbookOperation> operations) {
     for (JsonNode bdoNode : bdoNodes) {
       Long opi = bdoNode.get("_opi").asLong();
-      OperationSe operation = operations.get(opi);
+      LogbookOperation operation = operations.get(opi);
       String id = nonNull(bdoNode.get("_binaryId"));
       String detail =
           bdoNode.get("DigestAlgorithm").asText() + ":" + bdoNode.get("MessageDigest").asText();
@@ -104,7 +105,7 @@ public class LifecycleConverterService {
     }
   }
 
-  private Map<Long, OperationSe> getUnitOperationMap(
+  private Map<Long, LogbookOperation> getUnitOperationMap(
       Long tenant, JsonNode srcNode, JsonNode lfcNodes) throws IOException {
     Set<String> opis = new HashSet<>();
     opis.add(srcNode.get("_opi").asText());
@@ -116,7 +117,7 @@ public class LifecycleConverterService {
     return getLogbookOperationsByIds(tenant, opis);
   }
 
-  private Map<Long, OperationSe> getLogbookOperationsByIds(Long tenant, Set<String> ids)
+  private Map<Long, LogbookOperation> getLogbookOperationsByIds(Long tenant, Set<String> ids)
       throws IOException {
     if (ids.isEmpty()) return Collections.emptyMap();
 
@@ -125,12 +126,12 @@ public class LifecycleConverterService {
     MgetRequest request =
         new MgetRequest.Builder().index(LogbookIndex.ALIAS).docs(mgetList).build();
     return searchEngineService
-        .getMultiById(request, OperationSe.class)
+        .getMultiById(request, LogbookOperation.class)
         .filter(ope -> tenantFilter(tenant, ope))
-        .collect(Collectors.toMap(OperationSe::getId, Function.identity()));
+        .collect(Collectors.toMap(LogbookOperation::getId, Function.identity()));
   }
 
-  private boolean tenantFilter(Long tenant, OperationSe operation) {
+  private boolean tenantFilter(Long tenant, LogbookOperation operation) {
     if (operation.getTenant().equals(tenant)) return true;
     throw new InternalException(
         String.format(
@@ -139,17 +140,25 @@ public class LifecycleConverterService {
   }
 
   private void addFirstUnitLfc(
-      ArrayNode anode, String sp, String id, JsonNode srcNode, Map<Long, OperationSe> operations) {
+      ArrayNode anode,
+      String sp,
+      String id,
+      JsonNode srcNode,
+      Map<Long, LogbookOperation> operations) {
     Long opi = srcNode.get("_opi").asLong();
-    OperationSe operation = operations.get(opi);
+    LogbookOperation operation = operations.get(opi);
     anode.add(createLfc(operation, sp, id, ""));
   }
 
   private void addNextUnitLfc(
-      ArrayNode anode, String sp, String id, JsonNode lfcNodes, Map<Long, OperationSe> operations) {
+      ArrayNode anode,
+      String sp,
+      String id,
+      JsonNode lfcNodes,
+      Map<Long, LogbookOperation> operations) {
     for (JsonNode lfcNode : lfcNodes) {
       Long opi = lfcNode.get("_opi").asLong();
-      OperationSe operation = operations.get(opi);
+      LogbookOperation operation = operations.get(opi);
       String detail = nonNull(lfcNode.get("_patch"));
       anode.add(createLfc(operation, sp, id, detail));
     }
@@ -159,7 +168,7 @@ public class LifecycleConverterService {
     return node == null ? "" : node.asText();
   }
 
-  private JsonNode createLfc(OperationSe operation, String sp, String id, String detail) {
+  private JsonNode createLfc(LogbookOperation operation, String sp, String id, String detail) {
 
     ObjectNode lfcNode = JsonNodeFactory.instance.objectNode();
     lfcNode.put("eventIdentifier", operation.getId());
@@ -183,11 +192,11 @@ public class LifecycleConverterService {
     return lfcNode;
   }
 
-  private String getOutcome(OperationSe operation) {
+  private String getOutcome(LogbookOperation operation) {
     return operation.getOutcome().isEmpty() ? "OK" : operation.getOutcome();
   }
 
-  private String getMessage(OperationSe operation) {
+  private String getMessage(LogbookOperation operation) {
     return operation.getMessage().isEmpty()
         ? "Operation completed with success"
         : operation.getMessage();

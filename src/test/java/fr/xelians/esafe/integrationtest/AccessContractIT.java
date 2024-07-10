@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -124,37 +125,37 @@ class AccessContractIT extends BaseIT {
                 {
                 "$and": [
                    {
-                     "$match_phrase_prefix": { "name": "NAME" }
+                     "$match_phrase_prefix": { "Name": "NAME" }
                    },
                    {
-                     "$match": { "description": "ESCRIPT YOUPBABOUM"  }
+                     "$match": { "Description": "ESCRIPT YOUPBABOUM"  }
                    },
                    {
-                     "$or": [ { "$match_all": { "description": "ESCR IPTI" } } , { "$eq": { "description": "Gurps!!!!" } } ]
+                     "$or": [ { "$match_all": { "Description": "ESCR IPTI" } } , { "$eq": { "Description": "Gurps!!!!" } } ]
                    },
                    {
-                     "$gte": { "activationDate": "1969-02-27" }
+                     "$gte": { "ActivationDate": "1969-02-27" }
                    },
                    {
-                     "$lte": { "activationDate": "1969-02-27" }
+                     "$lte": { "ActivationDate": "1969-02-27" }
                    },
                    {
-                     "$lt": { "activationDate": "2020-12-27" }
+                     "$lt": { "ActivationDate": "2020-12-27" }
                    },
                    {
-                     "$not": [ { "$gt": { "activationDate": "2020-12-27" } } ]
+                     "$not": [ { "$gt": { "ActivationDate": "2020-12-27" } } ]
                    },
                    {
-                     "$in": { "activationDate": ["1969-02-27", "1970-01-01"] }
+                     "$in": { "ActivationDate": ["1969-02-27", "1970-01-01"] }
                    },
                    {
-                     "$nin": { "activationDate": ["1969-02-26", "1969-02-28", "1971-01-01"] }
+                     "$nin": { "ActivationDate": ["1969-02-26", "1969-02-28", "1971-01-01"] }
                    },
                    {
-                     "$eq": { "status": "ACTIVE" }
+                     "$eq": { "Status": "ACTIVE" }
                    },
                    {
-                     "$neq": { "status": "INACTIVE" }
+                     "$neq": { "Status": "INACTIVE" }
                    }
                 ]
                }
@@ -162,7 +163,7 @@ class AccessContractIT extends BaseIT {
              "$filter": {
                  "$offset": 0,
                  "$limit": 2,
-                 "$orderby": { "identifier": -1 }
+                 "$orderby": { "Identifier": -1 }
             },
              "$projection": {}
           }
@@ -180,6 +181,71 @@ class AccessContractIT extends BaseIT {
 
     assertNotNull(outputDtos3);
     assertEquals(2, outputDtos3.results().size(), TestUtils.getBody(r3));
+    assertEquals(3, outputDtos3.hits().total(), TestUtils.getBody(r3));
+  }
+
+  @Test
+  void searchAccessContractWithEmptyInTest() {
+    Long tenant = nextTenant();
+
+    String query =
+        """
+               {
+                 "$query": [
+                    {
+                    "$and": [
+                       {
+                         "$in": { "ActivationDate": [] }
+                       },
+                       {
+                         "$nin": { "ActivationDate": [] }
+                       }
+                    ]
+                   }
+                 ],
+                 "$projection": {}
+              }
+              """;
+
+    for (int i = 1; i <= 3; i++) {
+      ResponseEntity<List<AccessContractDto>> response =
+          restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    }
+
+    ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAccessContracts(tenant, query);
+    SearchResult<JsonNode> outputDtos3 = r3.getBody();
+    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+
+    assertNotNull(outputDtos3);
+    assertEquals(0, outputDtos3.results().size(), TestUtils.getBody(r3));
+    assertEquals(0, outputDtos3.hits().total(), TestUtils.getBody(r3));
+  }
+
+  @Test
+  void searchAccessContractWithEmptyQueryTest() {
+    Long tenant = nextTenant();
+
+    String query =
+        """
+                   {
+                     "$query": [],
+                     "$projection": {}
+                  }
+                  """;
+
+    for (int i = 1; i <= 3; i++) {
+      ResponseEntity<List<AccessContractDto>> response =
+          restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
+      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    }
+
+    ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAccessContracts(tenant, query);
+    SearchResult<JsonNode> outputDtos3 = r3.getBody();
+    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+
+    assertNotNull(outputDtos3);
+    assertEquals(3, outputDtos3.results().size(), TestUtils.getBody(r3));
     assertEquals(3, outputDtos3.hits().total(), TestUtils.getBody(r3));
   }
 }

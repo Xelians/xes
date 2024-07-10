@@ -4,8 +4,9 @@
  * in the editor.
  */
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.service;
@@ -57,7 +58,13 @@ public class RuleService extends AbstractReferentialService<RuleDto, RuleDb> {
   @Transactional
   public List<RuleDto> create(
       Long tenant, String userIdentifier, String applicationId, List<RuleDto> dtos) {
-    dtos.forEach(dto -> checkDuration(dto.getDuration()));
+    dtos.forEach(
+        dto ->
+            checkDuration(
+                dto.getIdentifier(),
+                dto.getType(),
+                dto.getDuration(),
+                dto.getMeasurement().toString()));
     return super.create(tenant, userIdentifier, applicationId, dtos);
   }
 
@@ -65,7 +72,8 @@ public class RuleService extends AbstractReferentialService<RuleDto, RuleDb> {
   @Transactional
   public RuleDto update(
       Long tenant, String userIdentifier, String applicationId, String identifier, RuleDto dto) {
-    checkDuration(dto.getDuration());
+    checkDuration(
+        dto.getIdentifier(), dto.getType(), dto.getDuration(), dto.getMeasurement().toString());
     return super.update(tenant, userIdentifier, applicationId, identifier, dto);
   }
 
@@ -77,7 +85,7 @@ public class RuleService extends AbstractReferentialService<RuleDto, RuleDb> {
     Assert.hasText(csv, "csv cannot be null or empty");
 
     // delete all rules
-    repository.findByTenant(tenant).stream().map(RuleDb::getId).forEach(repository::deleteById);
+    repository.deleteWithTenant(tenant);
 
     // create new rule
     super.create(tenant, userIdentifier, applicationId, fromCsv(csv));
@@ -122,38 +130,44 @@ public class RuleService extends AbstractReferentialService<RuleDto, RuleDb> {
       for (CSVRecord col : parser) {
         if (col.size() != 6) {
           throw new BadRequestException(
-              RULE_CREATION_FAILED, "Failed to parse Rule Csv - Wrong number of records");
+              RULE_CREATION_FAILED, "Failed to parse csv - Wrong number of records");
         }
 
-        if (StringUtils.isBlank(col.get("RuleId"))) {
+        String ruleId = col.get("RuleId");
+        if (StringUtils.isBlank(ruleId)) {
           throw new BadRequestException(
-              RULE_CREATION_FAILED, "Failed to parse Rule Csv - Empty RuleId");
+              RULE_CREATION_FAILED, "Failed to validate Rule - Empty RuleId");
         }
 
-        if (StringUtils.isBlank(col.get("RuleValue"))) {
+        String ruleValue = col.get("RuleValue");
+        if (StringUtils.isBlank(ruleValue)) {
           throw new BadRequestException(
-              RULE_CREATION_FAILED, "Failed to parse Rule Csv - Empty RuleValue");
+              RULE_CREATION_FAILED,
+              String.format("Failed to validate Rule '%s' - Empty RuleValue", ruleId));
         }
 
-        if (StringUtils.isBlank(col.get("RuleType"))) {
+        String ruleType = col.get("RuleType");
+        if (StringUtils.isBlank(ruleType)) {
           throw new BadRequestException(
-              RULE_CREATION_FAILED, "Failed to parse Rule Csv - Empty RuleType");
+              RULE_CREATION_FAILED,
+              String.format("Failed to validate Rule '%s' - Empty RuleType", ruleId));
         }
 
-        if (StringUtils.isBlank(col.get("RuleMeasurement"))) {
-          throw new BadRequestException(
-              RULE_CREATION_FAILED, "Failed to parse Rule Csv - Empty RuleMeasurement");
-        }
+        String duration = col.get("RuleDuration");
+        String measurement = col.get("RuleMeasurement");
+        checkDuration(ruleId, RuleType.valueOf(ruleType), duration, measurement);
 
-        checkDuration(col.get("RuleDuration"));
+        // Defaults for empty hold rule duration
+        if (StringUtils.isBlank(duration)) duration = "unlimited";
+        if (StringUtils.isBlank(measurement)) measurement = RuleMeasurement.YEAR.toString();
 
         RuleDto rule = new RuleDto();
-        rule.setIdentifier(col.get("RuleId"));
-        rule.setName(col.get("RuleValue"));
+        rule.setIdentifier(ruleId);
+        rule.setName(ruleValue);
         rule.setDescription(col.get("RuleDescription"));
-        rule.setType(RuleType.valueOf(col.get("RuleType")));
-        rule.setDuration(col.get("RuleDuration"));
-        rule.setMeasurement(RuleMeasurement.valueOf(col.get("RuleMeasurement").toUpperCase()));
+        rule.setType(RuleType.valueOf(ruleType));
+        rule.setDuration(duration);
+        rule.setMeasurement(RuleMeasurement.valueOf(measurement.toUpperCase()));
 
         rules.add(rule);
       }
@@ -163,22 +177,36 @@ public class RuleService extends AbstractReferentialService<RuleDto, RuleDb> {
     return rules;
   }
 
-  private void checkDuration(String duration) {
-    if (StringUtils.isBlank(duration)) {
-      throw new BadRequestException(
-          CHECK_RULE_DURATION_FAILED, "Failed to parse Rule Csv - Empty RuleDuration");
+  private void checkDuration(
+      String ruleId, RuleType ruleType, String duration, String measurement) {
+    if (ruleType == RuleType.HoldRule) {
+      if (StringUtils.isBlank(duration)) return;
+    } else {
+      if (StringUtils.isBlank(duration)) {
+        throw new BadRequestException(
+            CHECK_RULE_DURATION_FAILED,
+            String.format("Failed to validate Rule '%s' - Rule Duration is not defined", ruleId));
+      }
     }
 
     if (StringUtils.isNumeric(duration)) {
       if (Integer.parseInt(duration) > 9000) {
         throw new BadRequestException(
             CHECK_RULE_DURATION_FAILED,
-            String.format("Failed to parse Rule Csv - Rule duration %s is too large", duration));
+            String.format(
+                "Failed to validate Rule '%s - Rule duration '%s' is too large", ruleId, duration));
       }
     } else if (!"unlimited".equalsIgnoreCase(duration)) {
       throw new BadRequestException(
           CHECK_RULE_DURATION_FAILED,
-          String.format("Failed to parse Rule Csv - unknown rule duration %s ", duration));
+          String.format(
+              "Failed to validate Rule '%s' - Rule duration '%s' is unknown", ruleId, duration));
+    }
+
+    if (StringUtils.isBlank(measurement)) {
+      throw new BadRequestException(
+          CHECK_RULE_DURATION_FAILED,
+          String.format("Failed to validate Rule '%s' - Rule Measurement is not defined", ruleId));
     }
   }
 

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -9,8 +10,7 @@ import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import fr.xelians.esafe.common.utils.Utils;
-import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.organization.dto.UserDto;
@@ -21,6 +21,7 @@ import fr.xelians.esafe.testcommon.TestUtils;
 import java.io.IOException;
 import java.nio.file.Path;
 import nu.xom.ParsingException;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,12 +54,14 @@ class AdminIT extends BaseIT {
     long systemId = Scenario.createScenario03(restClient, tenant, userDto, tmpDir);
     String acIdentifier = "AC-" + TestUtils.pad(1);
 
-    // Let enough time for indexing (TODO: optimize)
-    Utils.sleep(1000);
-
     // Check Archive Unit exists
-    ResponseEntity<JsonNode> response = restClient.getArchiveUnit(tenant, acIdentifier, systemId);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    var response =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getArchiveUnit(tenant, acIdentifier, systemId),
+                r -> r.getStatusCode() == HttpStatus.OK);
     JsonNode archiveUnitDto = response.getBody();
 
     // Create Sip
@@ -76,23 +79,22 @@ class AdminIT extends BaseIT {
     assertEquals(OperationStatus.OK, operation.status());
     // TODO Get Sip and assert parent == systemId
 
-    // Let enough time for indexing (TODO: optimize)
-    Utils.sleep(1000);
-
     // Get the logbook operation
-    ResponseEntity<LogbookOperationDto> r3 = restClient.getLogbookOperation(tenant, requestId1);
-    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    VitamLogbookOperationDto logbookOperation =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getVitamLogbookOperation(tenant, requestId1),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
     // Compare logbook operation and operation
-    LogbookOperationDto logbookOperation = r3.getBody();
-
     assertNotNull(logbookOperation);
     assertEquals(operation.id(), logbookOperation.getId());
     assertEquals(operation.tenant(), logbookOperation.getTenant());
-    assertEquals(operation.type(), logbookOperation.getType());
-
-    // Wait a moment before closing the index while still writing
-    // Utils.sleep(1000);
+    assertEquals(operation.applicationId(), logbookOperation.getEvIdAppSession());
+    assertEquals(operation.userIdentifier(), logbookOperation.getAgId());
 
     // Create new empty index
     ResponseEntity<Object> r4 = restClient.newIndex(tenant);
@@ -102,7 +104,7 @@ class AdminIT extends BaseIT {
     HttpClientErrorException t1 =
         assertThrows(
             HttpClientErrorException.class,
-            () -> restClient.getLogbookOperation(tenant, requestId1));
+            () -> restClient.getVitamLogbookOperation(tenant, requestId1));
     assertEquals(HttpStatus.NOT_FOUND, t1.getStatusCode(), t1.toString());
 
     // Check archive does not exist in the new archive index
@@ -121,30 +123,37 @@ class AdminIT extends BaseIT {
     operation = restClient.waitForOperation(tenant, requestId2, 30, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, operation.status());
 
-    // Wait for Elastic to index
-    Utils.sleep(1000);
-
     // Check operation exists in new logbook index
-    ResponseEntity<LogbookOperationDto> r8 =
-        restClient.getLogbookOperation(tenant, logbookOperation.getId());
-    assertEquals(HttpStatus.OK, r8.getStatusCode(), TestUtils.getBody(r8));
-    LogbookOperationDto newLogbookOperation = r8.getBody();
+    VitamLogbookOperationDto newLogbookOperation =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getVitamLogbookOperation(tenant, logbookOperation.getId()),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
     assertNotNull(newLogbookOperation);
     assertEquals(logbookOperation.getId(), newLogbookOperation.getId());
     assertEquals(logbookOperation.getTenant(), newLogbookOperation.getTenant());
-    assertEquals(logbookOperation.getType(), newLogbookOperation.getType());
-    assertEquals(logbookOperation.getUserIdentifier(), newLogbookOperation.getUserIdentifier());
-    assertEquals(logbookOperation.getTypeInfo(), newLogbookOperation.getTypeInfo());
+    assertEquals(logbookOperation.getEvType(), newLogbookOperation.getEvType());
+    assertEquals(logbookOperation.getEvIdAppSession(), newLogbookOperation.getEvIdAppSession());
+    assertEquals(logbookOperation.getAgIdApp(), newLogbookOperation.getAgIdApp());
+    assertEquals(logbookOperation.getEvTypeProc(), newLogbookOperation.getEvTypeProc());
     assertEquals(logbookOperation.getOutcome(), newLogbookOperation.getOutcome());
-    assertEquals(logbookOperation.getObjectIdentifier(), newLogbookOperation.getObjectIdentifier());
-    assertEquals(logbookOperation.getObjectData(), newLogbookOperation.getObjectData());
-    assertEquals(logbookOperation.getObjectInfo(), newLogbookOperation.getObjectInfo());
+    assertEquals(logbookOperation.getObId(), newLogbookOperation.getObId());
+    assertEquals(logbookOperation.getEvDetData(), newLogbookOperation.getEvDetData());
+    assertEquals(logbookOperation.getObIdReq(), newLogbookOperation.getObIdReq());
 
     // Check if archive exists in the new archive index
-    ResponseEntity<JsonNode> r9 = restClient.getArchiveUnit(tenant, acIdentifier, systemId);
-    assertEquals(HttpStatus.OK, r9.getStatusCode(), TestUtils.getBody(r9));
-    JsonNode newArchiveUnitDto = r9.getBody();
+    JsonNode newArchiveUnitDto =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getArchiveUnit(tenant, acIdentifier, systemId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
     assertNotNull(archiveUnitDto);
     assertNotNull(newArchiveUnitDto);

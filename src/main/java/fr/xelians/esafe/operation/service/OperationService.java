@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation.service;
@@ -86,33 +87,18 @@ public class OperationService {
       List.of(RUN, STORE, RETRY_STORE, INDEX, RETRY_INDEX);
   private static final List<OperationStatus> INDEX_OK_STATUS = List.of(INDEX, RETRY_INDEX, OK);
   private static final List<OperationStatus> RUN_STORE_STATUS = List.of(RUN, STORE, RETRY_STORE);
-  private static final Hits ONE_HITS = new Hits(0, 1, 1, 1L);
+  private static final Hits ONE_HITS = new Hits(0, 1, 1, 1);
 
   private final OperationRepository operationRepository;
   private final TaskLockRepository lockRepository;
   private final SeqLbkRepository seqLbkRepository;
-
-  public OperationDb secureAndsave(OperationDb operation) {
-    operation.setSecured(true);
-    return operationRepository.save(operation);
-  }
 
   public OperationDb save(OperationDb operation) {
     operation.setModified(LocalDateTime.now());
     return operationRepository.save(operation);
   }
 
-  // Get operations
-  public OperationDb getOperationDb(Long tenant, Long id) {
-    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
-    Assert.notNull(id, ID_MUST_BE_NOT_NULL);
-
-    return operationRepository
-        .findOneByTenantAndId(tenant, id)
-        .orElseThrow(
-            () -> new NotFoundException(OPERATION_NOT_FOUND, String.format(ID_NOT_FOUND, id)));
-  }
-
+  // Dto Search operations - Dto are not stored in the  entity manager cache
   public OperationDto getOperationDto(Long tenant, Long id) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(id, ID_MUST_BE_NOT_NULL);
@@ -149,7 +135,6 @@ public class OperationService {
     return new OperationResult<>(HttpStatusCode.OK, ONE_HITS, List.of(dto), "{}");
   }
 
-  // Search operations
   public SliceResult<OperationDto> searchOperationDtos(
       Long tenant, OperationQuery operationQuery, PageRequest pageRequest) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
@@ -170,7 +155,7 @@ public class OperationService {
         operationRepository.searchOperationDtos(tenant, operationQuery, pageRequest);
     return new OperationResult<>(
         HttpStatus.OK.value(),
-        new Hits(0, MAX_1000, results.getContent().size(), (long) results.getContent().size()),
+        new Hits(0, MAX_1000, results.getContent().size(), results.getContent().size()),
         results.getContent().stream().map(VitamOperationListDto::new).toList(),
         JsonService.toString(operationQuery));
   }
@@ -183,6 +168,17 @@ public class OperationService {
 
     return new SliceResult<>(
         operationRepository.findOperationStatus(tenant, operationQuery, pageRequest));
+  }
+
+  // Get operations
+  public OperationDb getOperationDb(Long tenant, Long id) {
+    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
+    Assert.notNull(id, ID_MUST_BE_NOT_NULL);
+
+    return operationRepository
+        .findOneByTenantAndId(tenant, id)
+        .orElseThrow(
+            () -> new NotFoundException(OPERATION_NOT_FOUND, String.format(ID_NOT_FOUND, id)));
   }
 
   public String getContractIdentifier(Long tenant, Long id) {
@@ -220,13 +216,26 @@ public class OperationService {
   }
 
   // Find operations greater than id in the database that need securing
-  public List<OperationDb> findOperationsToSecure(
-      Long tenant, Long lbkId, LocalDateTime startDate) {
+  public List<OperationDb> findForSecuring(Long tenant, Long lbkId, LocalDateTime startDate) {
     // Normally, it would be better to secure all operations with status INDEX and OK.
     // However, an operation not indexed means either a search engine problem
     // or an indexation bug. For this last reason, it's (now) preferable to only secure OK
     // operations
-    return operationRepository.findForSecuring(tenant, lbkId, OK, startDate, FIRST_200);
+    return operationRepository.findToSecure(tenant, lbkId, OK, startDate, FIRST_1000);
+  }
+
+  @Transactional
+  public void updateSecured(OperationDb operation) {
+    operationRepository.updateSecured(operation.getId(), false);
+  }
+
+  public List<OperationDb> findToRegister() {
+    return operationRepository.findToRegister(OK);
+  }
+
+  @Transactional
+  public void updateRegistered(OperationDb operation) {
+    operationRepository.updateRegister(operation.getId(), false);
   }
 
   // Find operations
@@ -279,7 +288,7 @@ public class OperationService {
   }
 
   @Transactional
-  public void deleteSecuredOperations(OperationStatus status, LocalDateTime date) {
+  public void deleteOperations(OperationStatus status, LocalDateTime date) {
     operationRepository.deleteSecuredOperation(status, date);
   }
 
@@ -294,8 +303,7 @@ public class OperationService {
   public void waitForSecureOperationsToBeStored(Long tenant) {
     // Find all secure operations that are not yet stored on storage offers
     List<OperationDb> operations =
-        operationRepository.findByTenantAndTypeAndStatusOrderByIdAsc(
-            tenant, OperationType.SECURING, RUN);
+        operationRepository.findByTenantAndTypeAndStatusOrderByIdAsc(tenant, TRACEABILITY, RUN);
     operations.forEach(ope -> waitOperation(ope.getId(), 1_800_000, INDEX, RETRY_INDEX, OK, FATAL));
   }
 

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
@@ -263,7 +264,7 @@ public class UpdateRulesService {
     try {
       operation.setStatus(OperationStatus.OK);
       operation.setOutcome(operation.getStatus().toString());
-      operation.setTypeInfo(operation.getType().toString());
+      operation.setTypeInfo(operation.getType().getInfo());
       operation.setMessage("Operation completed with success");
       logbookService.index(operation);
     } catch (IOException ex) {
@@ -355,7 +356,7 @@ public class UpdateRulesService {
       SearchResponse<ArchiveUnit> response =
           searchEngineService.search(searchRequest, ArchiveUnit.class);
 
-      // TODO check if result overflows
+      // TODO check if detail overflows
       List<ArchiveUnit> nodes = response.hits().hits().stream().map(Hit::source).toList();
       return new UpdateRulesResult<>(nodes, updateRulesRequest.ruleLists());
 

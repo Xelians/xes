@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -17,8 +18,10 @@ import fr.xelians.esafe.testcommon.DtoFactory;
 import fr.xelians.esafe.testcommon.RestClient;
 import fr.xelians.esafe.testcommon.TestUtils;
 import fr.xelians.sipg.service.sedav2.Sedav2Service;
+import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Durations;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -28,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 // @DirtiesContext is not needed because the context does not change between tests
 @Slf4j
@@ -41,6 +45,12 @@ public class BaseIT {
   protected final Sedav2Service sedaService = Sedav2Service.getV22Instance();
   @LocalServerPort protected int port;
   protected RestClient restClient;
+
+  static {
+    Awaitility.setDefaultPollDelay(Duration.ZERO);
+    Awaitility.setDefaultPollInterval(Durations.ONE_HUNDRED_MILLISECONDS);
+    Awaitility.setDefaultTimeout(Durations.FIVE_SECONDS);
+  }
 
   protected SetupDto setup() {
     if (restClient == null) {

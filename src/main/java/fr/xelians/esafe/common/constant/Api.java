@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.constant;
@@ -57,6 +58,10 @@ public final class Api {
 
   // Admin
   public static final String ADMIN_EXTERNAL = "/admin-external";
+
+  // Accession register (Admin)
+  public static final String ACCESSION_REGISTER_SUMMARY = "/accessionregisters";
+  public static final String ACCESSION_REGISTER_DETAILS = "/accessionregisterdetails";
 
   // Referential (Admin)
   public static final String ONTOLOGIES = "/ontologies";

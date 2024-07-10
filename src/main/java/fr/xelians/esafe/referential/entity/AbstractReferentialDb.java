@@ -1,15 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.entity;
 
 import fr.xelians.esafe.common.entity.database.AbstractBaseDb;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -22,7 +20,8 @@ import org.hibernate.validator.constraints.Length;
 public abstract class AbstractReferentialDb extends AbstractBaseDb implements ReferentialDb {
 
   @Id
-  @GeneratedValue(generator = "global_generator")
+  @SequenceGenerator(name = "referential_generator", sequenceName = "referential_seq")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "referential_generator")
   protected Long id;
 
   @Column(nullable = false, updatable = false, length = 64)

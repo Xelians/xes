@@ -1,13 +1,14 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.domain.scanner.iterator.unit;
 
 import fr.xelians.esafe.admin.domain.scanner.AllLbkIterator;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.operation.domain.StorageAction;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.service.StorageService;
@@ -24,22 +25,22 @@ public class UnitLbkIterator extends AllLbkIterator {
   }
 
   @Override
-  public void actionCreate(OperationSe operationSe, String[] tokens) {
+  public void actionCreate(LogbookOperation logbookOperation, String[] tokens) {
     if (StorageObjectType.uni.name().equals(tokens[2])) {
-      operationSe.addAction(StorageAction.create(tokens));
+      logbookOperation.addAction(StorageAction.create(tokens));
     }
   }
 
   @Override
-  public void actionUpdate(OperationSe operationSe, String[] tokens) {
+  public void actionUpdate(LogbookOperation logbookOperation, String[] tokens) {
     // We only need to know existing archive units (i.e. created and not yet deleted archive unit)
     // so update is not necessary
   }
 
   @Override
-  public void actionDelete(OperationSe operationSe, String[] tokens) {
+  public void actionDelete(LogbookOperation logbookOperation, String[] tokens) {
     if (StorageObjectType.uni.name().equals(tokens[2])) {
-      operationSe.addAction(StorageAction.create(tokens));
+      logbookOperation.addAction(StorageAction.create(tokens));
     }
   }
 }

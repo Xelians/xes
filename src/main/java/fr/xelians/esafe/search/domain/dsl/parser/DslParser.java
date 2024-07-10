@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.search.domain.dsl.parser;
@@ -62,13 +63,16 @@ public abstract class DslParser<T> {
   }
 
   public String getProjectionFieldName(String docType, String fieldName) {
-    return getNamedField(docType, fieldName, FieldContext.PROJECTION).fieldName();
+    NamedField namedField = getNamedField(docType, fieldName, FieldContext.PROJECTION);
+    return (namedField.field() == null || !namedField.field().isStandard())
+        ? namedField.fieldName()
+        : namedField.field().getName();
   }
 
   protected NamedField getNamedField(String docType, String fieldName, FieldContext fieldContext) {
 
     if (searchable.isSpecialField(fieldName)) {
-      return getSpecialNamedField(fieldName, fieldContext);
+      return searchable.getSpecialNamedField(fieldName, fieldContext);
     }
 
     Field field = searchable.getAliasField(fieldName, fieldContext);
@@ -76,7 +80,7 @@ public abstract class DslParser<T> {
       return new NamedField(fieldName, field);
     }
 
-    // Do not accept _ and others weirds characters
+    // Do not accept _ and others weird characters
     if (FieldUtils.isNotAlphaNumeric(fieldName)) {
       throwBadRequestException(
           String.format("Field '%s' must only contain alpha numeric characters", fieldName));
@@ -111,26 +115,6 @@ public abstract class DslParser<T> {
 
   private NamedField createExtNameField(String fieldName, Field field) {
     return new NamedField("_extents." + fieldName, field);
-  }
-
-  protected NamedField getSpecialNamedField(String fieldName, FieldContext fieldContext) {
-    String name;
-    int i = fieldName.indexOf('.');
-    if (i > 0) {
-      String lastName = fieldName.substring(i);
-      if (FieldUtils.isNotAlphaNumeric(lastName)) {
-        throwBadRequestException(
-            String.format("Field '%s' must only contain alpha numeric characters", fieldName));
-      }
-      name = searchable.getSpecialFieldName(fieldName.substring(0, i), fieldContext) + lastName;
-    } else {
-      name = searchable.getSpecialFieldName(fieldName, fieldContext);
-    }
-
-    if (StringUtils.isBlank(name)) {
-      throwBadRequestException(String.format("Field '%s' is not a valid special field", fieldName));
-    }
-    return new NamedField(name, searchable.getField(name));
   }
 
   public NamedField getUpdateNameField(String docType, String fieldName) {

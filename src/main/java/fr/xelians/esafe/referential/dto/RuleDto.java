@@ -1,18 +1,19 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import fr.xelians.esafe.common.constraint.NoHtml;
-import fr.xelians.esafe.common.constraint.RegularChar;
 import fr.xelians.esafe.referential.domain.RuleMeasurement;
 import fr.xelians.esafe.referential.domain.RuleType;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.validator.constraints.Length;
+import org.apache.commons.lang.StringUtils;
 
 @Getter
 @Setter
@@ -24,14 +25,9 @@ public class RuleDto extends AbstractReferentialDto {
   @JsonProperty("Type")
   private RuleType type;
 
-  @NoHtml
-  @NotNull
-  @RegularChar
-  @Length(min = 1, max = 10)
   @JsonProperty("Duration")
   private String duration;
 
-  @NotNull
   @JsonProperty("Measurement")
   private RuleMeasurement measurement;
 
@@ -47,5 +43,25 @@ public class RuleDto extends AbstractReferentialDto {
   @Override
   public String getName() {
     return this.name;
+  }
+
+  @AssertTrue(message = "Duration or Measurement are not defined")
+  @JsonIgnore
+  private boolean validate() {
+    return type == RuleType.HoldRule ? checkHoldRule() : checkStdRule();
+  }
+
+  @JsonIgnore
+  private boolean checkHoldRule() {
+    if (StringUtils.isBlank(duration)) {
+      duration = "unlimited";
+      measurement = RuleMeasurement.YEAR;
+    }
+    return measurement != null;
+  }
+
+  @JsonIgnore
+  private boolean checkStdRule() {
+    return StringUtils.isNotBlank(duration) && measurement != null;
   }
 }

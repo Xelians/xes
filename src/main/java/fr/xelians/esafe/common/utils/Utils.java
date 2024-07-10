@@ -4,8 +4,9 @@
  * and open the template in the editor.
  */
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.utils;
@@ -29,7 +30,7 @@ public final class Utils {
   public static final int CPUS = Runtime.getRuntime().availableProcessors();
 
   public static final String NOT_NULL = "the %s argument must be not null";
-  public static final int PAD_SIZE = 4;
+  public static final int PAD_SIZE = 6;
   public static final char PAD_CHAR = '0';
 
   public static final PolicyFactory NO_HTML = new HtmlPolicyBuilder().allowTextIn("'").toFactory();
@@ -109,8 +110,8 @@ public final class Utils {
     return org.apache.commons.lang.StringUtils.leftPad(String.valueOf(i), 3, '0');
   }
 
-  public static String padIdentifier(String prefix, long max) {
-    return prefix + StringUtils.leftPad(String.valueOf(max + 1), PAD_SIZE, PAD_CHAR);
+  public static String padIdentifier(String prefix, long num) {
+    return prefix + StringUtils.leftPad(String.valueOf(num), PAD_SIZE, PAD_CHAR);
   }
 
   public static boolean isNotHtmlSafe(String text) {

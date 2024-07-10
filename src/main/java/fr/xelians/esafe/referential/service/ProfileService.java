@@ -4,8 +4,9 @@
  * in the editor.
  */
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.service;
@@ -17,6 +18,7 @@ import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.utils.ByteContent;
 import fr.xelians.esafe.common.utils.DroidUtils;
+import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.referential.domain.ProfileFormat;
 import fr.xelians.esafe.referential.domain.search.ReferentialParser;
@@ -58,6 +60,16 @@ public class ProfileService extends AbstractReferentialService<ProfileDto, Profi
       ProfileRepository repository,
       OperationService operationService) {
     super(entityManager, repository, operationService);
+  }
+
+  @Override
+  public ProfileDto toDto(ProfileDb entity) {
+    ProfileDto dto = Utils.copyProperties(entity, createDto());
+    if (entity.getData() != null) {
+      String base = StringUtils.defaultIfBlank(entity.getName(), entity.getIdentifier());
+      dto.setPath((base + "." + entity.getFormat()).toLowerCase());
+    }
+    return dto;
   }
 
   public void updateDataByIdentifier(

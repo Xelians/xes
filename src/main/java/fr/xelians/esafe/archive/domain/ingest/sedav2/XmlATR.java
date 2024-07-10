@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.ingest.sedav2;
@@ -188,7 +189,7 @@ public class XmlATR {
         && type != OperationType.INGEST_FILING
         && type != OperationType.INGEST_ARCHIVE) {
       throw new BadRequestException(
-          "Failed to get manifest",
+          "Failed to get archive transfer reply",
           String.format("No manifest available for operation id '%s'", operationDb.getId()));
     }
 
@@ -210,7 +211,7 @@ public class XmlATR {
       return JsonService.to(info, AtrInfo.class);
     } catch (IOException e) {
       throw new InternalException(
-          "Failed to get manifest",
+          "Failed to get archive transfer reply",
           String.format("Error parsing operation id %s", operationDb.getId()),
           e);
     }

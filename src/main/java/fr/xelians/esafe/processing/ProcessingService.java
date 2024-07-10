@@ -1,12 +1,14 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.processing;
 
 import fr.xelians.esafe.common.task.AbstractOperationTask;
 import fr.xelians.esafe.operation.service.OperationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.Future;
@@ -23,6 +25,8 @@ public class ProcessingService {
 
   @Getter private final OperationService operationService;
 
+  private final MeterRegistry meterRegistry;
+
   @Value("${app.processing.threads:0}")
   private int processingThreads;
 
@@ -33,7 +37,7 @@ public class ProcessingService {
     int defaultThreads = Runtime.getRuntime().availableProcessors() * 2;
     int threads = processingThreads <= 0 ? defaultThreads : processingThreads;
     log.info("Number thread available={} for task pool executor", threads);
-    this.executor = new TaskPoolExecutor(operationService, threads);
+    this.executor = new TaskPoolExecutor(operationService, threads, meterRegistry);
     this.executor.start();
   }
 
@@ -42,7 +46,7 @@ public class ProcessingService {
     this.executor.stop();
   }
 
-  public Future<Void> submit(AbstractOperationTask<Void> task) {
+  public Future<?> submit(AbstractOperationTask task) {
     return executor.submit(task);
   }
 }

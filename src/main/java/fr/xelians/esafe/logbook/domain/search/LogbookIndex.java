@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.logbook.domain.search;
@@ -18,17 +19,8 @@ public class LogbookIndex implements Searchable {
                     {
                       "dynamic": "strict",
                       "properties": {
-                        "Created": {
-                          "type": "date"
-                        },
                         "_operationId": {
-                          "type": "long"
-                        },
-                        "_secureNumber": {
-                          "type": "long"
-                        },
-                        "Modified": {
-                          "type": "date"
+                          "type": "keyword"
                         },
                         "_tenant": {
                           "type": "long"
@@ -48,6 +40,15 @@ public class LogbookIndex implements Searchable {
                         "ObjectIdentifier": {
                           "type": "keyword"
                         },
+                        "_secureNumber": {
+                          "type": "long"
+                        },
+                        "Created": {
+                          "type": "date"
+                        },
+                        "Modified": {
+                          "type": "date"
+                        },
                         "ObjectInfo": {
                           "type": "keyword"
                         },
@@ -64,14 +65,14 @@ public class LogbookIndex implements Searchable {
                     }
                     """;
 
-  public static final String INDEX = "logbook";
-  public static final String ALIAS = INDEX + "_alias";
+  public static final String NAME = "logbook";
+  public static final String ALIAS = NAME + "_alias";
 
   private static final Map<String, Field> STD_FIELDS = FieldUtils.buildStandardFields(MAPPING);
 
   private static final Map<String, Field> ALIAS_FIELDS =
       Map.ofEntries(
-          Map.entry("eventId", STD_FIELDS.get("_operationId")),
+          Map.entry("evId", STD_FIELDS.get("_operationId")),
           Map.entry("evType", STD_FIELDS.get("TypeInfo")),
           Map.entry("evTypeProc", STD_FIELDS.get("Type")),
           Map.entry("agId", STD_FIELDS.get("UserIdentifier")),
@@ -82,7 +83,21 @@ public class LogbookIndex implements Searchable {
           Map.entry("outMessg", STD_FIELDS.get("Message")),
           Map.entry("evDetData", STD_FIELDS.get("ObjectData")),
           Map.entry("obIdReq", STD_FIELDS.get("ObjectInfo")),
-          Map.entry("obId", STD_FIELDS.get("ObjectIdentifier")));
+          Map.entry("obId", STD_FIELDS.get("ObjectIdentifier")),
+          Map.entry("outcome", STD_FIELDS.get("Outcome")),
+          Map.entry("events.evId", STD_FIELDS.get("_operationId")),
+          Map.entry("events.evType", STD_FIELDS.get("TypeInfo")),
+          Map.entry("events.evTypeProc", STD_FIELDS.get("Type")),
+          Map.entry("events.agId", STD_FIELDS.get("UserIdentifier")),
+          Map.entry("events.agIdApp", STD_FIELDS.get("ApplicationId")),
+          Map.entry("events.evIdAppSession", STD_FIELDS.get("ApplicationId")),
+          Map.entry("events._lastPersistedDate", STD_FIELDS.get("Modified")),
+          Map.entry("events.evDateTime", STD_FIELDS.get("Created")),
+          Map.entry("events.outMessg", STD_FIELDS.get("Message")),
+          Map.entry("events.evDetData", STD_FIELDS.get("ObjectData")),
+          Map.entry("events.obIdReq", STD_FIELDS.get("ObjectInfo")),
+          Map.entry("events.obId", STD_FIELDS.get("ObjectIdentifier")),
+          Map.entry("events.outcome", STD_FIELDS.get("Outcome")));
 
   public static final LogbookIndex INSTANCE = new LogbookIndex();
 
@@ -100,7 +115,7 @@ public class LogbookIndex implements Searchable {
 
   @Override
   public String getName() {
-    return INDEX;
+    return NAME;
   }
 
   @Override

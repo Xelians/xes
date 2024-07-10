@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.cluster.repository;
@@ -30,11 +31,11 @@ public interface ServerNodeRepository extends JpaRepository<ServerNodeDb, Long> 
   @Modifying
   @Query(
       value =
-          "insert into server_node_db(feature, delay) values(:#{#feature.name()}, now()) on conflict do nothing",
+          "insert into server_node(feature, delay) values(:#{#feature.name()}, now()) on conflict do nothing",
       nativeQuery = true)
   void upsert(@Param("feature") NodeFeature feature);
 
-  @Query(value = "select nextval('server_node')", nativeQuery = true)
+  @Query(value = "select nextval('server_node_seq')", nativeQuery = true)
   long getNextValue();
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)

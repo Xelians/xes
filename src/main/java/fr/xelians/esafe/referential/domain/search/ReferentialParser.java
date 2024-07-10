@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.domain.search;
@@ -100,10 +101,6 @@ public class ReferentialParser<T> extends SqlParser<T> {
   private void checkSearchQuery(SearchQuery searchQuery) {
     Assert.notNull(searchQuery, "Search query must ne not null");
 
-    if (isEmpty(searchQuery.queryNode())) {
-      throw new BadRequestException(CREATION_FAILED, QUERY_IS_EMPTY_OR_NOT_DEFINED);
-    }
-
     if (searchQuery.type() != null) {
       throw new BadRequestException(CREATION_FAILED, "This query dos not support $type");
     }
@@ -119,7 +116,7 @@ public class ReferentialParser<T> extends SqlParser<T> {
     List<Order> sortOrders = createSortOrders(searchContext, searchQuery.filterNode());
     mainCriteria
         .select(rootEntity)
-        .where(wherePredicate(searchContext, searchQuery.queryNode()))
+        .where(wherePredicate(searchContext, getNonEmptyQuery(searchQuery)))
         .orderBy(sortOrders);
     int[] limits = createLimits(searchQuery.filterNode());
     return entityManager
@@ -138,7 +135,7 @@ public class ReferentialParser<T> extends SqlParser<T> {
     List<Order> sortOrders = createSortOrders(searchContext, searchQuery.filterNode());
     mainCriteria
         .multiselect(paths)
-        .where(wherePredicate(searchContext, searchQuery.queryNode()))
+        .where(wherePredicate(searchContext, getNonEmptyQuery(searchQuery)))
         .orderBy(sortOrders);
     int[] limits = createLimits(searchQuery.filterNode());
     return entityManager
@@ -152,7 +149,7 @@ public class ReferentialParser<T> extends SqlParser<T> {
     rootEntity = countCriteria.from(entityClass);
     countCriteria
         .select(criteriaBuilder.count(rootEntity))
-        .where(wherePredicate(searchContext, searchQuery.queryNode()));
+        .where(wherePredicate(searchContext, getNonEmptyQuery(searchQuery)));
     return entityManager.createQuery(countCriteria);
   }
 }

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -129,6 +130,13 @@ class ProfileIT extends BaseIT {
     ResponseEntity<Void> r1 =
         restClient.updateBinaryProfile(tenant, OK_RNG, profile.getIdentifier());
     assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+
+    ResponseEntity<ProfileDto> r3 =
+        restClient.getProfileByIdentifier(tenant, profile.getIdentifier());
+    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    ProfileDto profileDto = r3.getBody();
+    assertNotNull(profileDto);
+    assertEquals("profilrng_mail.rng", profileDto.getPath(), TestUtils.getBody(r3));
 
     ResponseEntity<byte[]> r2 = restClient.getBinaryProfile(tenant, profile.getIdentifier());
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation;
@@ -47,8 +48,17 @@ public class OperationController {
     return operationService.getVitamOperationDto(tenant, operationId);
   }
 
-  @Operation(summary = "Search for VITAM operations. Use only if you need VITAM compatibility.")
+  @Operation(
+      summary = "Search for VITAM operations with (GET). Use only if you need VITAM compatibility.",
+      hidden = true)
   @GetMapping(V1 + OPERATIONS)
+  public OperationResult<VitamOperationListDto> searchVitamOperationsWithGet(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody OperationQuery operationQuery) {
+    return operationService.searchVitamOperationDtos(tenant, operationQuery);
+  }
+
+  @Operation(summary = "Search for VITAM operations. Use only if you need VITAM compatibility.")
+  @PostMapping(V1 + OPERATIONS)
   public OperationResult<VitamOperationListDto> searchVitamOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody OperationQuery operationQuery) {
     return operationService.searchVitamOperationDtos(tenant, operationQuery);

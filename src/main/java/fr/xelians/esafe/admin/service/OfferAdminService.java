@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.service;
@@ -138,7 +139,7 @@ public class OfferAdminService {
       // Copy logbooks and archives
       copyLogbooks(tenantDb, srcOffers, dstOffer);
       copyArchives(tenantDb, srcOffers, dstOffer);
-      // TODO cope with backup and ope
+      // TODO copy refrentials, backup and ope
 
       operationService.unlockAndSave(
           operation,

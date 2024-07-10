@@ -1,12 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.unit.rules.computed;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
+import fr.xelians.esafe.archive.domain.unit.rules.Rule;
 import fr.xelians.esafe.archive.domain.unit.rules.management.*;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.referential.domain.RuleType;
@@ -48,18 +49,30 @@ public class ComputedInheritedRules {
     appraisalComputedRules = new AppraisalComputedRules();
     appraisalComputedRules.setFinalAction(arules.getFinalAction());
     appraisalComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      appraisalComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
   }
 
   @JsonIgnore
   public void setAccessRules(AccessRules arules) {
     accessComputedRules = new AccessComputedRules();
     accessComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      accessComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
   }
 
   @JsonIgnore
   public void setClassificationRules(ClassificationRules arules) {
     classificationComputedRules = new ClassificationComputedRules();
     classificationComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      classificationComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
     if (arules.getClassificationAudience() != null) {
       classificationComputedRules.setClassificationAudiences(
           List.of(arules.getClassificationAudience()));
@@ -84,12 +97,20 @@ public class ComputedInheritedRules {
   public void setDisseminationRules(DisseminationRules arules) {
     disseminationComputedRules = new DisseminationComputedRules();
     disseminationComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      disseminationComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
   }
 
   @JsonIgnore
   public void setReuseRules(ReuseRules arules) {
     reuseComputedRules = new ReuseComputedRules();
     reuseComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      reuseComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
   }
 
   @JsonIgnore
@@ -97,12 +118,19 @@ public class ComputedInheritedRules {
     storageComputedRules = new StorageComputedRules();
     storageComputedRules.setFinalAction(arules.getFinalAction());
     storageComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      storageComputedRules.rules.add(
+          new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
   }
 
   @JsonIgnore
   public void setHoldRules(HoldRules arules) {
     holdComputedRules = new HoldComputedRules();
     holdComputedRules.setMaxEndDate(arules.getEndDate());
+    for (Rule rule : arules.getRules()) {
+      holdComputedRules.rules.add(new ComputedInheritedRule(rule.getRuleName(), rule.getEndDate()));
+    }
     holdComputedRules.setPreventRearrangement(arules.getPreventRearrangement());
   }
 

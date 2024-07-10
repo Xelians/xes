@@ -1,4 +1,7 @@
 spring:
+  output:
+    ansi:
+      enabled: always
   threads:
     virtual:
       enabled: false
@@ -15,17 +18,13 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    defer-datasource-initialization: true
-    hibernate:
-      ddl-auto: create-drop
-      validator:
-        apply_to_ddl: true
+    show-sql: false
   sql:
     init:
       mode: always
-  mvc:
-    throw-exception-if-no-handler-found: true
+  liquibase:
+    drop-first: false
+    contexts: prod
 
 elasticsearch:
   host: localhost
@@ -49,6 +48,13 @@ management:
         enabled: true
         add-additional-paths: true
       show-details: always
+  tracing:
+    baggage:
+      correlation:
+        fields: x-application-id, x-tenant-id
+      remote-fields: x-application-id, x-tenant-id
+    sampling:
+      probability: 1
   endpoints:
     web:
       exposure:
@@ -70,6 +76,9 @@ app:
   # Indexing properties
   indexing:
     threads: 16
+    on-start:
+      reset: false
+      create-if-missing: true
   # Tenant encryption (seconds)
   tenant:
     encryption:
@@ -123,21 +132,16 @@ app:
       fixedDelay: 2000
       initialDelay: 1000
 
+antivirus:
+  name: None
+  hosts: localhost:3310,127.0.0.1:3310
+  timeout: 10000
+  scanLength: 2048
+
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true
 
 logging:
-  level:
-    fr:
-      xelians: INFO
-    org:
-      springframework: ERROR
-  pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level - %msg%n'
-    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
-  file:
-    name: target/application.log
   request:
     path-to-ignore: /actuator,/v3/api-docs,/swagger-ui,/readyz,/livez
-

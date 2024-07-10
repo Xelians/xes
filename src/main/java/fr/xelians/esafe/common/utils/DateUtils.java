@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.utils;
@@ -39,10 +40,14 @@ public final class DateUtils {
           .optionalStart()
           .appendLiteral('T')
           .append(ISO_LOCAL_TIME)
+          .optionalStart()
+          .appendLiteral('Z')
+          .optionalEnd()
           .optionalEnd()
           .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
           .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
           .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+          .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
           .toFormatter()
           .withChronology(IsoChronology.INSTANCE)
           .withResolverStyle(ResolverStyle.STRICT);

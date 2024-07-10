@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.organization.entity;
@@ -14,17 +15,20 @@ import java.util.ArrayList;
 import lombok.Getter;
 import lombok.Setter;
 
-@SequenceGenerator(name = "tenant_generator", sequenceName = "tenant", allocationSize = 1)
 @Getter
 @Setter
 @Entity
+@Table(name = "tenant")
 public class TenantDb extends AbstractBaseDb {
 
   @Id
+  @SequenceGenerator(name = "tenant_generator", sequenceName = "tenant_seq", allocationSize = 1)
   @GeneratedValue(generator = "tenant_generator")
   private Long id;
 
-  @NotNull private ArrayList<String> storageOffers = new ArrayList<>();
+  @NotNull
+  @Column(length = 512)
+  private ArrayList<String> storageOffers = new ArrayList<>();
 
   private Boolean encrypted = DefaultValue.ENCRYPTED;
 

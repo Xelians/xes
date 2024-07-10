@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.testcommon;
@@ -146,6 +147,7 @@ public class SipFactory {
     unit2.setBinaryVersion("BinaryMaster");
     unit2.addTitle("MyTitle2");
     unit2.addDescription("MyDescription2");
+    unit2.addOriginatingSystemId("OSID_12345");
     unit2.addTag("Keyword002", "MyValue2");
 
     LocalDate startDate = LocalDate.now();
@@ -226,7 +228,7 @@ public class SipFactory {
     archiveTransfer.setTransferringAgency("AGENCY-" + TestUtils.pad(n), "Transferring Agency");
 
     ArchiveUnit unit1 = new ArchiveUnit();
-    UpdateOperation updateOperation = new UpdateOperation("Keyword002", "MyValue2");
+    UpdateOperation updateOperation = new UpdateOperation("OriginatingSystemId", "OSID_12345");
     unit1.setUpdateOperation(updateOperation);
 
     Path binaryPath2 = tmpDir.resolve("hellolupdatesip_1.pdf");

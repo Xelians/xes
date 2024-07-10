@@ -1,11 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.atr;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.*;
 
 @Getter
@@ -20,6 +22,6 @@ public class ArchiveUnitReply {
   @JsonProperty("SystemId")
   private String systemId;
 
-  @JsonProperty("OriginatingSystemId")
-  private String originatingSystemId;
+  @JsonProperty("OriginatingSystemIds")
+  private List<String> originatingSystemIds;
 }

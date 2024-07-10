@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
@@ -23,6 +24,8 @@ import fr.xelians.esafe.archive.domain.search.elimination.EliminationQuery;
 import fr.xelians.esafe.archive.domain.search.elimination.EliminationRequest;
 import fr.xelians.esafe.archive.domain.search.elimination.EliminationResult;
 import fr.xelians.esafe.archive.domain.unit.ArchiveUnit;
+import fr.xelians.esafe.archive.domain.unit.object.ObjectVersion;
+import fr.xelians.esafe.archive.domain.unit.object.Qualifiers;
 import fr.xelians.esafe.archive.domain.unit.rules.computed.AppraisalComputedRules;
 import fr.xelians.esafe.archive.domain.unit.rules.computed.HoldComputedRules;
 import fr.xelians.esafe.archive.task.EliminationTask;
@@ -234,7 +237,7 @@ public class EliminationService {
     try {
       operation.setStatus(OperationStatus.OK);
       operation.setOutcome(operation.getStatus().toString());
-      operation.setTypeInfo(operation.getType().toString());
+      operation.setTypeInfo(operation.getType().getInfo());
       operation.setMessage("Operation completed with success");
       logbookService.index(operation);
     } catch (IOException ex) {
@@ -263,7 +266,7 @@ public class EliminationService {
       SearchResponse<ArchiveUnit> response =
           searchEngineService.search(eliminationRequest.searchRequest(), ArchiveUnit.class);
 
-      // TODO check if result overflows
+      // TODO check if detail overflows
       List<ArchiveUnit> nodes = response.hits().hits().stream().map(Hit::source).toList();
       return new EliminationResult<>(nodes);
 
@@ -296,12 +299,20 @@ public class EliminationService {
         JsonGenerator generator = JsonService.createGenerator(os)) {
 
       generator.writeStartObject();
+      generator.writeStringField("Type", ReportType.ELIMINATION.toString());
       generator.writeStringField("Date", LocalDateTime.now().toString());
       generator.writeNumberField("Tenant", tenant);
       generator.writeNumberField("OperationId", operationId);
-      generator.writeStringField("Type", ReportType.ELIMINATION.toString());
+      generator.writeStringField("GrantDate", operation.getCreated().toString());
       generator.writeStringField("Status", ReportStatus.OK.toString());
-      generator.writeFieldName("Units");
+
+      int numOfUnits = 0;
+      int numOfObjectGroups = 0;
+      int numOfPhysicalObjects = 0;
+      int numOfBinaryObjects = 0;
+      long sizeOfBinaryObjects = 0;
+
+      generator.writeFieldName("ArchiveUnits");
       generator.writeStartArray();
 
       // Get updated Archive Units from stream
@@ -318,7 +329,57 @@ public class EliminationService {
           List<ArchiveUnit> archiveUnits = entry.getValue();
 
           for (ArchiveUnit au : archiveUnits) {
-            generator.writeNumber(au.getId());
+            numOfUnits++;
+
+            generator.writeStartObject();
+            generator.writeStringField("SystemId", au.getId().toString());
+            generator.writeNumberField("OperationId", au.getOperationId());
+            generator.writeStringField("ArchivalAgencyIdentifier", au.getServiceProducer());
+            generator.writeStringField("CreationDate", au.getCreationDate().toString());
+
+            boolean isNotEmpty = false;
+
+            generator.writeFieldName("BinaryDataObjects");
+            generator.writeStartArray();
+            for (Qualifiers qualifiers : au.getQualifiers()) {
+              if (qualifiers.isBinaryQualifier()) {
+                for (ObjectVersion ov : qualifiers.getVersions()) {
+                  isNotEmpty = true;
+                  numOfBinaryObjects++;
+                  sizeOfBinaryObjects += ov.getSize();
+                  generator.writeStartObject();
+                  generator.writeStringField("DataObjectSystemId", ov.getId().toString());
+                  generator.writeStringField("DataObjectVersion", ov.getDataObjectVersion());
+                  generator.writeNumberField("Size", ov.getSize());
+                  generator.writeStringField("DigestAlgorithm", ov.getAlgorithm());
+                  generator.writeStringField("MessageDigest", ov.getMessageDigest());
+                  generator.writeEndObject();
+                }
+              }
+            }
+            generator.writeEndArray();
+
+            generator.writeFieldName("PhysicalDataObjects");
+            generator.writeStartArray();
+            for (Qualifiers qualifiers : au.getQualifiers()) {
+              if (qualifiers.isPhysicalQualifier()) {
+                for (ObjectVersion ov : qualifiers.getVersions()) {
+                  isNotEmpty = true;
+                  numOfPhysicalObjects++;
+                  generator.writeStartObject();
+                  generator.writeStringField("DataObjectSystemId", ov.getId().toString());
+                  generator.writeStringField("DataObjectVersion", ov.getDataObjectVersion());
+                  generator.writeEndObject();
+                }
+              }
+            }
+
+            if (isNotEmpty) {
+              numOfObjectGroups++;
+            }
+
+            generator.writeEndArray();
+            generator.writeEndObject();
           }
 
           // Read from storage offers archive units with unit.operationId and group them by archive
@@ -367,6 +428,13 @@ public class EliminationService {
       }
 
       generator.writeEndArray();
+
+      generator.writeNumberField("NumOfUnits", numOfUnits);
+      generator.writeNumberField("NumOfObjectGroups", numOfObjectGroups);
+      generator.writeNumberField("NumOfPhysicalObjects", numOfPhysicalObjects);
+      generator.writeNumberField("NumOfBinaryObjects", numOfBinaryObjects);
+      generator.writeNumberField("SizeOfBinaryObjects", sizeOfBinaryObjects);
+
       generator.writeEndObject();
     }
 
@@ -402,6 +470,8 @@ public class EliminationService {
     }
   }
 
+  // TODO: delete objects after a while via a batch
+  // Note. the corresponding atr object must not be deleted.
   private void deleteObjects(OperationDb operation, List<String> offers, Long tenant, Long opId)
       throws IOException {
     storageService.deleteObjectIfExists(offers, tenant, opId, StorageObjectType.uni);
@@ -410,8 +480,6 @@ public class EliminationService {
     operation.addAction(StorageAction.create(DELETE, opId, StorageObjectType.bin, MD5, ZERO_BYTES));
     storageService.deleteObjectIfExists(offers, tenant, opId, StorageObjectType.mft);
     operation.addAction(StorageAction.create(DELETE, opId, StorageObjectType.mft, MD5, ZERO_BYTES));
-    storageService.deleteObjectIfExists(offers, tenant, opId, StorageObjectType.atr);
-    operation.addAction(StorageAction.create(DELETE, opId, StorageObjectType.atr, MD5, ZERO_BYTES));
   }
 
   private void doElimination(

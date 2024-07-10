@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.search;
@@ -19,8 +20,8 @@ import java.util.stream.IntStream;
 public final class ArchiveUnitIndex implements Searchable {
 
   public static final int UPS_SIZE = 10;
-  public static final String INDEX = "archiveunit";
-  public static final String ALIAS = INDEX + "_alias";
+  public static final String NAME = "archiveunit";
+  public static final String ALIAS = NAME + "_alias";
 
   private static final Map<String, Field> EXT_FIELDS = buildExtFields();
   public static final String MAPPING = buildArchiveUnitMapping();
@@ -38,6 +39,9 @@ public final class ArchiveUnitIndex implements Searchable {
   private static final Map<String, Field> ALIAS_FIELDS =
       Map.ofEntries(
           Map.entry("full_search", STD_FIELDS.get("_fullSearch")),
+          Map.entry("Title_", STD_FIELDS.get("Title_")),
+          Map.entry("Title_.fr", STD_FIELDS.get("Title_.fr")),
+          Map.entry("Title_.en", STD_FIELDS.get("Title_.en")),
           Map.entry("DocumentType_keyword", STD_FIELDS.get("DocumentType")),
           Map.entry("FileInfo.Filename", STD_FIELDS.get("_qualifiers.versions.FileInfo.Filename")),
           Map.entry(
@@ -64,7 +68,7 @@ public final class ArchiveUnitIndex implements Searchable {
 
   @Override
   public String getName() {
-    return INDEX;
+    return NAME;
   }
 
   @Override
@@ -469,6 +473,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                  "properties": {
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    }
                                  }
                                },
@@ -479,6 +496,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                    },
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    }
                                  }
                                },
@@ -486,6 +516,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                  "properties": {
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    },
                                    "ClassificationLevel": {
                                      "type": "keyword"
@@ -508,6 +551,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                  "properties": {
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    }
                                  }
                                },
@@ -515,6 +571,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                  "properties": {
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    }
                                  }
                                },
@@ -525,6 +594,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                    },
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    }
                                  }
                                },
@@ -532,6 +614,19 @@ public final class ArchiveUnitIndex implements Searchable {
                                  "properties": {
                                    "MaxEndDate": {
                                      "type": "date"
+                                   },
+                                   "InheritanceOrigin": {
+                                     "type": "keyword"
+                                   },
+                                   "Rules": {
+                                     "properties": {
+                                       "Rule": {
+                                         "type": "keyword"
+                                       },
+                                       "EndDate": {
+                                         "type": "date"
+                                       }
+                                     }
                                    },
                                    "PreventRearrangement": {
                                      "type": "boolean"
@@ -833,6 +928,22 @@ public final class ArchiveUnitIndex implements Searchable {
                              "copy_to": [
                                "_fullSearch"
                              ]
+                           },
+                           "Title_": {
+                             "properties": {
+                               "fr": {
+                                 "type": "text",
+                                 "copy_to": [
+                                   "_fullSearch"
+                                 ]
+                               },
+                               "en": {
+                                 "type": "text",
+                                 "copy_to": [
+                                   "_fullSearch"
+                                 ]
+                               }
+                             }
                            },
                            "TransactedDate": {
                              "type": "date"

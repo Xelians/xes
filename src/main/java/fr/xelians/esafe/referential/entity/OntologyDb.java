@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.entity;
@@ -13,7 +14,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(
+    name = "ontology",
     uniqueConstraints = {
       @UniqueConstraint(
           name = "unique_ontology_tenant_identifier",
@@ -22,7 +25,6 @@ import lombok.Setter;
           name = "unique_ontology_tenant_name",
           columnNames = {"tenant", "name"})
     })
-@Entity
 public class OntologyDb extends AbstractReferentialDb {
 
   // JPA has different behaviour depending on SpringBoot & Hibernate/JPA version
@@ -33,5 +35,8 @@ public class OntologyDb extends AbstractReferentialDb {
   //    Failed to set HashMap to hibernate PersistentMap
   @NotEmpty
   @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(name = "ontology_mapping", joinColumns = @JoinColumn(name = "ontology_id"))
+  @MapKeyColumn(name = "mapping_key")
+  @Column(name = "mapping_value")
   private Map<String, String> mappings;
 }

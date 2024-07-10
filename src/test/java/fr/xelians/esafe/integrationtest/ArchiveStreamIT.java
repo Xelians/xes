@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -81,21 +82,21 @@ class ArchiveStreamIT extends BaseIT {
     // Wait SIP to be loaded and indexed
     requestId = response1.getHeaders().getFirst(X_REQUEST_ID);
     OperationStatusDto operation =
-        restClient.waitForOperationStatus(tenant, requestId, 60, OperationStatus.OK);
+        restClient.waitForOperationStatus(tenant, requestId, 120, OperationStatus.OK);
     assertEquals(OperationStatus.OK, operation.status(), TestUtils.getBody(response1));
 
     OperationStatusDto operation2 =
         restClient.waitForOperationStatus(
-            tenant, response2.getHeaders().getFirst(X_REQUEST_ID), 60, OperationStatus.OK);
+            tenant, response2.getHeaders().getFirst(X_REQUEST_ID), 120, OperationStatus.OK);
     assertEquals(OperationStatus.OK, operation2.status(), TestUtils.getBody(response2));
 
     OperationStatusDto operation3 =
         restClient.waitForOperationStatus(
-            tenant, response3.getHeaders().getFirst(X_REQUEST_ID), 60, OperationStatus.OK);
+            tenant, response3.getHeaders().getFirst(X_REQUEST_ID), 120, OperationStatus.OK);
     assertEquals(OperationStatus.OK, operation3.status(), TestUtils.getBody(response3));
 
     // Wait 1 sec to let lucene commit the indexed unit
-    Utils.sleep(2000);
+    Utils.sleep(1000);
   }
 
   @BeforeEach

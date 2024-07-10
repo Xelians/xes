@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.converter;
@@ -11,7 +12,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
-public class UnitConverter implements Converter {
+public final class UnitConverter implements Converter {
+
+  private static final String[] RULES_NAMES = {
+    "AccessRule",
+    "AppraisalRule",
+    "DisseminationRule",
+    "ReuseRule",
+    "ClassificationRule",
+    "StorageRule",
+    "HoldRule"
+  };
 
   public static final UnitConverter INSTANCE = new UnitConverter();
 
@@ -30,14 +41,11 @@ public class UnitConverter implements Converter {
   }
 
   private static ObjectNode doConvert(JsonNode srcNode) {
-    ObjectNode dstNode = JsonNodeFactory.instance.objectNode();
+    ObjectNode dstNode = createObjectNode();
     for (var ite = srcNode.fields(); ite.hasNext(); ) {
       Map.Entry<String, JsonNode> entry = ite.next();
       convertRoot(dstNode, entry);
     }
-
-    // TODO maybe we should add validComputedInheritedRules to index
-    // dstNode.put("#validComputedInheritedRules", true);
     return dstNode;
   }
 
@@ -75,7 +83,7 @@ public class UnitConverter implements Converter {
         dstNode.set("#validComputedInheritedRules", entry.getValue());
         break;
       case "_cir":
-        dstNode.set("#computedInheritedRules", entry.getValue());
+        convertComputInheritedRules(dstNode, entry.getValue());
         break;
       case "_extents":
         convertExtents(dstNode, entry.getValue());
@@ -133,11 +141,19 @@ public class UnitConverter implements Converter {
     }
   }
 
+  private static void convertComputInheritedRules(ObjectNode dstNode, JsonNode cirNode) {
+    ObjectNode dstCirNode = createObjectNode();
+    for (String rulesName : RULES_NAMES) {
+      JsonNode rulesNode = cirNode.get(rulesName);
+      dstCirNode.set(rulesName, rulesNode == null ? createObjectNode() : rulesNode);
+    }
+    dstNode.set("#computedInheritedRules", dstCirNode);
+  }
+
   private static void convertLifeCycles(ObjectNode dstNode, JsonNode srcLfcNodes) {
     ArrayNode dstArrayNode = dstNode.putArray("#lifecycles");
-
     for (JsonNode srcLfcNode : srcLfcNodes) {
-      ObjectNode dstLfcNode = JsonNodeFactory.instance.objectNode();
+      ObjectNode dstLfcNode = createObjectNode();
       for (var ite = srcLfcNode.fields(); ite.hasNext(); ) {
         Map.Entry<String, JsonNode> entry = ite.next();
         String srcKey = entry.getKey();
@@ -154,5 +170,9 @@ public class UnitConverter implements Converter {
       }
       dstArrayNode.add(dstLfcNode);
     }
+  }
+
+  private static ObjectNode createObjectNode() {
+    return JsonNodeFactory.instance.objectNode();
   }
 }

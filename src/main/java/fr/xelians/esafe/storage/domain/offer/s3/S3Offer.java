@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.storage.domain.offer.s3;
@@ -202,25 +203,41 @@ public class S3Offer extends AbstractStorageOffer {
   public void putStorageObjects(Long tenant, List<StorageObject> storageObjects)
       throws IOException {
 
-    String bucket = getBucket(tenant);
-    List<Future<PutObjectResponse>> futures =
-        storageObjects.stream().map(pso -> putObject(pso, bucket)).toList();
-
-    try {
-      ThreadUtils.joinFutures(futures);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IOException(e);
-    } catch (ExecutionException e) {
-      if (e.getCause() instanceof IOException ioe) {
-        throw ioe;
+    if (storageObjects.size() == 1) {
+      putStorageObject(tenant, storageObjects.getFirst());
+    } else {
+      String bucket = getBucket(tenant);
+      List<Future<PutObjectResponse>> futures =
+          storageObjects.stream().map(pso -> putAsyncStorageObject(pso, bucket)).toList();
+      try {
+        ThreadUtils.joinFutures(futures);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IOException(e);
+      } catch (ExecutionException e) {
+        if (e.getCause() instanceof IOException ioe) {
+          throw ioe;
+        }
+        throw new IOException(e.getCause());
       }
-      throw new IOException(e.getCause());
     }
   }
 
-  private Future<PutObjectResponse> putObject(StorageObjectId storageObject, String bucket) {
-    // https://aws.amazon.com/fr/blogs/developer/introducing-crt-based-s3-client-and-the-s3-transfer-manager-in-the-aws-sdk-for-java-2-x/
+  private void putStorageObject(Long tenant, StorageObject storageObject) throws IOException {
+    switch (storageObject) {
+      case PathStorageObject pso -> putStorageObject(
+          pso.getPath(), tenant, pso.getId(), pso.getType());
+      case ByteStorageObject bso -> putStorageObject(
+          bso.getBytes(), tenant, bso.getId(), bso.getType());
+      default -> throw new InternalException(
+          "Failed to put storage objects",
+          String.format("Not supported StorageObjectId '%s'", storageObject.getId()));
+    }
+  }
+
+  // https://aws.amazon.com/fr/blogs/developer/introducing-crt-based-s3-client-and-the-s3-transfer-manager-in-the-aws-sdk-for-java-2-x/
+  private Future<PutObjectResponse> putAsyncStorageObject(
+      StorageObjectId storageObject, String bucket) {
     String key = getKey(storageObject.getId(), storageObject.getType());
     PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).build();
     AsyncRequestBody body = getAsyncrequestBody(storageObject);
@@ -238,64 +255,6 @@ public class S3Offer extends AbstractStorageOffer {
         "Failed to put storage objects",
         String.format("Not supported StorageObjectId '%s'", storageObject.getId()));
   }
-
-  //  @Override
-  //  public void putPathStorageObjects(Long tenant, List<PathStorageObjectId> pathStorageObjects)
-  //      throws IOException {
-  //
-  //    String bucket = getBucket(tenant);
-  //    List<Future<PutObjectResponse>> futures =
-  //        pathStorageObjects.stream().map(pso -> putPathObject(pso, bucket)).toList();
-  //
-  //    try {
-  //      ThreadUtils.joinFutures(futures);
-  //    } catch (InterruptedException e) {
-  //      Thread.currentThread().interrupt();
-  //      throw new IOException(e);
-  //    } catch (ExecutionException e) {
-  //      if (e.getCause() instanceof IOException ioe) {
-  //        throw ioe;
-  //      }
-  //      throw new IOException(e.getCause());
-  //    }
-  //  }
-  //
-  //  private Future<PutObjectResponse> putPathObject(PathStorageObjectId pso, String bucket) {
-  //    //
-  // https://aws.amazon.com/fr/blogs/developer/introducing-crt-based-s3-client-and-the-s3-transfer-manager-in-the-aws-sdk-for-java-2-x/
-  //    String key = getKey(pso.getId(), pso.getType());
-  //    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).build();
-  //    AsyncRequestBody body = AsyncRequestBody.fromFile(pso.getPath());
-  //    return s3AsyncClient.putObject(request, body);
-  //  }
-  //
-  //  @Override
-  //  public void putByteStorageObjects(Long tenant, List<ByteStorageObjectId> byteStorageObjects)
-  //      throws IOException {
-  //
-  //    String bucket = getBucket(tenant);
-  //    List<Future<PutObjectResponse>> futures =
-  //        byteStorageObjects.stream().map(bso -> putBytesObject(bso, bucket)).toList();
-  //
-  //    try {
-  //      ThreadUtils.joinFutures(futures);
-  //    } catch (InterruptedException e) {
-  //      Thread.currentThread().interrupt();
-  //      throw new IOException(e);
-  //    } catch (ExecutionException e) {
-  //      if (e.getCause() instanceof IOException ioe) {
-  //        throw ioe;
-  //      }
-  //      throw new IOException(e.getCause());
-  //    }
-  //  }
-  //
-  //  private Future<PutObjectResponse> putBytesObject(ByteStorageObjectId bso, String bucket) {
-  //    String key = getKey(bso.getId(), bso.getType());
-  //    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(key).build();
-  //    AsyncRequestBody body = AsyncRequestBody.fromBytes(bso.getBytes());
-  //    return s3AsyncClient.putObject(request, body);
-  //  }
 
   @Override
   public void putStorageObject(Path srcPath, Long tenant, Long id, StorageObjectType type)

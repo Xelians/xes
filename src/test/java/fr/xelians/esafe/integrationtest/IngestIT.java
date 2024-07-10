@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -30,16 +31,17 @@ import fr.xelians.esafe.testcommon.*;
 import fr.xelians.sipg.model.ArchiveTransfer;
 import fr.xelians.sipg.model.ArchiveUnit;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import nu.xom.*;
 import org.apache.commons.lang3.StringUtils;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,9 +106,6 @@ class IngestIT extends BaseIT {
           String.format("path: %s - r2: %s", path, TestUtils.getBody(r3)));
     }
 
-    // Wait for indexing
-    Utils.sleep(1000);
-
     // Get unit and assert parent unit == systemId
     String query =
         """
@@ -119,7 +118,7 @@ class IngestIT extends BaseIT {
               """;
 
     String acIdentifier = "AC-" + TestUtils.pad(1);
-    SearchResult<JsonNode> searchResult = searchArchive(tenant, acIdentifier, query);
+    SearchResult<JsonNode> searchResult = searchArchives(tenant, acIdentifier, query, 12);
     assertNotNull(searchResult, "Search Time out");
 
     List<JsonNode> units = searchResult.results();
@@ -301,21 +300,11 @@ class IngestIT extends BaseIT {
 
     // Download XML ATR
     Path atrPath = tmpDir.resolve(requestId + ".atr");
-    restClient.downloadXmlAtr(tenant, requestId, atrPath);
-
-    // Retrieve all created archive units from ATR
-    Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
-    XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
-
-    String replyCode = rootElem.query("//ns:ReplyCode", xc).get(0).getValue();
-    assertEquals("KO", replyCode, Files.readString(atrPath, StandardCharsets.UTF_8));
-
-    String eventType = rootElem.query("//ns:EventType", xc).get(0).getValue();
-    assertEquals("INGEST_ARCHIVE", eventType, Files.readString(atrPath, StandardCharsets.UTF_8));
-
-    String outcome = rootElem.query("//ns:Outcome", xc).get(0).getValue();
-    assertEquals("ERROR_CHECK", outcome, Files.readString(atrPath, StandardCharsets.UTF_8));
+    HttpClientErrorException t1 =
+        assertThrows(
+            HttpClientErrorException.class,
+            () -> restClient.downloadXmlAtr(tenant, requestId, atrPath));
+    assertEquals(HttpStatus.NOT_FOUND, t1.getStatusCode(), t1.toString());
   }
 
   @Test
@@ -337,8 +326,6 @@ class IngestIT extends BaseIT {
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, operation.status());
 
-    Utils.sleep(1000);
-
     // Download Json ATR
     Path atrPath = tmpDir.resolve(requestId + ".atr");
     restClient.downloadJsonAtr(tenant, requestId, atrPath);
@@ -353,8 +340,13 @@ class IngestIT extends BaseIT {
       if (unit.getBinaryPath() != null) {
         // Download binary object from Archive Unit
         Path binPath =
-            restClient.getBinaryObjectByUnitId(
-                tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion());
+            Awaitility.given()
+                .ignoreException(HttpClientErrorException.NotFound.class)
+                .until(
+                    () ->
+                        restClient.getBinaryObjectByUnitId(
+                            tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion()),
+                    Objects::nonNull);
 
         assertNotNull(binPath);
         assertTrue(Files.exists(binPath));
@@ -411,8 +403,6 @@ class IngestIT extends BaseIT {
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.OK, operation.status());
 
-    Utils.sleep(1000);
-
     // Download XML ATR
     Path atrPath = tmpDir.resolve(requestId + ".atr");
     restClient.downloadXmlAtr(tenant, requestId, atrPath);
@@ -431,8 +421,13 @@ class IngestIT extends BaseIT {
       if (unit.getBinaryPath() != null) {
         // Download binary object from Archive Unit
         Path binPath =
-            restClient.getBinaryObjectByUnitId(
-                tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion());
+            Awaitility.given()
+                .ignoreException(HttpClientErrorException.NotFound.class)
+                .until(
+                    () ->
+                        restClient.getBinaryObjectByUnitId(
+                            tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion()),
+                    Objects::nonNull);
 
         assertNotNull(binPath);
         assertTrue(Files.exists(binPath));
@@ -558,13 +553,15 @@ class IngestIT extends BaseIT {
     String systemId = Scenario.createScenario04(restClient, tenant, userDto, tmpDir);
     String acIdentifier = "AC-" + TestUtils.pad(1);
 
-    // Let enough time for indexing (TODO: optimize)
-    Utils.sleep(1000);
+    JsonNode archiveUnitDto =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getArchiveUnit(tenant, acIdentifier, systemId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
-    ResponseEntity<JsonNode> r1 = restClient.getArchiveUnit(tenant, acIdentifier, systemId);
-    assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
-
-    JsonNode archiveUnitDto = r1.getBody();
     assertNotNull(archiveUnitDto);
     assertEquals("MyTitle1", archiveUnitDto.get("Title").asText());
     assertEquals(1, archiveUnitDto.get("#version").asInt());
@@ -735,8 +732,9 @@ class IngestIT extends BaseIT {
             .formatted(unitId2, unitId3);
 
     String acIdentifier = "AC-" + TestUtils.pad(1);
-    SearchResult<JsonNode> searchResult = searchArchive(tenant, acIdentifier, query);
+    SearchResult<JsonNode> searchResult = searchArchives(tenant, acIdentifier, query, 2);
     assertNotNull(searchResult, "Search Time out");
+
     List<JsonNode> units = searchResult.results();
     assertEquals(2, units.size(), searchResult.toString());
     assertEquals(systemId, toLongs(units.getFirst().get("#unitups")).getFirst());
@@ -761,9 +759,6 @@ class IngestIT extends BaseIT {
     ArchiveTransfer updateSip = SipFactory.createUpdateOperationSimpleSip(tmpDir, 1);
     Map<String, Long> ids2 = Scenario.uploadSip(restClient, tenant, tmpDir, updateSip);
 
-    // Wait for indexing
-    Utils.sleep(1000);
-
     // Get unit and assert parent unit == systemId
     String idQuery =
         """
@@ -777,11 +772,10 @@ class IngestIT extends BaseIT {
             .formatted(ids2.get("UNIT_ID2"), ids2.get("UNIT_ID3"));
 
     String acIdentifier = "AC-" + TestUtils.pad(1);
-    SearchResult<JsonNode> searchResult = searchArchive(tenant, acIdentifier, idQuery);
+    SearchResult<JsonNode> searchResult = searchArchives(tenant, acIdentifier, idQuery, 2);
     assertNotNull(searchResult, "Search Time out");
 
     List<JsonNode> units = searchResult.results();
-
     assertEquals(2, units.size(), searchResult.toString());
     assertEquals(linkId, toLongs(units.getFirst().get("#unitups")).getFirst());
     assertEquals(linkId, toLongs(units.get(1).get("#unitups")).getFirst());
@@ -799,19 +793,19 @@ class IngestIT extends BaseIT {
     long systemId = Scenario.createScenario03(restClient, tenant, userDto, tmpDir);
 
     ResponseEntity<List<AgencyDto>> response =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto(2));
+        restClient.createAgencies(tenant, DtoFactory.createAgencyDto(3));
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
     // Wait for indexing
     Utils.sleep(1000);
 
-    IngestContractDto ic2 = DtoFactory.createIngestContractDto(2);
+    IngestContractDto ic2 = DtoFactory.createIngestContractDto(3);
     ic2.setLinkParentId(systemId);
     ResponseEntity<List<IngestContractDto>> r2 = restClient.createIngestContract(tenant, ic2);
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
 
     Path sipPath = tmpDir.resolve("sip.zip");
-    sedaService.write(SipFactory.createSimpleSip(tmpDir, 2), sipPath);
+    sedaService.write(SipFactory.createSimpleSip(tmpDir, 3), sipPath);
 
     ResponseEntity<Void> r3 = restClient.uploadSip(tenant, sipPath);
     assertEquals(HttpStatus.ACCEPTED, r3.getStatusCode());
@@ -873,15 +867,16 @@ class IngestIT extends BaseIT {
     }
   }
 
+  private SearchResult<JsonNode> searchArchives(
+      Long tenant, String acIdentifier, String query, long min) {
+    return Awaitility.await()
+        .until(
+            () -> restClient.searchArchive(tenant, acIdentifier, query),
+            r -> r.getBody() != null && r.getBody().hits().size() >= min)
+        .getBody();
+  }
+
   private SearchResult<JsonNode> searchArchive(Long tenant, String acIdentifier, String query) {
-    for (int i = 0; i < 50; i++) {
-      Utils.sleep(50);
-      var response = restClient.searchArchive(tenant, acIdentifier, query);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-      SearchResult<JsonNode> searchResult = response.getBody();
-      assertNotNull(searchResult);
-      if (!searchResult.results().isEmpty()) return searchResult;
-    }
-    return null;
+    return searchArchives(tenant, acIdentifier, query, 1);
   }
 }

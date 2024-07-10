@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.repository;
@@ -44,8 +45,7 @@ public class CustomReferentialRepositoryImpl implements CustomReferentialReposit
 
     int offset = request.mainQuery().getFirstResult();
     int limit = request.mainQuery().getMaxResults();
-
-    Long total = request.countQuery().getSingleResult();
+    long total = request.countQuery().getSingleResult();
     if (total == 0) {
       Hits hits = new Hits(offset, limit, 0, total);
       return new SearchResult<>(HttpStatus.OK.value(), hits, Collections.emptyList(), null, query);
@@ -78,7 +78,7 @@ public class CustomReferentialRepositoryImpl implements CustomReferentialReposit
     if (size != length) {
       throw new InternalException(
           "Failed to create json from referential request",
-          String.format("Projection size '%s' and result size '%s' are not equal", size, length));
+          String.format("Projection size '%s' and detail size '%s' are not equal", size, length));
     }
   }
 }

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.service;
@@ -128,12 +129,12 @@ public abstract class AbstractReferentialService<
   public List<D> create(Long tenant, String userIdentifier, String applicationId, List<D> dtos) {
     Assert.notNull(dtos, String.format("%s dto cannot be null", getEntityName()));
 
-    long max = -1L;
     String prefix = getEntityName().toUpperCase() + "-";
 
     OperationDb operation = createOperation(tenant, userIdentifier, applicationId);
     List<Long> entityIds = new ArrayList<>(dtos.size());
 
+    long next = 1;
     List<D> saveDtos = new ArrayList<>(dtos.size());
     for (D dto : dtos) {
       if (dto.getTenant() != null && !tenant.equals(dto.getTenant())) {
@@ -142,9 +143,10 @@ public abstract class AbstractReferentialService<
             String.format(
                 "Entity %s tenant mismatch: %s vs %s", getEntityName(), tenant, dto.getTenant()));
       }
+
       if (dto.getIdentifier() == null) {
-        max = (max < 0) ? nextIdentifier(tenant, prefix) + 1 : max + 1;
-        dto.setIdentifier(Utils.padIdentifier(prefix, max));
+        next = next == 1 ? nextIdentifier(tenant, prefix) : next + 1;
+        dto.setIdentifier(Utils.padIdentifier(prefix, next));
       }
 
       E entity = toEntity(dto);
@@ -173,8 +175,9 @@ public abstract class AbstractReferentialService<
         .map(identifier -> identifier.substring(prefix.length()))
         .filter(StringUtils::isNumeric)
         .mapToLong(Long::parseLong)
+        .map(n -> n + 1)
         .max()
-        .orElse(0);
+        .orElse(1);
   }
 
   @Transactional

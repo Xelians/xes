@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.performancetest;
@@ -10,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import fr.xelians.esafe.common.utils.Perfs;
 import fr.xelians.esafe.common.utils.Utils;
-import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
@@ -125,7 +126,7 @@ class LogbookPEIT extends BasePEIT {
     // Wait for Elastic to index (TODO: loop)
     Utils.sleep(1000);
 
-    // Compare search engine result with db result
+    // Compare search engine detail with db detail
     //    perfs.reset();
     //    operations.forEach(o -> {
     //      ResponseEntity<?> r = restClient.getLogbookOperation(tenant, o.getId());
@@ -153,7 +154,6 @@ class LogbookPEIT extends BasePEIT {
     perfs.log("Rebuild index");
 
     // Wait for Elastic to index (TODO: loop)
-    //        System.err.println("Wait for Elastic to index");
     //        Utils.sleep(5000);
 
     // Check if operation exists in new index
@@ -193,21 +193,21 @@ class LogbookPEIT extends BasePEIT {
     Utils.sleep(1000);
 
     // Get the logbook operation from Search engine
-    response = restClient.getLogbookOperation(tenant, requestId);
+    response = restClient.getVitamLogbookOperation(tenant, requestId);
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
-    // Compare search engine result with db result
-    LogbookOperationDto logbookOperation = (LogbookOperationDto) response.getBody();
+    // Compare search engine detail with db detail
+    VitamLogbookOperationDto logbookOperation = (VitamLogbookOperationDto) response.getBody();
     assertEquals(operation.id(), logbookOperation.getId());
     assertEquals(operation.tenant(), logbookOperation.getTenant());
-    assertEquals(operation.type(), logbookOperation.getType());
+    assertEquals(operation.type().toString(), logbookOperation.getEvTypeProc());
 
     // Create new empty index
     response = restClient.newIndex(tenant);
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
     // Check if operation exists in new index
-    response = restClient.getLogbookOperation(tenant, requestId);
+    response = restClient.getVitamLogbookOperation(tenant, requestId);
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 
     // Update empty index
@@ -223,13 +223,13 @@ class LogbookPEIT extends BasePEIT {
     Utils.sleep(10000);
 
     // Check if operation exists in new index
-    response = restClient.getLogbookOperation(tenant, logbookOperation.getId());
+    response = restClient.getVitamLogbookOperation(tenant, logbookOperation.getId());
     assertEquals(HttpStatus.OK, response.getStatusCode());
 
-    // Compare search engine result with db result
-    LogbookOperationDto logbookOperation2 = (LogbookOperationDto) response.getBody();
+    // Compare search engine detail with db detail
+    VitamLogbookOperationDto logbookOperation2 = (VitamLogbookOperationDto) response.getBody();
     assertEquals(logbookOperation.getId(), logbookOperation2.getId());
     assertEquals(logbookOperation.getTenant(), logbookOperation2.getTenant());
-    assertEquals(logbookOperation.getType(), logbookOperation2.getType());
+    assertEquals(logbookOperation.getEvType(), logbookOperation2.getEvType());
   }
 }

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.domain.search;
@@ -15,20 +16,21 @@ public class ReferentialIndex implements Searchable {
   public static final String NAME = "Ontology";
   public static final String ALIAS = NAME + "_alias";
 
+  // Fields in DB cannot start with _
   private static final Map<String, Field> STD_FIELDS =
       Map.ofEntries(
           Map.entry("_id", new LongField("id", true)),
           Map.entry("_tenant", new LongField("tenant", true)),
-          Map.entry("identifier", new KeywordField("identifier", true)),
-          Map.entry("operationId", new LongField("operationId", true)),
-          Map.entry("autoVersion", new IntegerField("autoVersion", true)),
-          Map.entry("name", new KeywordField("name", true)),
-          Map.entry("description", new TextField("description", true)),
-          Map.entry("creationDate", new DateField("creationDate", true)),
-          Map.entry("lastUpdate", new DateField("lastUpdate", true)),
-          Map.entry("activationDate", new DateField("activationDate", true)),
-          Map.entry("deactivationDate", new DateField("deactivationDate", true)),
-          Map.entry("status", new StatusField("status", true)));
+          Map.entry("Identifier", new KeywordField("identifier", true)),
+          Map.entry("OperationId", new LongField("operationId", true)),
+          Map.entry("AutoVersion", new IntegerField("autoVersion", true)),
+          Map.entry("Name", new KeywordField("name", true)),
+          Map.entry("Description", new TextField("description", true)),
+          Map.entry("CreationDate", new DateField("creationDate", true)),
+          Map.entry("LastUpdate", new DateField("lastUpdate", true)),
+          Map.entry("ActivationDate", new DateField("activationDate", true)),
+          Map.entry("DeactivationDate", new DateField("deactivationDate", true)),
+          Map.entry("Status", new StatusField("status", true)));
 
   private static final Map<String, Field> ALIAS_FIELDS = Map.ofEntries();
 

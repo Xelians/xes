@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe;
@@ -8,7 +9,9 @@ package fr.xelians.esafe;
 import fr.xelians.esafe.admin.service.IndexAdminService;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.annotation.Order;
@@ -21,6 +24,12 @@ public class ApplicationInit implements ApplicationListener<ApplicationReadyEven
 
   private final IndexAdminService indexAdminService;
 
+  @Value("${app.indexing.on-start.reset:false}")
+  private Boolean resetIndex;
+
+  @Value("${app.indexing.on-start.create-if-missing:true}")
+  private Boolean createIndexIfMissing;
+
   @Autowired
   public ApplicationInit(IndexAdminService indexAdminService) {
     this.indexAdminService = indexAdminService;
@@ -29,15 +38,35 @@ public class ApplicationInit implements ApplicationListener<ApplicationReadyEven
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
     log.info("ApplicationListener#onApplicationEvent()");
+    createIndex();
+    resetIndex();
+  }
 
-    try {
-      indexAdminService.deleteIndex();
-      indexAdminService.resetIndex();
-
-    } catch (IOException e) {
-      log.error("Failed to create LogbookOperation index", e);
-      log.error("Exiting...");
-      System.exit(1);
+  private void resetIndex() {
+    if (BooleanUtils.isTrue(this.resetIndex)) {
+      try {
+        indexAdminService.deleteAllIndex();
+        indexAdminService.resetAllIndex();
+      } catch (IOException e) {
+        log.error("Failed to create LogbookOperation index", e);
+        shutdownWithError();
+      }
     }
+  }
+
+  private void createIndex() {
+    if (BooleanUtils.isTrue(this.createIndexIfMissing)) {
+      try {
+        indexAdminService.createAllIndex();
+      } catch (IOException e) {
+        log.error("Failed to create missing index", e);
+        shutdownWithError();
+      }
+    }
+  }
+
+  private static void shutdownWithError() {
+    log.error("Exiting...");
+    System.exit(1);
   }
 }

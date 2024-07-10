@@ -17,4 +17,4 @@ COPY --from=builder application/application/ ./
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+CMD ["java", "org.springframework.boot.loader.launch.JarLauncher"]

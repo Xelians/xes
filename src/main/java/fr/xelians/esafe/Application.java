@@ -1,13 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe;
 
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -24,10 +24,14 @@ import org.springframework.core.env.Environment;
 @SpringBootApplication(exclude = ElasticsearchClientAutoConfiguration.class)
 public class Application implements CommandLineRunner {
 
-  @Autowired private Environment environment;
+  private final Environment environment;
 
   @Value("${spring.application.name}")
   private String appName;
+
+  public Application(Environment environment) {
+    this.environment = environment;
+  }
 
   public static void main(final String[] args) {
     SpringApplication application = new SpringApplicationBuilder(Application.class).build();

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.storage.domain.offer.s3;
@@ -17,7 +18,9 @@ import org.springframework.validation.annotation.Validated;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.crt.AwsCrtHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.*;
 import software.amazon.awssdk.services.s3.crt.S3CrtHttpConfiguration;
@@ -80,7 +83,7 @@ public class S3Storage {
     return s3ClientBuilder.build();
   }
 
-  public S3AsyncClient createS3AsyncClient() {
+  public S3AsyncClient createS3AsyncClient2() {
 
     AwsCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
     StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(credentials);
@@ -94,9 +97,43 @@ public class S3Storage {
             .credentialsProvider(credentialsProvider)
             .checksumValidationEnabled(false)
             .forcePathStyle(true)
+            // https://github.com/awslabs/aws-crt-java/issues/686
+            // .httpConfiguration(e -> e.trustAllCertificatesEnabled(true))
             .maxConcurrency(concurrency)
             .targetThroughputInGbps(10d)
             .minimumPartSizeInBytes(8_000_000L);
+
+    if (endpoint != null) {
+      builder.endpointOverride(endpoint);
+    }
+    return builder.build();
+  }
+
+  public S3AsyncClient createS3AsyncClient() {
+    SdkAsyncHttpClient httpClient =
+        NettyNioAsyncHttpClient.builder()
+            .maxPendingConnectionAcquires(60000)
+            .connectionAcquisitionTimeout(Duration.ofSeconds(10))
+            .writeTimeout(Duration.ofSeconds(10))
+            .readTimeout(Duration.ofSeconds(10))
+            .maxConcurrency(concurrency)
+            .build();
+
+    S3Configuration s3Configuration =
+        S3Configuration.builder()
+            .checksumValidationEnabled(false)
+            .pathStyleAccessEnabled(true)
+            .build();
+
+    AwsCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+    StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(credentials);
+
+    S3AsyncClientBuilder builder =
+        S3AsyncClient.builder()
+            .region(region)
+            .httpClient(httpClient)
+            .serviceConfiguration(s3Configuration)
+            .credentialsProvider(credentialsProvider);
 
     if (endpoint != null) {
       builder.endpointOverride(endpoint);
@@ -136,41 +173,4 @@ public class S3Storage {
 //    }
 //
 //    return s3Client;
-//  }
-
-//  public synchronized S3AsyncClient getS3AsyncClient() {
-//    if (s3AsyncClient == null) {
-//      SdkAsyncHttpClient httpClient =
-//          NettyNioAsyncHttpClient.builder()
-//              .maxPendingConnectionAcquires(60000)
-//              .connectionAcquisitionTimeout(Duration.ofSeconds(10))
-//              .writeTimeout(Duration.ofSeconds(10))
-//              .readTimeout(Duration.ofSeconds(10))
-//              .maxConcurrency(concurrency)
-//              .build();
-//
-//      S3Configuration s3Configuration =
-//          S3Configuration.builder()
-//              .checksumValidationEnabled(false)
-//              .pathStyleAccessEnabled(true)
-//              .build();
-//
-//      AwsCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
-//      StaticCredentialsProvider credentialsProvider =
-// StaticCredentialsProvider.create(credentials);
-//
-//      S3AsyncClientBuilder builder =
-//          S3AsyncClient.builder()
-//              .region(region)
-//              .httpClient(httpClient)
-//              .serviceConfiguration(s3Configuration)
-//              .credentialsProvider(credentialsProvider);
-//
-//      if (endpoint != null) {
-//        builder.endpointOverride(endpoint);
-//      }
-//      s3AsyncClient = builder.build();
-//    }
-//
-//    return s3AsyncClient;
 //  }

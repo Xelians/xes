@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.repository;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.Param;
@@ -50,4 +52,8 @@ public interface IRepository<E extends ReferentialDb>
       @Param("tenant") Long tenant, @Param("identifiers") List<String> identifiers);
 
   boolean existsByTenantAndIdentifier(Long tenant, String identifier);
+
+  @Modifying
+  @Query("DELETE FROM #{#entityName} e where e.tenant = ?1")
+  void deleteWithTenant(Long tenant);
 }

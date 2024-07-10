@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.dto;
@@ -50,22 +51,22 @@ public abstract class AbstractBaseDto implements BaseDto {
    * Both JsonDeserialize and JsonFormat annotations are mandatory
    * */
 
-  @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+  @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("CreationDate")
   protected LocalDate creationDate = DefaultValue.creationDate();
 
-  @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+  @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("LastUpdate")
   protected LocalDate lastUpdate = DefaultValue.lastUpdate();
 
-  @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+  @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("ActivationDate")
   protected LocalDate activationDate = ACTIVATION_DATE;
 
-  @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+  @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("DeactivationDate")
   protected LocalDate deactivationDate = DEACTIVATION_DATE;

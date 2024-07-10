@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.logbook.domain.search;
@@ -22,7 +23,8 @@ public final class LogbookSpecialFields {
     return Map.ofEntries(
         Map.entry("#id", "_operationId"),
         Map.entry("#creation", "_creationDate"),
-        Map.entry("#update", "_updateDate"));
+        Map.entry("#update", "_updateDate"),
+        Map.entry("#score", "_score"));
   }
 
   private static Map<String, String> createQueryFields() {

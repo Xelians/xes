@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.search;
@@ -34,6 +35,8 @@ public class ArchiveUnitQueryFactory {
     readMapper.disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
     objectReader = readMapper.reader();
   }
+
+  private ArchiveUnitQueryFactory() {}
 
   public static SearchQuery createSearchQuery(String dsl) {
     try {

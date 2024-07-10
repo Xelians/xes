@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.task;
@@ -10,6 +11,7 @@ import fr.xelians.esafe.common.exception.EsafeException;
 import fr.xelians.esafe.common.json.JsonService;
 import fr.xelians.esafe.common.utils.ExceptionsUtils;
 import fr.xelians.esafe.common.utils.NioUtils;
+import fr.xelians.esafe.common.utils.ObservationUtils;
 import fr.xelians.esafe.operation.domain.Workspace;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
@@ -22,8 +24,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbstractOperationTask<T> implements OperationTask<T> {
+public abstract class AbstractOperationTask implements OperationTask {
 
+  public static final String METRICS_PREFIX = "task_";
   @Getter protected final OperationDb operation;
   @Getter protected final List<TaskEvent> events = new ArrayList<>();
   @Getter @Setter protected boolean isActive;
@@ -39,6 +42,10 @@ public abstract class AbstractOperationTask<T> implements OperationTask<T> {
     this.tenantService = tenantService;
   }
 
+  public void executeWithObservation(Runnable runnable) {
+    ObservationUtils.observe(buildMetricName(this), runnable);
+  }
+
   public boolean isExclusive() {
     return operation.isExclusive();
   }
@@ -51,6 +58,10 @@ public abstract class AbstractOperationTask<T> implements OperationTask<T> {
 
   protected String format(String title, EsafeException ex) {
     return ExceptionsUtils.format(title, ex, operation);
+  }
+
+  private String buildMetricName(Object object) {
+    return METRICS_PREFIX + object.getClass().getSimpleName().toLowerCase();
   }
 
   protected void logEvent(String event) {

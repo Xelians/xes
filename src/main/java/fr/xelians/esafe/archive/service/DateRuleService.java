@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
@@ -8,10 +9,7 @@ package fr.xelians.esafe.archive.service;
 import fr.xelians.esafe.archive.domain.unit.ArchiveUnit;
 import fr.xelians.esafe.archive.domain.unit.rules.FinalActionRule;
 import fr.xelians.esafe.archive.domain.unit.rules.Rule;
-import fr.xelians.esafe.archive.domain.unit.rules.computed.AbstractComputedRules;
-import fr.xelians.esafe.archive.domain.unit.rules.computed.ClassificationComputedRules;
-import fr.xelians.esafe.archive.domain.unit.rules.computed.ComputedInheritedRules;
-import fr.xelians.esafe.archive.domain.unit.rules.computed.HoldComputedRules;
+import fr.xelians.esafe.archive.domain.unit.rules.computed.*;
 import fr.xelians.esafe.archive.domain.unit.rules.management.*;
 import fr.xelians.esafe.common.exception.functional.ManifestException;
 import fr.xelians.esafe.common.utils.SipUtils;
@@ -92,7 +90,7 @@ public class DateRuleService {
           if (ruleDate == null) {
             unlimited = true;
             aRule.setEndDate(null);
-            // Don't break here to compute all ruleDate
+            // Don't break here because we need  to compute all ruleDate
           } else if (!unlimited && isAfter(ruleDate, aRule.getEndDate())) {
             aRule.setEndDate(ruleDate);
           }
@@ -119,7 +117,7 @@ public class DateRuleService {
           if (ruleDate == null) {
             unlimited = true;
             aRule.setEndDate(null);
-            // Don't break here to compute all ruleDate
+            // Don't break here because we need to compute all ruleDate
           } else if (!unlimited && isAfter(ruleDate, aRule.getEndDate())) {
             aRule.setEndDate(ruleDate);
           }
@@ -137,7 +135,9 @@ public class DateRuleService {
       Management mgt = unit.getManagement();
       AbstractRules aRule = mgt == null ? null : mgt.getRules(ruleType);
       if (aRule == null) {
-        cir.setRules(parentComputedRule.duplicate());
+        AbstractComputedRules pcr = parentComputedRule.duplicate();
+        pcr.setInheritanceOrigin(InheritanceOrigin.INHERITED);
+        cir.setRules(pcr);
       } else {
         Boolean preventInheritance = aRule.getRuleInheritance().getPreventInheritance();
         AbstractComputedRules computedRule = cir.getRules(ruleType);
@@ -148,6 +148,8 @@ public class DateRuleService {
             && endDate != null
             && pcrMaxEndDate.isAfter(endDate)) {
           computedRule.setMaxEndDate(pcrMaxEndDate);
+          computedRule.setInheritanceOrigin(InheritanceOrigin.INHERITED);
+          parentComputedRule.getRules().forEach(rule -> computedRule.getRules().add(rule));
         } else {
           computedRule.setMaxEndDate(endDate);
         }
@@ -184,7 +186,9 @@ public class DateRuleService {
       Management mgt = unit.getManagement();
       HoldRules aRule = mgt == null ? null : mgt.getHoldRules();
       if (aRule == null) {
-        cir.setHoldComputedRules(parentComputedRule.duplicate());
+        HoldComputedRules pcr = parentComputedRule.duplicate();
+        pcr.setInheritanceOrigin(InheritanceOrigin.INHERITED);
+        cir.setHoldComputedRules(pcr);
       } else {
         Boolean preventInheritance = aRule.getRuleInheritance().getPreventInheritance();
         HoldComputedRules computedRule = cir.getHoldComputedRules();
@@ -196,6 +200,8 @@ public class DateRuleService {
             && endDate != null
             && pcrMaxEndDate.isAfter(endDate)) {
           computedRule.setMaxEndDate(pcrMaxEndDate);
+          computedRule.setInheritanceOrigin(InheritanceOrigin.INHERITED);
+          parentComputedRule.getRules().forEach(rule -> computedRule.getRules().add(rule));
           if (BooleanUtils.isTrue(rearrangement)) {
             computedRule.setPreventRearrangement(rearrangement);
           }

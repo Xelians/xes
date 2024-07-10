@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -87,6 +88,18 @@ class RuleIT extends BaseIT {
   }
 
   @Test
+  void should_reimport_rules_csv_should_erase_and_recreate_rules() throws IOException {
+    var tenant = nextTenant();
+    Path path = Paths.get(ItInit.RULE + "OK_regles_CSV.csv");
+
+    ResponseEntity<List<RuleDto>> response1 = restClient.createCsvRule(tenant, path);
+    assertEquals(HttpStatus.OK, response1.getStatusCode(), TestUtils.getBody(response1));
+
+    ResponseEntity<List<RuleDto>> response2 = restClient.createCsvRule(tenant, path);
+    assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
+  }
+
+  @Test
   void searchRulesTest() throws IOException {
     Long tenant = nextTenant();
 
@@ -95,15 +108,15 @@ class RuleIT extends BaseIT {
              {
                "$query": [
                   {
-                     "$neq": { "identifier": "BAD_666" }
+                     "$neq": { "Identifier": "BAD_666" }
                  }
                ],
                "$filter": {
                    "$offset": 10,
                    "$limit": 12,
-                   "$orderby": { "identifier": 1 }
+                   "$orderby": { "Identifier": 1 }
               },
-               "$projection": {"$fields": { "identifier": 1, "lastUpdate": 1, "status": 1 }}
+               "$projection": {"$fields": { "Identifier": 1, "LastUpdate": 1, "Status": 1 }}
             }
             """;
 

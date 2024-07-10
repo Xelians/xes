@@ -1,19 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.authentication.entity;
 
 import fr.xelians.esafe.organization.entity.UserDb;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -22,12 +16,15 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Table(indexes = {@Index(columnList = "token")})
 @Entity
+@Table(
+    name = "refresh_token",
+    indexes = {@Index(columnList = "token")})
 public class RefreshTokenDb {
 
   @Id
-  @GeneratedValue(generator = "global_generator")
+  @SequenceGenerator(name = "refresh_token_generator", sequenceName = "refresh_token_seq")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "refresh_token_generator")
   private long id;
 
   @ManyToOne

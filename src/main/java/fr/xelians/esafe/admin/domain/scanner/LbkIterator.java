@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.domain.scanner;
@@ -10,9 +11,9 @@ import fr.xelians.esafe.common.constant.Logbook;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.Hash;
 import fr.xelians.esafe.common.utils.HashUtils;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.domain.StorageAction;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.service.StorageService;
@@ -24,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
-public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe> {
+public abstract class LbkIterator implements AutoCloseable, Iterator<LogbookOperation> {
 
   private static final String PARSE_FAILED =
       "Failed to parse corrupted operation log - tenant: '%s' - id: '%s'";
@@ -63,7 +64,7 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
 
   protected abstract boolean hastNextOperation();
 
-  public OperationSe next() {
+  public LogbookOperation next() {
     if (!done && !hasNext()) {
       throw new NoSuchElementException("Operation not found");
     }
@@ -79,8 +80,8 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
     }
   }
 
-  private OperationSe nextOperation() throws IOException {
-    OperationSe operationSe = null;
+  private LogbookOperation nextOperation() throws IOException {
+    LogbookOperation logbookOperation = null;
 
     oups:
     while (line != null) {
@@ -88,26 +89,26 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
 
       switch (tokens[0]) {
         case OPERATION_BEGIN -> {
-          assertNull(operationSe);
+          assertNull(logbookOperation);
           // TOD0 should be abstract to be able to filter
-          operationSe = createOperation(tokens);
+          logbookOperation = createOperation(tokens);
         }
         case ACTION_CREATE -> {
-          assertNotNull(operationSe);
-          actionCreate(operationSe, tokens);
+          assertNotNull(logbookOperation);
+          actionCreate(logbookOperation, tokens);
         }
         case ACTION_UPDATE -> {
-          assertNotNull(operationSe);
-          actionUpdate(operationSe, tokens);
+          assertNotNull(logbookOperation);
+          actionUpdate(logbookOperation, tokens);
         }
         case ACTION_DELETE -> {
-          assertNotNull(operationSe);
-          actionDelete(operationSe, tokens);
+          assertNotNull(logbookOperation);
+          actionDelete(logbookOperation, tokens);
         }
         case OPERATION_COMMIT -> {
-          assertNotNull(operationSe);
-          commitOperation(operationSe, tokens);
-          return operationSe;
+          assertNotNull(logbookOperation);
+          commitOperation(logbookOperation, tokens);
+          return logbookOperation;
         }
         default -> {
           break oups;
@@ -121,21 +122,21 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
         "Read next logbook operation failed", String.format(PARSE_FAILED, tenantDb.getId(), lbkId));
   }
 
-  protected abstract void actionCreate(OperationSe operationSe, String[] tokens);
+  protected abstract void actionCreate(LogbookOperation logbookOperation, String[] tokens);
 
-  protected abstract void actionUpdate(OperationSe operationSe, String[] tokens);
+  protected abstract void actionUpdate(LogbookOperation logbookOperation, String[] tokens);
 
-  protected abstract void actionDelete(OperationSe operationSe, String[] tokens);
+  protected abstract void actionDelete(LogbookOperation logbookOperation, String[] tokens);
 
-  protected void assertNull(OperationSe operationSe) {
-    if (operationSe != null) {
+  protected void assertNull(LogbookOperation logbookOperation) {
+    if (logbookOperation != null) {
       throw new InternalException(
           "Null operation", String.format(PARSE_FAILED, tenantDb.getId(), lbkId));
     }
   }
 
-  protected void assertNotNull(OperationSe operationSe) {
-    if (operationSe == null) {
+  protected void assertNotNull(LogbookOperation logbookOperation) {
+    if (logbookOperation == null) {
       throw new InternalException(
           "Non null operation", String.format(PARSE_FAILED, tenantDb.getId(), lbkId));
     }
@@ -145,7 +146,7 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
   // CREATE;453;bin;MD5;2e32ee6b3922991e5a65f2d14094a22f
   // CREATE;456;uni;MD5;1b7e9e582dc07b757f10374ec7701116
   // COMMIT;SECURE_OPERATION;109;868;2022-04-25T00:49:43.608007
-  protected OperationSe createOperation(String[] tokens) {
+  protected LogbookOperation createOperation(String[] tokens) {
     OperationType type = OperationType.valueOf(tokens[1]);
     long te = Long.parseLong(tokens[2]);
     long id = Long.parseLong(tokens[3]);
@@ -159,7 +160,7 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
     String obData = tokens[11];
     LocalDateTime created = LocalDateTime.parse(tokens[12]);
 
-    return new OperationSe(
+    return new LogbookOperation(
         id,
         te,
         type,
@@ -175,17 +176,17 @@ public abstract class LbkIterator implements AutoCloseable, Iterator<OperationSe
         obData);
   }
 
-  protected void commitOperation(OperationSe operationSe, String[] tokens) {
-    operationSe.setModified(LocalDateTime.parse(tokens[4]));
+  protected void commitOperation(LogbookOperation logbookOperation, String[] tokens) {
+    logbookOperation.setModified(LocalDateTime.parse(tokens[4]));
 
     // Check if the checksum of this secure operation exists and is valid
-    if (checkStorageChain() && OperationType.SECURING == operationSe.getType()) {
-      checkChecksums(operationSe);
+    if (checkStorageChain() && OperationType.TRACEABILITY == logbookOperation.getType()) {
+      checkChecksums(logbookOperation);
     }
   }
 
-  protected void checkChecksums(OperationSe operationSe) {
-    for (StorageAction storageAction : operationSe.getStorageActions()) {
+  protected void checkChecksums(LogbookOperation logbookOperation) {
+    for (StorageAction storageAction : logbookOperation.getStorageActions()) {
       byte[] checksum = checksums.get(storageAction.getId());
       if (checksum == null || !Arrays.equals(checksum, storageAction.getChecksum())) {
         throw new InternalException(

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -178,10 +179,10 @@ class OntologyIT extends BaseIT {
                   {
                     "$and": [
                        {
-                         "$in": { "activationDate": ["1969-02-27", "1970-01-01"] }
+                         "$in": { "ActivationDate": ["1969-02-27", "1970-01-01"] }
                        },
                        {
-                         "$eq": { "status": "ACTIVE" }
+                         "$eq": { "Status": "ACTIVE" }
                        }
                     ]
                   }
@@ -189,9 +190,9 @@ class OntologyIT extends BaseIT {
                "$filter": {
                    "$offset": 0,
                    "$limit": 1,
-                   "$orderby": { "identifier": -1 }
+                   "$orderby": { "Identifier": -1 }
               },
-               "$projection": {"$fields": { "#tenant": 1 , "identifier": 1,  "name": 1 , "creationDate": 1, "status": 1 }}
+               "$projection": {"$fields": { "#tenant": 1 , "Identifier": 1,  "Name": 1 , "CreationDate": 1, "Status": 1 }}
             }
             """;
 
@@ -202,12 +203,16 @@ class OntologyIT extends BaseIT {
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchOntologies(tenant, query);
-    SearchResult<JsonNode> outputDtos2 = r3.getBody();
+    SearchResult<JsonNode> result3 = r3.getBody();
     assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    assertNotNull(result3);
 
-    assertNotNull(outputDtos2);
-    assertEquals(1, outputDtos2.results().size(), TestUtils.getBody(r3));
-    assertEquals(2, outputDtos2.hits().total(), TestUtils.getBody(r3));
+    JsonNode result = result3.results().getFirst();
+    assertEquals(1, result3.results().size(), TestUtils.getBody(r3));
+    assertEquals(2, result3.hits().total(), TestUtils.getBody(r3));
+    assertEquals(tenant, result.get("#tenant").asLong(), TestUtils.getBody(r2));
+
+    System.err.println(r3);
   }
 
   @Test

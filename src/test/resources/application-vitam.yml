@@ -1,9 +1,6 @@
 spring:
   application:
     name: eSafe (Integration)
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
 
 app:
   # Batchs (delay in milli-sec)

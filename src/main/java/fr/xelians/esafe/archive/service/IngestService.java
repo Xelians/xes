@@ -1,10 +1,15 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.service;
 
+import fr.xelians.esafe.antivirus.AntiVirus;
+import fr.xelians.esafe.antivirus.AntiVirusScanner;
+import fr.xelians.esafe.antivirus.ScanResult;
+import fr.xelians.esafe.antivirus.ScanStatus;
 import fr.xelians.esafe.archive.domain.atr.ArchiveTransferReply;
 import fr.xelians.esafe.archive.domain.ingest.AbstractManifestParser;
 import fr.xelians.esafe.archive.domain.ingest.ContextId;
@@ -17,7 +22,6 @@ import fr.xelians.esafe.archive.task.IngestionTask;
 import fr.xelians.esafe.common.constant.Env;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.ForbiddenException;
-import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
@@ -73,6 +77,7 @@ public class IngestService {
   private final LogbookService logbookService;
   private final DateRuleService dateRuleService;
   private final ReferentialService referentialService;
+  private final AntiVirusScanner antiVirusScanner;
 
   public Long ingestStream(
       Long tenant, ContextId contextId, InputStream inputStream, String user, String app)
@@ -181,19 +186,25 @@ public class IngestService {
     }
   }
 
+  /*
+   * As the NF-461 says, we must only generate an ATR when the ingest operation has succeed :
+   * "L’attestation est produite lorsque l’objet numérique et ses métadonnées sont dûment enregistrés sur
+   * l’ensemble des sites conservation, spécifiés dans la politique d’archivage électronique ou la convention
+   * d’archivage, connus du PA et conformes aux dispositions d’architecture."
+   *
+   * So, when an ATR of a failed ingest operation is requested, we throw a Not Found Exception.
+   */
   public InputStream getXmlAtrStream(Long tenant, Long id) throws IOException, XMLStreamException {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(id, ID_MUST_BE_NOT_NULL);
 
     TenantDb tenantDb = tenantService.getTenantDb(tenant);
     List<String> offers = tenantDb.getStorageOffers();
+
     try (StorageDao storageDao = storageService.createStorageDao(tenantDb);
         InputStream is = storageDao.getAtrStream(tenant, offers, id)) {
       ArchiveTransferReply atr = JsonService.toArchiveTransferReply(is);
       return XmlATR.createOkInputStream(atr);
-    } catch (NotFoundException ex) {
-      OperationDb operationDb = operationService.getOperationDb(tenant, id);
-      return XmlATR.createKoInputStream(operationDb);
     }
   }
 
@@ -230,6 +241,13 @@ public class IngestService {
       }
 
       // Check AV
+      if (antiVirusScanner.getName() != AntiVirus.None) {
+        ScanResult scanResult = antiVirusScanner.scan(sipPath);
+        if (scanResult.status() != ScanStatus.OK) {
+          throw new BadRequestException(
+              String.format("Archive is not virus safe: %s", scanResult.detail()));
+        }
+      }
 
       // Unzip (protect against Zip bomb & Zip slip)
       ZipUtils.unzip(sipPath, unzipDir);
@@ -240,6 +258,12 @@ public class IngestService {
         throw new FileNotFoundException("Archive does not contain a manifest");
       }
 
+      // Log - change to debug
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "operationid: {}  - manifest {} ", operation.getId(), Files.readString(manifestPath));
+      }
+
       // Validate manifest against Seda v2 xsd
       Sedav2Validator sedav2Validator = Sedav2Utils.getSedav2Validator(manifestPath);
       sedav2Validator.validate(manifestPath);
@@ -248,8 +272,18 @@ public class IngestService {
       // Parse manifest, check coherency and convert to json
       parser.parse(sedaVersion, manifestPath, unzipDir);
 
+      // Log - change to debug
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "operationid: {} - archivetransfer: {}",
+            operation.getId(),
+            parser.getArchiveTransfer());
+        parser
+            .getArchiveUnits()
+            .forEach(u -> log.debug("operationid: {} - archiveunit: {}", operation.getId(), u));
+      }
+
     } catch (IOException | SAXException | XMLStreamException ex) {
-      // TODO : generate Error ATR not here but dynamically from operation error
       throw new InternalException(ex);
     }
   }
@@ -258,7 +292,8 @@ public class IngestService {
       OperationDb operation,
       TenantDb tenantDb,
       List<ArchiveUnit> archiveUnits,
-      ArchiveTransfer archiveTransfert,
+      ArchiveTransfer archiveTransfer,
+      ManagementMetadata managementMetadata,
       List<DataObjectGroup> dataObjectGroups,
       IngestContractDb ingestContractDb) {
 
@@ -268,6 +303,7 @@ public class IngestService {
 
     Path unzipDir = getUnzipPath(operation);
     List<StorageObject> storageObjects = new ArrayList<>();
+    List<StorageObject> atrObjects = new ArrayList<>();
 
     try (StorageDao storageDao = storageService.createStorageDao(tenantDb)) {
 
@@ -306,10 +342,6 @@ public class IngestService {
       byte[] units = JsonService.collToBytes(archiveUnits, JsonConfig.DEFAULT);
       storageObjects.add(new ByteStorageObject(units, operationId, StorageObjectType.uni));
 
-      // Add ATR to offer
-      byte[] atr = JsonATR.toBytes(archiveTransfert, dataObjectGroups, archiveUnits);
-      storageObjects.add(new ByteStorageObject(atr, operationId, StorageObjectType.atr));
-
       // Add Operation to storage (This eventually allows to restore operation from offer)
       byte[] ops = JsonService.toBytes(operation, JsonConfig.DEFAULT);
       storageObjects.add(new ByteStorageObject(ops, operationId, StorageObjectType.ope, true));
@@ -319,9 +351,20 @@ public class IngestService {
           .putStorageObjects(tenant, storageOffers, storageObjects)
           .forEach(e -> operation.addAction(StorageAction.create(ActionType.CREATE, e)));
 
+      // Write ATR when all others objects were successfully written to offers
+      byte[] atr =
+          JsonATR.toBytes(archiveTransfer, managementMetadata, dataObjectGroups, archiveUnits);
+      atrObjects.add(new ByteStorageObject(atr, operationId, StorageObjectType.atr));
+
+      // Write to offers then create actions
+      storageDao
+          .putStorageObjects(tenant, storageOffers, atrObjects)
+          .forEach(e -> operation.addAction(StorageAction.create(ActionType.CREATE, e)));
+
     } catch (Exception ex) {
       // Rollback (best effort!)
       storageService.deleteObjectsQuietly(storageOffers, tenant, storageObjects);
+      storageService.deleteObjectsQuietly(storageOffers, tenant, atrObjects);
       throw new InternalException(ex);
     }
   }
@@ -331,7 +374,7 @@ public class IngestService {
       // The operation is written to database after the indexation
       operation.setStatus(OperationStatus.OK);
       operation.setOutcome(operation.getStatus().toString());
-      operation.setTypeInfo(operation.getType().toString());
+      operation.setTypeInfo(operation.getType().getInfo());
       operation.setMessage("Operation completed with success");
 
       searchService.bulkIndex(archiveUnits);

@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.common.utils;
@@ -29,6 +30,17 @@ public final class JsonUtils {
       List<Long> list = new ArrayList<>();
       for (JsonNode node : jsonNode) {
         list.add(node.asLong());
+      }
+      return list;
+    }
+    throw new InternalException("JsonNode is not an array");
+  }
+
+  public static List<String> toStrings(JsonNode jsonNode) {
+    if (jsonNode.isArray()) {
+      List<String> list = new ArrayList<>();
+      for (JsonNode node : jsonNode) {
+        list.add(node.asText());
       }
       return list;
     }

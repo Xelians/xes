@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.admin.service;
@@ -8,6 +9,8 @@ package fr.xelians.esafe.admin.service;
 import static fr.xelians.esafe.operation.domain.OperationFactory.rebuildIndexOp;
 import static fr.xelians.esafe.operation.domain.OperationFactory.resetTenantIndexOp;
 
+import fr.xelians.esafe.accession.domain.search.RegisterDetailsIndex;
+import fr.xelians.esafe.accession.domain.search.RegisterSummaryIndex;
 import fr.xelians.esafe.admin.domain.scanner.*;
 import fr.xelians.esafe.admin.domain.scanner.iterator.capacity.CapacityDbIterator;
 import fr.xelians.esafe.admin.domain.scanner.iterator.capacity.CapacityLbkIterator;
@@ -39,10 +42,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -66,31 +71,56 @@ public class IndexAdminService {
   @Value("${app.indexing.threads:16}")
   private int indexingThreads;
 
+  public void createAllIndex() throws IOException {
+    createIndex(ArchiveUnitIndex.NAME, ArchiveUnitIndex.ALIAS, ArchiveUnitIndex.MAPPING);
+    createIndex(LogbookIndex.NAME, LogbookIndex.ALIAS, LogbookIndex.MAPPING);
+    createIndex(
+        RegisterDetailsIndex.NAME, RegisterDetailsIndex.ALIAS, RegisterDetailsIndex.MAPPING);
+    createIndex(
+        RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterSummaryIndex.MAPPING);
+  }
+
   // Delete archive unit and logbook index
   // TODO Check if a rebuild operation is already running  (Status = commit)
-  public void deleteIndex() throws IOException {
-    searchEngineService.deleteIndexWithPrefix(LogbookIndex.INDEX);
-    searchEngineService.deleteIndexWithPrefix(ArchiveUnitIndex.INDEX);
+  public void deleteAllIndex() throws IOException {
+    searchEngineService.deleteIndexWithPrefix(RegisterSummaryIndex.NAME);
+    searchEngineService.deleteIndexWithPrefix(RegisterDetailsIndex.NAME);
+    searchEngineService.deleteIndexWithPrefix(LogbookIndex.NAME);
+    searchEngineService.deleteIndexWithPrefix(ArchiveUnitIndex.NAME);
   }
 
   // TODO Check if a rebuild operation is already running  (Status = commit)
-  public void resetIndex() throws IOException {
-    String indexName = LogbookIndex.INDEX + "." + LocalDateTime.now().format(FMT);
-    searchEngineService.removeAlias(LogbookIndex.ALIAS);
-    searchEngineService.deleteIndex(LogbookIndex.ALIAS);
-    searchEngineService.deleteIndexWithPrefix(LogbookIndex.INDEX);
-    searchEngineService.createIndex(indexName, LogbookIndex.ALIAS, LogbookIndex.MAPPING);
+  public void resetAllIndex() throws IOException {
+    resetIndex(RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterSummaryIndex.MAPPING);
+    resetIndex(RegisterDetailsIndex.NAME, RegisterDetailsIndex.ALIAS, RegisterDetailsIndex.MAPPING);
+    resetIndex(LogbookIndex.NAME, LogbookIndex.ALIAS, LogbookIndex.MAPPING);
+    resetIndex(ArchiveUnitIndex.NAME, ArchiveUnitIndex.ALIAS, ArchiveUnitIndex.MAPPING);
+  }
 
-    indexName = ArchiveUnitIndex.INDEX + "." + LocalDateTime.now().format(FMT);
-    searchEngineService.removeAlias(ArchiveUnitIndex.ALIAS);
-    searchEngineService.deleteIndex(ArchiveUnitIndex.ALIAS);
-    searchEngineService.deleteIndexWithPrefix(ArchiveUnitIndex.INDEX);
-    searchEngineService.createIndex(indexName, ArchiveUnitIndex.ALIAS, ArchiveUnitIndex.MAPPING);
+  private void createIndex(final String name, final String alias, final String mapping)
+      throws IOException {
+    Set<String> indices;
+    indices = searchEngineService.getIndicesByAlias(alias);
+    if (CollectionUtils.isEmpty(indices)) {
+      searchEngineService.createIndex(buildIndexName(name), alias, mapping);
+    }
+  }
+
+  private void resetIndex(final String name, final String alias, final String mapping)
+      throws IOException {
+    searchEngineService.removeAlias(alias);
+    searchEngineService.deleteIndex(alias);
+    searchEngineService.deleteIndexWithPrefix(name);
+    searchEngineService.createIndex(buildIndexName(name), alias, mapping);
+  }
+
+  private String buildIndexName(final String indexName) {
+    return indexName + "." + LocalDateTime.now().format(FMT);
   }
 
   // Delete, create and update archive unit and logbook index
   public Long rebuildIndex(Long tenant, String user, String app) throws IOException {
-    resetIndex();
+    resetAllIndex();
     OperationDb ope = operationService.save(rebuildIndexOp(tenant, user, app));
     processingService.submit(new ResetIndexTask(ope, this));
     return ope.getId();
@@ -174,9 +204,9 @@ public class IndexAdminService {
           IdSet idSet = OperationUtils.createIdSet(capacity)) {
         IteratorFactory factory =
             new ReindexSearchIndexIteratorFactory(storageService, operationService);
-        OperationProcessor parser = new ReindexSearchIndexProcessor(idSet, logbookService);
-        OperationUtils.scanDb(maxOperationId, tenant, factory, parser);
-        OperationUtils.scanLbk(tenantDb, offers, factory, parser);
+        OperationProcessor processor = new ReindexSearchIndexProcessor(idSet, logbookService);
+        OperationUtils.scanDb(maxOperationId, tenant, factory, processor);
+        OperationUtils.scanLbk(tenantDb, offers, factory, processor);
         // Chronicle Map Iterator is not thread safe and must only be accessed from a single thread
         for (Iterator<List<Long>> it = idSet.listIterator(); it.hasNext(); ) {
           indexService.indexArchives(storageDao, tenant, offers, it.next());

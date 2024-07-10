@@ -1,20 +1,18 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.logbook.service;
 
-import static co.elastic.clients.elasticsearch.core.search.TotalHitsRelation.Eq;
 import static fr.xelians.esafe.common.utils.ExceptionsUtils.format;
 
 import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
-import co.elastic.clients.elasticsearch.core.search.TotalHits;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import fr.xelians.esafe.archive.domain.search.search.Hits;
@@ -25,24 +23,23 @@ import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.JsonUtils;
-import fr.xelians.esafe.common.utils.Utils;
-import fr.xelians.esafe.logbook.domain.converter.LogbookConverter;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.logbook.domain.search.LogbookIndex;
 import fr.xelians.esafe.logbook.domain.search.LogbookParser;
 import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.operation.domain.OperationFactory;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.dto.vitam.VitamExternalEventDto;
 import fr.xelians.esafe.operation.entity.OperationDb;
-import fr.xelians.esafe.operation.entity.OperationSe;
 import fr.xelians.esafe.operation.service.OperationService;
-import fr.xelians.esafe.search.domain.dsl.bucket.Bucket;
+import fr.xelians.esafe.search.domain.dsl.bucket.Facet;
 import fr.xelians.esafe.search.service.SearchEngineService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -59,102 +56,120 @@ public class LogbookService {
   public static final String TENANT_MUST_BE_NOT_NULL = "Tenant must be not null";
   public static final int LOGBOOK_BULK_SIZE = 5000;
 
+  private final LogbookMapper logbookOperationMapper;
   private final SearchEngineService searchEngineService;
   private final OperationService operationService;
 
-  public static LogbookOperationDto toLogbookOperationDto(OperationSe operationSe) {
-    return Utils.copyProperties(operationSe, new LogbookOperationDto());
+  public LogbookOperationDto toLogbookOperationDto(LogbookOperation logbookOperation) {
+    return logbookOperationMapper.toLogbookOperationDto(logbookOperation);
+  }
+
+  public VitamLogbookOperationDto toVitamLogbookOperationDto(LogbookOperation logbookOperation) {
+    return logbookOperationMapper.toVitamLogbookOperationDto(logbookOperation);
   }
 
   public void index(OperationDb operation) throws IOException {
     index(operation.toOperationSe());
   }
 
-  public void index(OperationSe operation) throws IOException {
+  public void index(LogbookOperation operation) throws IOException {
     searchEngineService.index(LogbookIndex.ALIAS, operation);
   }
 
-  public void bulkIndex(List<OperationSe> operations) throws IOException {
-    for (List<OperationSe> list : ListUtils.partition(operations, LOGBOOK_BULK_SIZE)) {
+  public void bulkIndex(List<LogbookOperation> operations) throws IOException {
+    for (List<LogbookOperation> list : ListUtils.partition(operations, LOGBOOK_BULK_SIZE)) {
       searchEngineService.bulkIndex(LogbookIndex.ALIAS, list);
     }
   }
 
-  public OperationSe getOperationSe(Long tenant, Long id) throws IOException {
+  public LogbookOperation getOperationSe(Long tenant, Long id) throws IOException {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(id, "Id  must be not null");
 
     GetRequest request =
         new GetRequest.Builder().index(LogbookIndex.ALIAS).id(String.valueOf(id)).build();
-    OperationSe operationSe = searchEngineService.getById(request, OperationSe.class);
+    LogbookOperation logbookOperation =
+        searchEngineService.getById(request, LogbookOperation.class);
 
-    if (operationSe == null || !tenant.equals(operationSe.getTenant())) {
+    if (logbookOperation == null || !tenant.equals(logbookOperation.getTenant())) {
       throw new NotFoundException(
           "Logbook operation not found",
           String.format(
               "Failed to find logbook operation with id: '%s' - tenant: '%s'",
               request.id(), tenant));
     }
-    return operationSe;
+    return logbookOperation;
+  }
+
+  public VitamLogbookOperationDto getVitamLogbookOperationDto(Long tenant, Long id)
+      throws IOException {
+    return toVitamLogbookOperationDto(getOperationSe(tenant, id));
   }
 
   public LogbookOperationDto getLogbookOperationDto(Long tenant, Long id) throws IOException {
     return toLogbookOperationDto(getOperationSe(tenant, id));
   }
 
-  public SearchResult<JsonNode> searchLogbookOperation(Long tenant, Long id) throws IOException {
+  public SearchResult<LogbookOperationDto> searchLogbookOperationDto(Long tenant, Long id)
+      throws IOException {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(id, "Id  must be not null");
-
-    SearchQuery query = queryById(id);
-    return searchLogbookOperations(tenant, query);
+    return searchLogbookOperationDtos(tenant, queryById(id));
   }
 
-  // "$eq": { "#id": id }
+  public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperationDto(Long tenant, Long id)
+      throws IOException {
+    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
+    Assert.notNull(id, "Id  must be not null");
+    return searchVitamLogbookOperationDtos(tenant, queryById(id));
+  }
+
   private SearchQuery queryById(Long id) {
     ObjectNode idNode = JsonNodeFactory.instance.objectNode();
     ObjectNode queryNode = JsonNodeFactory.instance.objectNode();
-    queryNode.set("$eq", idNode.put("#id", id));
+    queryNode.set("$eq", idNode.put("#id", id.toString()));
     ObjectNode projectionNode = JsonNodeFactory.instance.objectNode();
     return SearchQuery.builder().queryNode(queryNode).projectionNode(projectionNode).build();
   }
 
-  public SearchResult<JsonNode> searchLogbookOperations(Long tenant, SearchQuery searchQuery)
-      throws IOException {
-    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
-    Assert.notNull(searchQuery, "Query must be not null");
+  public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperationDtos(
+      Long tenant, SearchQuery searchQuery) throws IOException {
+    return search(tenant, searchQuery, this::toVitamLogbookOperationDto);
+  }
 
-    LogbookParser queryParser = LogbookParser.create(tenant);
+  public SearchResult<LogbookOperationDto> searchLogbookOperationDtos(
+      Long tenant, SearchQuery searchQuery) throws IOException {
+    return search(tenant, searchQuery, this::toLogbookOperationDto);
+  }
+
+  private <T> SearchResult<T> search(
+      Long tenant, SearchQuery query, Function<LogbookOperation, T> mapper) throws IOException {
+    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
+    Assert.notNull(query, "Query must be not null");
+
+    LogbookParser parser = LogbookParser.create(tenant);
 
     try {
-      SearchRequest searchRequest = queryParser.createSearchRequest(searchQuery);
-      log.info("Search JSON query: {}", JsonUtils.toJson(searchRequest));
-      SearchResponse<JsonNode> response = searchEngineService.search(searchRequest, JsonNode.class);
+      SearchRequest request = parser.createSearchRequest(query);
+      log.info("Search JSON query: {}", JsonUtils.toJson(request));
+      SearchResponse<LogbookOperation> response =
+          searchEngineService.search(request, LogbookOperation.class);
 
-      HitsMetadata<JsonNode> hits = response.hits();
-      TotalHits totalHits = hits.total();
-      Long total = totalHits == null ? null : getTotal(totalHits);
-      Integer offset = searchRequest.from();
-      Integer limit = searchRequest.size();
-      Hits hit = new Hits(offset, limit, hits.hits().size(), total);
+      HitsMetadata<LogbookOperation> hitsMeta = response.hits();
+      Hits hit = Hits.create(request, hitsMeta);
 
-      Map<String, List<Bucket>> facets = searchEngineService.getFacets(response.aggregations());
-      List<JsonNode> nodes =
-          hits.hits().stream()
+      List<Facet> facets = SearchEngineService.getFacets(response.aggregations());
+      List<T> nodes =
+          hitsMeta.hits().stream()
               .map(co.elastic.clients.elasticsearch.core.search.Hit::source)
-              .map(LogbookConverter::convert)
+              .map(mapper)
               .toList();
-      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, searchQuery);
+      return new SearchResult<>(HttpStatus.OK.value(), hit, nodes, facets, query);
 
     } catch (JsonProcessingException ex) {
       throw new BadRequestException(
-          "Search request failed", String.format("Failed to parse query '%s'", searchQuery), ex);
+          "Search request failed", String.format("Failed to parse query '%s'", query), ex);
     }
-  }
-
-  // Return max result plus 1 if the result overflows
-  private static Long getTotal(TotalHits totalHits) {
-    return totalHits.relation() == Eq ? totalHits.value() : totalHits.value() + 1;
   }
 
   public Long createExternalLogbookOperation(

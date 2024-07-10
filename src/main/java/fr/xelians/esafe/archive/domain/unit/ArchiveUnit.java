@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.unit;
@@ -84,6 +85,7 @@ public class ArchiveUnit implements DocumentSe {
   @JsonProperty("_sps")
   protected HashSet<String> serviceProducers = new HashSet<>();
 
+  // The operation id that created the unit
   @JsonProperty("_opi")
   protected Long operationId;
 
@@ -229,18 +231,6 @@ public class ArchiveUnit implements DocumentSe {
 
   @JsonProperty("FullText")
   protected String fullText;
-
-  public ArchiveUnit() {}
-
-  //  @JsonProperty("SystemId")
-  //  public void setSystemId(String str) {
-  //    // Do nothing - SystemId is an alias for id
-  //  }
-
-  //  @JsonProperty("SystemId")
-  //  public String getSystemId() {
-  //    return id.toString();
-  //  }
 
   @JsonIgnore
   public boolean isDetached() {

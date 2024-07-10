@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -9,7 +10,7 @@ import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import fr.xelians.esafe.admin.domain.report.EliminationReport;
+import fr.xelians.esafe.admin.domain.report.EliminationReportDto;
 import fr.xelians.esafe.admin.domain.report.ReportStatus;
 import fr.xelians.esafe.admin.domain.report.ReportType;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
@@ -46,7 +47,7 @@ class ArchiveEliminateIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
@@ -66,7 +67,6 @@ class ArchiveEliminateIT extends BaseIT {
     Arrays.fill(sips, 0, sips.length, sip);
     List<Map<String, Long>> ids = Scenario.uploadSips(restClient, tenant, tmpDir, sips);
     List<Long> id1s = ids.stream().map(m -> m.get("UNIT_ID1")).toList();
-    // Utils.sleep(1000);
 
     String searchQuery =
         """
@@ -133,12 +133,12 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReport report = JsonService.to(repPath, EliminationReport.class);
+    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
     assertEquals(ReportStatus.OK, report.status());
-    assertEquals(9, report.units().size());
+    assertEquals(9, report.archiveUnits().size());
 
     // Search for units
     ResponseEntity<SearchResult<JsonNode>> r3 =
@@ -211,12 +211,12 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReport report = JsonService.to(repPath, EliminationReport.class);
+    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
     assertEquals(ReportStatus.OK, report.status());
-    assertEquals(4, report.units().size());
+    assertEquals(4, report.archiveUnits().size());
 
     // Search for units
     ResponseEntity<SearchResult<JsonNode>> r3 =
@@ -280,12 +280,12 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReport report = JsonService.to(repPath, EliminationReport.class);
+    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
     assertEquals(ReportStatus.OK, report.status());
-    assertEquals(7, report.units().size());
+    assertEquals(7, report.archiveUnits().size());
 
     // Search for units
     ResponseEntity<SearchResult<JsonNode>> r3 =
@@ -442,12 +442,12 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReport report = JsonService.to(repPath, EliminationReport.class);
+    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
     assertEquals(ReportStatus.OK, report.status());
-    assertEquals(ids.get("UNIT_ID3"), report.units().getFirst());
+    assertEquals(ids.get("UNIT_ID3").toString(), report.archiveUnits().getFirst().systemId());
 
     // Search units
     String searchQuery =
@@ -606,10 +606,10 @@ class ArchiveEliminateIT extends BaseIT {
     // Get elimination report
     Path repPath5 = tmpDir.resolve(requestId5 + ".elimination_report");
     restClient.downloadReport(tenant, requestId5, repPath5);
-    EliminationReport report5 = JsonService.to(repPath5, EliminationReport.class);
+    EliminationReportDto report5 = JsonService.to(repPath5, EliminationReportDto.class);
     assertEquals(tenant, report5.tenant());
     assertEquals(requestId5, report5.operationId().toString());
-    assertEquals(ids1.get("UNIT_ID3"), report5.units().getFirst());
+    assertEquals(ids1.get("UNIT_ID3").toString(), report5.archiveUnits().getFirst().systemId());
 
     // Search
     String searchQuery =

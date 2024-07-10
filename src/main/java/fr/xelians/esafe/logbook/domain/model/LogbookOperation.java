@@ -1,9 +1,10 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
-package fr.xelians.esafe.operation.entity;
+package fr.xelians.esafe.logbook.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,7 +21,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class OperationSe implements DocumentSe {
+public class LogbookOperation implements DocumentSe {
 
   @JsonProperty("_operationId")
   private Long id;
@@ -66,9 +67,9 @@ public class OperationSe implements DocumentSe {
 
   @JsonIgnore private List<StorageAction> storageActions = new ArrayList<>();
 
-  public OperationSe() {}
+  public LogbookOperation() {}
 
-  public OperationSe(
+  public LogbookOperation(
       Long id,
       Long tenant,
       OperationType type,

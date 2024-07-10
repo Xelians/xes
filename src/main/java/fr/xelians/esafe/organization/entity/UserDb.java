@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.organization.entity;
@@ -34,7 +35,9 @@ import org.hibernate.validator.constraints.Length;
  */
 @Getter
 @Setter
+@Entity
 @Table(
+    name = "user_account",
     uniqueConstraints = {
       @UniqueConstraint(
           name = "unique_user_identifier_organization_id",
@@ -46,11 +49,11 @@ import org.hibernate.validator.constraints.Length;
           name = "unique_user_email",
           columnNames = {"email"})
     })
-@Entity
 public class UserDb extends AbstractBaseDb {
 
   @Id
-  @GeneratedValue(generator = "global_generator")
+  @SequenceGenerator(name = "user_account_generator", sequenceName = "user_account_seq")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_account_generator")
   protected Long id;
 
   @Column(nullable = false, updatable = false)

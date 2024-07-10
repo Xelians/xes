@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.converter;
@@ -11,7 +12,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
-public class ObjectConverter implements Converter {
+public final class ObjectConverter implements Converter {
 
   public static final ObjectConverter INSTANCE = new ObjectConverter();
 
@@ -78,24 +79,24 @@ public class ObjectConverter implements Converter {
     }
   }
 
-  static void convertOperations(ObjectNode dstNode, JsonNode value) {
+  static void convertOperations(ObjectNode dstNode, JsonNode valueNode) {
     ArrayNode anode = dstNode.putArray("#operations");
-    for (JsonNode node : value) {
+    for (JsonNode node : valueNode) {
       anode.add(node.asText());
     }
   }
 
-  static void convertUp(ObjectNode dstNode, JsonNode value) {
+  static void convertUp(ObjectNode dstNode, JsonNode valueNode) {
     ArrayNode anode = dstNode.putArray("#unitups");
-    String v = value.asText();
-    if (!v.equals("-1")) anode.add(v);
+    String value = valueNode.asText();
+    if (!value.equals("-1")) anode.add(value);
   }
 
-  static void convertUs(ObjectNode dstNode, JsonNode value) {
+  static void convertUs(ObjectNode dstNode, JsonNode valueNode) {
     ArrayNode anode = dstNode.putArray("#allunitups");
-    for (JsonNode node : value) {
-      String v = node.asText();
-      if (!v.equals("-1")) anode.add(v);
+    for (JsonNode node : valueNode) {
+      String value = node.asText();
+      if (!value.equals("-1")) anode.add(value);
     }
   }
 

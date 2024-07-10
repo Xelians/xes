@@ -1,12 +1,14 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.archive.domain.ingest;
 
 import static fr.xelians.esafe.archive.domain.unit.ArchiveUnit.ROOT;
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Validator;
 import fr.xelians.esafe.archive.domain.search.ArchiveUnitIndex;
 import fr.xelians.esafe.archive.domain.unit.*;
@@ -15,6 +17,7 @@ import fr.xelians.esafe.archive.domain.unit.rules.management.Management;
 import fr.xelians.esafe.archive.service.DateRuleService;
 import fr.xelians.esafe.archive.service.IngestService;
 import fr.xelians.esafe.archive.service.SearchService;
+import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.ManifestException;
 import fr.xelians.esafe.common.utils.*;
 import fr.xelians.esafe.operation.domain.OperationType;
@@ -31,7 +34,9 @@ import fr.xelians.esafe.referential.service.AgencyService;
 import fr.xelians.esafe.referential.service.IngestContractService;
 import fr.xelians.esafe.referential.service.OntologyService;
 import fr.xelians.esafe.referential.service.ProfileService;
-import fr.xelians.esafe.search.domain.field.Field;
+import fr.xelians.esafe.search.domain.dsl.parser.FieldContext;
+import fr.xelians.esafe.search.domain.dsl.parser.NamedField;
+import fr.xelians.esafe.search.domain.field.*;
 import fr.xelians.esafe.sequence.SequenceService;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,7 +141,7 @@ public abstract class AbstractManifestParser {
 
   public abstract void parse(String sedaVersion, Path manifestPath, Path sipDir) throws IOException;
 
-  public abstract ArchiveTransfer getArchiveTransfert();
+  public abstract ArchiveTransfer getArchiveTransfer();
 
   public abstract List<DataObjectGroup> getDataObjectGroups();
 
@@ -170,7 +175,7 @@ public abstract class AbstractManifestParser {
 
     ArchiveUnit linkUnit = linkSystemIdMap.get(systemId);
     if (linkUnit == null) {
-      linkUnit = searchService.getArchiveUnit(tenant, systemId);
+      linkUnit = searchService.getLinkedArchiveUnit(tenant, systemId);
       checkParentIds(linkUnit);
       linkSystemIdMap.put(systemId, linkUnit);
     }
@@ -183,11 +188,52 @@ public abstract class AbstractManifestParser {
     Key<String, String> key = new Key<>(metadataName, metadataValue);
     ArchiveUnit linkUnit = linkKeyMap.get(key);
     if (linkUnit == null) {
-      linkUnit = searchService.getArchiveUnit(tenant, key);
+      NamedField namedField = getNamedField(metadataName);
+      FieldValue fieldValue = getFieldValue(namedField, metadataValue);
+      linkUnit = searchService.getLinkedArchiveUnit(tenant, namedField, fieldValue);
       checkParentIds(linkUnit);
       linkKeyMap.put(key, linkUnit);
     }
     return linkUnit;
+  }
+
+  private static FieldValue getFieldValue(NamedField namedField, String metadataValue) {
+    return switch (namedField.field().getType()) {
+      case DoubleField.TYPE -> FieldValue.of(Double.parseDouble(metadataValue));
+      case LongField.TYPE, IntegerField.TYPE -> FieldValue.of(Long.parseLong(metadataValue));
+      case DateField.TYPE, KeywordField.TYPE, TextField.TYPE -> FieldValue.of(metadataValue);
+      default -> throw new BadRequestException(
+          "Check attached unit failed",
+          String.format(
+              "Bad type '%s' for attachement key: %s",
+              namedField.field().getType(), namedField.fieldName()));
+    };
+  }
+
+  private static NamedField getNamedField(String fieldName) {
+    if (ArchiveUnitIndex.INSTANCE.isSpecialField(fieldName)) {
+      return ArchiveUnitIndex.INSTANCE.getSpecialNamedField(fieldName, FieldContext.QUERY);
+    }
+
+    Field field = ArchiveUnitIndex.INSTANCE.getAliasField(fieldName, FieldContext.QUERY);
+    if (field != null) {
+      return new NamedField(fieldName, field);
+    }
+
+    // Do not accept _ and others weirds characters
+    if (FieldUtils.isNotAlphaNumeric(fieldName)) {
+      throw new ManifestException(
+          "Check attached unit failed",
+          String.format("Field '%s' must only contain alpha numeric characters", fieldName));
+    }
+
+    if (ArchiveUnitIndex.INSTANCE.isStdField(fieldName)) {
+      return new NamedField(fieldName, ArchiveUnitIndex.INSTANCE.getField(fieldName));
+    }
+
+    throw new ManifestException(
+        "Check attached unit failed",
+        String.format("Field '%s' must be a standard field", fieldName));
   }
 
   private void checkUpdateOperationIsAllowed() {

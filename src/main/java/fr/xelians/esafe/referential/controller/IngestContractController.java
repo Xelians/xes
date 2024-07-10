@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.controller;
@@ -60,6 +61,12 @@ public class IngestContractController {
 
   @GetMapping(V1 + INGEST_CONTRACTS)
   public SearchResult<JsonNode> searchIngestContracts(
+      @RequestHeader(Header.X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query) {
+    return ingestContractService.search(tenant, query);
+  }
+
+  @PostMapping(V2 + INGEST_CONTRACTS + "/search")
+  public SearchResult<JsonNode> searchIngestContractsV2(
       @RequestHeader(Header.X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query) {
     return ingestContractService.search(tenant, query);
   }

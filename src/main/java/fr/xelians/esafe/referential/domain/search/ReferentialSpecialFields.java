@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.domain.search;
@@ -20,19 +21,20 @@ public final class ReferentialSpecialFields {
 
   private ReferentialSpecialFields() {}
 
+  // Don't add score. It does not exist in postgresql (maybe we could map #score to _id instead)
   private static Map<String, String> createBaseFields() {
-    return Collections.emptyMap();
+    return Map.ofEntries(Map.entry("#id", "_id"));
   }
 
   // Unsupported fields : #nbunits, #nbobjects
   private static Map<String, String> createQueryFields() {
-    return Collections.emptyMap();
+    return BASE_FIELDS;
   }
 
   // Query supported fields
   // Vitam unsupported fields : #nbunits, #nbobjects, #score, #storage
   private static Map<String, String> createProjectionFields() {
-    return CollUtils.concatMap(BASE_FIELDS, Map.of("#tenant", "tenant"));
+    return CollUtils.concatMap(BASE_FIELDS, Map.of("#tenant", "_tenant"));
   }
 
   // Update supported fields
@@ -40,7 +42,7 @@ public final class ReferentialSpecialFields {
     return Collections.emptyMap();
   }
 
-  // Reclassification  supported fields
+  // Reclassification supported fields
   // An archive unit accepts one and only one parent.
   // So #unitup and #unitups refer to the same property.
   private static Map<String, String> createReclassificationFields() {

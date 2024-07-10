@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.integrationtest;
@@ -10,9 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
-import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.logbook.dto.LogbookOperationDto;
+import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import fr.xelians.esafe.operation.domain.OperationStatus;
+import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import fr.xelians.esafe.operation.dto.vitam.VitamExternalEventDto;
@@ -30,12 +32,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import nu.xom.ParsingException;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 
 class LogbookIT extends BaseIT {
 
@@ -45,7 +49,7 @@ class LogbookIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
@@ -60,7 +64,6 @@ class LogbookIT extends BaseIT {
     VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
     ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
     assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
-    Utils.sleep(1000);
 
     String query =
         """
@@ -74,8 +77,11 @@ class LogbookIT extends BaseIT {
           }
           """;
 
-    ResponseEntity<SearchResult<JsonNode>> r2 = restClient.searchLogbookOperation(tenant, query);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    ResponseEntity<SearchResult<JsonNode>> r2 =
+        Awaitility.await()
+            .until(
+                () -> restClient.searchVitamLogbookOperation(tenant, query),
+                r -> r.getBody() != null && r.getBody().hits().size() > 0);
 
     SearchResult<JsonNode> result = r2.getBody();
     assertNotNull(result, TestUtils.getBody(r2));
@@ -95,7 +101,6 @@ class LogbookIT extends BaseIT {
     VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
     ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
     assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
-    Utils.sleep(1000);
 
     String query =
         """
@@ -113,11 +118,16 @@ class LogbookIT extends BaseIT {
         }
         """;
 
-    ResponseEntity<SearchResult<JsonNode>> r2 = restClient.searchLogbookOperation(tenant, query);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    ResponseEntity<SearchResult<JsonNode>> r2 =
+        Awaitility.await()
+            .until(
+                () -> restClient.searchVitamLogbookOperation(tenant, query),
+                r -> r.getBody() != null && r.getBody().hits().size() > 0);
 
     SearchResult<JsonNode> result = r2.getBody();
     assertNotNull(result, TestUtils.getBody(r2));
+
+    System.err.println("r2" + r2);
 
     List<JsonNode> results = result.results();
     assertFalse(results.isEmpty(), TestUtils.getBody(r2));
@@ -134,8 +144,6 @@ class LogbookIT extends BaseIT {
 
     ArchiveTransfer sip = SipFactory.createComplexSip(tmpDir, 1);
     Map<String, Long> ids = Scenario.uploadSip(restClient, tenant, tmpDir, sip);
-
-    Utils.sleep(1000);
 
     String updateQuery =
         """
@@ -193,21 +201,22 @@ class LogbookIT extends BaseIT {
 
     String requestId = r1.getHeaders().getFirst(X_REQUEST_ID);
     OperationDto operation = restClient.waitForOperation(tenant, requestId, 10, OperationStatus.OK);
-
     assertEquals(OperationStatus.OK, operation.status());
-    assertEquals(HttpStatus.ACCEPTED, r1.getStatusCode(), TestUtils.getBody(r1));
 
     // Wait for Elastic to index
-    Utils.sleep(1000);
+    VitamLogbookOperationDto logbookOperation =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getVitamLogbookOperation(tenant, requestId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
-    ResponseEntity<LogbookOperationDto> r2 = restClient.getLogbookOperation(tenant, requestId);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
-
-    LogbookOperationDto logbookOperation = r2.getBody();
     assertNotNull(logbookOperation);
     assertEquals(operation.id(), logbookOperation.getId());
     assertEquals(operation.tenant(), logbookOperation.getTenant());
-    assertEquals(operation.type(), logbookOperation.getType());
+    assertTrue(operation.type().toString().startsWith(logbookOperation.getEvTypeProc()));
 
     String query =
         """
@@ -222,21 +231,31 @@ class LogbookIT extends BaseIT {
                 }
                 """;
 
-    ResponseEntity<SearchResult<JsonNode>> r4 = restClient.searchLogbookOperation(tenant, query);
-    assertEquals(HttpStatus.OK, r4.getStatusCode(), TestUtils.getBody(r4));
-    SearchResult<JsonNode> result4 = r4.getBody();
-    assertNotNull(result4, TestUtils.getBody(r4));
+    ResponseEntity<SearchResult<JsonNode>> r3 =
+        Awaitility.await()
+            .until(
+                () -> restClient.searchVitamLogbookOperation(tenant, query),
+                r -> r.getBody() != null && r.getBody().hits().size() > 0);
 
-    System.err.println(r4);
-
-    ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchLogbookOperation(tenant, query);
-    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
     SearchResult<JsonNode> result = r3.getBody();
-
     assertNotNull(result, TestUtils.getBody(r3));
     assertTrue(result.hits().size() > 0, TestUtils.getBody(r3));
     assertEquals(
         tenant, result.results().getFirst().get("#tenant").asLong(), TestUtils.getBody(r3));
+
+    ResponseEntity<SearchResult<LogbookOperationDto>> r4 =
+        Awaitility.await()
+            .until(
+                () -> restClient.searchLogbookOperation(tenant, query),
+                r -> r.getBody() != null && r.getBody().hits().size() > 0);
+
+    SearchResult<LogbookOperationDto> result4 = r4.getBody();
+    assertNotNull(result4, TestUtils.getBody(r4));
+    assertTrue(result4.hits().size() > 0, TestUtils.getBody(r4));
+    assertEquals(tenant, result4.results().getFirst().tenant(), TestUtils.getBody(r4));
+    assertEquals(
+        OperationType.INGEST_ARCHIVE, result4.results().getFirst().type(), TestUtils.getBody(r4));
+    assertEquals("OK", result4.results().getFirst().outcome(), TestUtils.getBody(r4));
   }
 
   @Test
@@ -253,18 +272,22 @@ class LogbookIT extends BaseIT {
     String requestId = r1.getHeaders().getFirst(X_REQUEST_ID);
     OperationDto operation =
         restClient.waitForOperation(tenant, requestId, 10, RestClient.OP_FINAL);
-    assertEquals(HttpStatus.ACCEPTED, r1.getStatusCode(), TestUtils.getBody(r1));
     // TODO Get Sip and assert parent == systemId
 
     // Get operation in logbook index
-    ResponseEntity<LogbookOperationDto> r2 = restClient.getLogbookOperation(tenant, requestId);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
-    LogbookOperationDto logbookOperation = r2.getBody();
+    VitamLogbookOperationDto logbookOperation =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getVitamLogbookOperation(tenant, requestId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
     assertNotNull(logbookOperation);
     assertEquals(operation.id(), logbookOperation.getId());
     assertEquals(operation.tenant(), logbookOperation.getTenant());
-    assertEquals(operation.type(), logbookOperation.getType());
+    assertTrue(operation.type().toString().startsWith(logbookOperation.getEvTypeProc()));
   }
 
   @Test
@@ -273,17 +296,17 @@ class LogbookIT extends BaseIT {
     long systemId = Scenario.createScenario03(restClient, tenant, userDto, tmpDir);
 
     ResponseEntity<List<AgencyDto>> response =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto(2));
+        restClient.createAgencies(tenant, DtoFactory.createAgencyDto(3));
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
-    IngestContractDto ic2 = DtoFactory.createIngestContractDto(2);
+    IngestContractDto ic2 = DtoFactory.createIngestContractDto(3);
     ic2.setLinkParentId(systemId);
     ResponseEntity<List<IngestContractDto>> r2 = restClient.createIngestContract(tenant, ic2);
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
 
     // Create Sip
     Path sipPath = tmpDir.resolve("sip.zip");
-    sedaService.write(SipFactory.createSimpleSip(tmpDir, 2), sipPath);
+    sedaService.write(SipFactory.createSimpleSip(tmpDir, 3), sipPath);
 
     // Upload Sip
     ResponseEntity<Void> r3 = restClient.uploadSip(tenant, sipPath);
@@ -297,13 +320,35 @@ class LogbookIT extends BaseIT {
     // TODO Get Sip and assert parent == systemId
 
     // Get operation in logbook index
-    ResponseEntity<LogbookOperationDto> r4 = restClient.getLogbookOperation(tenant, requestId);
-    assertEquals(HttpStatus.OK, r4.getStatusCode(), TestUtils.getBody(r4));
-    LogbookOperationDto logbookOperation = r4.getBody();
+    VitamLogbookOperationDto vitamLogbookOperation =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getVitamLogbookOperation(tenant, requestId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
+
+    assertNotNull(vitamLogbookOperation);
+    assertEquals(operation.id(), vitamLogbookOperation.getId());
+    assertEquals(operation.tenant(), vitamLogbookOperation.getTenant());
+    assertTrue(operation.type().toString().startsWith(vitamLogbookOperation.getEvTypeProc()));
+
+    LogbookOperationDto logbookOperation =
+        Awaitility.await()
+            .until(
+                () -> restClient.getLogbookOperation(tenant, requestId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
 
     assertNotNull(logbookOperation);
-    assertEquals(operation.id(), logbookOperation.getId());
-    assertEquals(operation.tenant(), logbookOperation.getTenant());
-    assertEquals(operation.type(), logbookOperation.getType());
+    assertEquals(vitamLogbookOperation.getId(), logbookOperation.id());
+    assertEquals(vitamLogbookOperation.getEvId(), logbookOperation.id());
+    assertEquals(vitamLogbookOperation.getTenant(), logbookOperation.tenant());
+    assertTrue(
+        logbookOperation.type().toString().startsWith(vitamLogbookOperation.getEvTypeProc()));
+    assertEquals(vitamLogbookOperation.getEvIdAppSession(), logbookOperation.applicationId());
+    assertEquals(vitamLogbookOperation.getOutcome(), logbookOperation.outcome());
+    assertEquals(vitamLogbookOperation.getAgId(), logbookOperation.userIdentifier());
   }
 }

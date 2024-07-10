@@ -1,13 +1,13 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation.entity;
 
-import static fr.xelians.esafe.sequence.Sequence.ALLOCATION_SIZE;
-
 import fr.xelians.esafe.common.utils.HashUtils;
+import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.domain.StorageAction;
@@ -23,19 +23,18 @@ import org.apache.commons.lang3.Validate;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.Length;
 
-@SequenceGenerator(
-    name = "global_generator",
-    sequenceName = "global",
-    allocationSize = ALLOCATION_SIZE)
 @Getter
 @Setter
-@Table(indexes = {@Index(columnList = "tenant, id")})
 @Entity
+@Table(
+    name = "operation",
+    indexes = {@Index(columnList = "tenant, id")})
 @DynamicUpdate
 public class OperationDb {
 
   @Id
-  @GeneratedValue(generator = "global_generator")
+  @SequenceGenerator(name = "global_generator", sequenceName = "global_seq")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "global_generator")
   private Long id;
 
   private Long lbkId;
@@ -60,11 +59,9 @@ public class OperationDb {
   @Enumerated(EnumType.STRING)
   private OperationType type;
 
-  @Column(nullable = false, updatable = false)
-  @NotNull
-  private Boolean toSecure;
+  @NotNull private Boolean toSecure;
 
-  @NotNull private Boolean secured;
+  @NotNull private Boolean toRegister;
 
   @NotNull
   @Enumerated(EnumType.STRING)
@@ -116,15 +113,36 @@ public class OperationDb {
   public OperationDb(
       OperationType opType,
       Long tenant,
-      boolean toSecure,
       String userIdentifier,
       String applicationId,
       String contractIdentifier) {
 
+    this(opType, tenant, userIdentifier, applicationId, contractIdentifier, false, false);
+  }
+
+  public OperationDb(
+      OperationType opType,
+      Long tenant,
+      String userIdentifier,
+      String applicationId,
+      String contractIdentifier,
+      boolean toSecure) {
+    this(opType, tenant, userIdentifier, applicationId, contractIdentifier, toSecure, false);
+  }
+
+  public OperationDb(
+      OperationType opType,
+      Long tenant,
+      String userIdentifier,
+      String applicationId,
+      String contractIdentifier,
+      boolean toSecure,
+      boolean toRegister) {
+
     this.type = opType;
     this.tenant = tenant;
     this.toSecure = toSecure;
-    this.secured = false;
+    this.toRegister = toRegister;
     this.userIdentifier = userIdentifier;
     this.applicationId = Objects.toString(applicationId, "");
     this.contractIdentifier = contractIdentifier;
@@ -157,26 +175,26 @@ public class OperationDb {
     actions = new ArrayList<>();
   }
 
-  public OperationSe toOperationSe() {
+  public LogbookOperation toOperationSe() {
     // Base operation properties
-    OperationSe operationSe = new OperationSe();
-    operationSe.setId(id);
-    operationSe.setTenant(tenant);
-    operationSe.setType(type);
-    operationSe.setMessage(message);
-    operationSe.setUserIdentifier(userIdentifier);
-    operationSe.setApplicationId(applicationId);
-    operationSe.setCreated(created);
-    operationSe.setModified(modified);
+    LogbookOperation logbookOperation = new LogbookOperation();
+    logbookOperation.setId(id);
+    logbookOperation.setTenant(tenant);
+    logbookOperation.setType(type);
+    logbookOperation.setMessage(message);
+    logbookOperation.setUserIdentifier(userIdentifier);
+    logbookOperation.setApplicationId(applicationId);
+    logbookOperation.setCreated(created);
+    logbookOperation.setModified(modified);
 
     // For logbook operation (search engine and/or lbk)
-    operationSe.setTypeInfo(typeInfo);
-    operationSe.setOutcome(outcome);
-    operationSe.setObjectIdentifier(objectIdentifier);
-    operationSe.setObjectInfo(objectInfo);
-    operationSe.setObjectData(objectData);
+    logbookOperation.setTypeInfo(typeInfo);
+    logbookOperation.setOutcome(outcome);
+    logbookOperation.setObjectIdentifier(objectIdentifier);
+    logbookOperation.setObjectInfo(objectInfo);
+    logbookOperation.setObjectData(objectData);
 
-    operationSe.setStorageActions(actions.stream().map(StorageAction::create).toList());
-    return operationSe;
+    logbookOperation.setStorageActions(actions.stream().map(StorageAction::create).toList());
+    return logbookOperation;
   }
 }

@@ -1,19 +1,22 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.operation.repository;
 
-import fr.xelians.esafe.operation.entity.DummyEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
 
-public interface SeqLbkRepository extends JpaRepository<DummyEntity, Long> {
+@Repository
+public class SeqLbkRepository {
 
-  @Query(value = "select currval('logbook')", nativeQuery = true)
-  long getCurrentValue();
+  @PersistenceContext private EntityManager entityManager;
 
-  @Query(value = "select nextval('logbook')", nativeQuery = true)
-  long getNextValue();
+  public long getNextValue() {
+    return (long)
+        entityManager.createNativeQuery("select nextval('logbook_seq')").getSingleResult();
+  }
 }

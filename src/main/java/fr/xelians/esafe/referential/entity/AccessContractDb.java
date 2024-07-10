@@ -1,6 +1,7 @@
 /*
- * Ce programme est un logiciel libre. Vous pouvez le modifier, l'utiliser et
- * le redistribuer en respectant les termes de la license Ceccil v2.1.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.referential.entity;
@@ -13,15 +14,11 @@ import java.util.HashSet;
 import lombok.Getter;
 import lombok.Setter;
 
-/*
-Hibernate automatically translates the bean validation annotations applied to the entities into the DDL schema metadata.
-For example @NotNull is translated to @Column(nullable = false). This feature is enabled when the property
-hibernate.validator.apply_to_ddl property is set to true (which is normally the default).
-*/
-
 @Getter
 @Setter
+@Entity
 @Table(
+    name = "access_contract",
     uniqueConstraints = {
       @UniqueConstraint(
           name = "unique_accesscontract_tenant_identifier",
@@ -30,7 +27,6 @@ hibernate.validator.apply_to_ddl property is set to true (which is normally the 
           name = "unique_accesscontract_tenant_name",
           columnNames = {"tenant", "name"})
     })
-@Entity
 public class AccessContractDb extends AbstractReferentialDb {
 
   /** Liste les RootUnits autorisées */
@@ -66,3 +62,9 @@ public class AccessContractDb extends AbstractReferentialDb {
   //  private HashSet<RuleType> ruleCategoryToFilter;
 
 }
+
+/*
+Hibernate automatically translates the bean validation annotations applied to the entities into the DDL schema metadata.
+For example @NotNull is translated to @Column(nullable = false). This feature is enabled when the property
+hibernate.validator.apply_to_ddl property is set to true (which is normally the default).
+*/
