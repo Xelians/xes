@@ -15,6 +15,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.flipkart.zjsonpatch.JsonDiff;
+import fr.xelians.esafe.admin.domain.report.ArchiveReporter;
+import fr.xelians.esafe.admin.domain.report.ReportStatus;
+import fr.xelians.esafe.admin.domain.report.ReportType;
 import fr.xelians.esafe.archive.domain.ingest.OntologyMapper;
 import fr.xelians.esafe.archive.domain.search.ArchiveUnitQueryFactory;
 import fr.xelians.esafe.archive.domain.search.updaterule.RuleLists;
@@ -45,10 +48,12 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
 import fr.xelians.esafe.referential.domain.RuleType;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.entity.RuleDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
 import fr.xelians.esafe.referential.service.OntologyService;
+import fr.xelians.esafe.referential.service.RuleService;
 import fr.xelians.esafe.search.service.SearchEngineService;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.domain.dao.StorageDao;
@@ -76,6 +81,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -98,6 +106,7 @@ public class UpdateRulesService {
   private final DateRuleService dateRuleService;
   private final AccessContractService accessContractService;
   private final OntologyService ontologyService;
+  private final RuleService ruleService;
 
   public Long updateRules(
       Long tenant, String accessContract, UpdateRuleQuery ruleQuery, String user, String app) {
@@ -119,6 +128,11 @@ public class UpdateRulesService {
   public Path check(OperationDb operation, TenantDb tenantDb) {
 
     Long tenant = tenantDb.getId();
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          "Failed to update rules", String.format("Tenant '%s' is not active", tenant));
+    }
+
     Map<String, RuleDb> ruleMap = new HashMap<>();
 
     // Get the accessContact and the mapper
@@ -172,8 +186,8 @@ public class UpdateRulesService {
               jsonUnitMap.put(indexedUnitId, jsonUnit);
 
               boolean isModified = deleteRules(mgt, ruleLists.deleteRules());
-              isModified |= addRules(mgt, ruleLists.addRules());
-              isModified |= updateRules(mgt, ruleLists.updateRules());
+              isModified |= addRules(tenant, mgt, ruleLists.addRules());
+              isModified |= updateRules(tenant, mgt, ruleLists.updateRules());
 
               if (isModified) {
                 removeEmptyRules(indexedUnit);
@@ -380,17 +394,23 @@ public class UpdateRulesService {
     return isModified;
   }
 
-  private boolean addRules(Management mgt, List<AbstractRules> actionRules) {
+  private boolean addRules(Long tenant, Management mgt, List<AbstractRules> actionRules) {
     boolean isModified = false;
+    Map<String, RuleDb> ruleMap = new HashMap<>();
+
     for (AbstractRules actionRule : actionRules) {
+      actionRule.getRules().forEach(rule -> checkRule(ruleMap, tenant, rule.getRuleName()));
       mgt.setRules(actionRule);
       isModified = true;
     }
     return isModified;
   }
 
-  private boolean updateRules(Management mgt, Map<RuleType, UpdateRules> actionRules) {
+  private boolean updateRules(Long tenant, Management mgt, Map<RuleType, UpdateRules> actionRules) {
+
     boolean isModified = false;
+    Map<String, RuleDb> ruleMap = new HashMap<>();
+
     for (Map.Entry<RuleType, UpdateRules> actionRule : actionRules.entrySet()) {
       AbstractRules aRules = mgt.getRules(actionRule.getKey());
       UpdateRules uRules = actionRule.getValue();
@@ -416,13 +436,12 @@ public class UpdateRulesService {
 
       for (var uRule : uRules.rules()) {
         Rule rule = aRuleMap.get(uRule.oldRule());
-        if (rule == null) {
-          throw new BadRequestException(
-              "Failed tu update rules", String.format("Rule '%s' does not exist", uRule.oldRule()));
-        }
+        if (rule == null) continue;
+
         isModified = true;
 
         if (StringUtils.isNotBlank(uRule.rule())) {
+          checkRule(ruleMap, tenant, uRule.rule());
           rule.setRuleName(uRule.rule());
         }
         if (BooleanUtils.isTrue(uRule.deleteStartDate())) {
@@ -467,6 +486,16 @@ public class UpdateRulesService {
       }
     }
     return isModified;
+  }
+
+  private void checkRule(Map<String, RuleDb> ruleMap, Long tenant, String ruleName) {
+    // Throw a NotFound exception if rule does not exist
+    RuleDb ruleDb = ruleMap.computeIfAbsent(ruleName, id -> ruleService.getEntity(tenant, id));
+
+    if (ruleDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          "Failed tu update rules", String.format("Rule '%s' is not active", ruleName));
+    }
   }
 
   private static boolean checkEmptyRules(AbstractRules arules) {
@@ -560,6 +589,8 @@ public class UpdateRulesService {
   private void doStore(
       OperationDb operation, TenantDb tenantDb, InputStream ausStream, StorageDao storageDao)
       throws IOException {
+
+    Long operationId = operation.getId();
     Long tenant = operation.getTenant();
     List<String> offers = tenantDb.getStorageOffers();
 
@@ -571,60 +602,75 @@ public class UpdateRulesService {
     // Reset Actions
     operation.resetActions();
 
-    // Get updated Archive Units from stream
-    Iterator<ArchiveUnit> iterator = JsonService.toArchiveUnitIterator(ausStream);
-    Iterator<List<ArchiveUnit>> listIterator = ListIterator.iterator(iterator, 10000);
-    while (listIterator.hasNext()) {
-      List<ArchiveUnit> indexedUnits = listIterator.next();
-      Map<Long, List<ArchiveUnit>> gmap = UnitUtils.groupByOpId(indexedUnits);
+    Path reportPath = Workspace.createTempFile(operation);
+    try (ArchiveReporter reporter =
+        new ArchiveReporter(ReportType.UPDATE_RULE, ReportStatus.OK, operation, reportPath)) {
 
-      // Write archive units by operation id
-      for (Map.Entry<Long, List<ArchiveUnit>> entry : gmap.entrySet()) {
-        Long opId = entry.getKey();
-        List<ArchiveUnit> groupedUnits = entry.getValue();
+      // Get updated Archive Units from stream
+      Iterator<ArchiveUnit> iterator = JsonService.toArchiveUnitIterator(ausStream);
+      Iterator<List<ArchiveUnit>> listIterator = ListIterator.iterator(iterator, 10000);
+      while (listIterator.hasNext()) {
+        List<ArchiveUnit> indexedUnits = listIterator.next();
+        Map<Long, List<ArchiveUnit>> gmap = UnitUtils.groupByOpId(indexedUnits);
 
-        // Read from storage offers archive units with unit.operationId and group them by archive
-        // unit id
-        Map<Long, ArchiveUnit> storedUnits =
-            UnitUtils.mapById(storageDao.getArchiveUnits(tenant, offers, opId));
+        // Write archive units by operation id
+        for (Map.Entry<Long, List<ArchiveUnit>> entry : gmap.entrySet()) {
+          Long opId = entry.getKey();
+          List<ArchiveUnit> groupedUnits = entry.getValue();
 
-        // Replace the stored archive with the updated unit
-        groupedUnits.forEach(unit -> storedUnits.put(unit.getId(), unit));
+          // Read from storage offers archive units with unit.operationId and group them by archive
+          // unit id
+          Map<Long, ArchiveUnit> storedUnits =
+              UnitUtils.mapById(storageDao.getArchiveUnits(tenant, offers, opId));
 
-        byte[] bytes = JsonService.collToBytes(storedUnits.values(), JsonConfig.DEFAULT);
-        storageObjects.add(new ByteStorageObject(bytes, opId, StorageObjectType.uni));
-        byteCount += bytes.length;
+          // Replace the stored archive with the updated unit
+          for (ArchiveUnit au : groupedUnits) {
+            storedUnits.put(au.getId(), au);
+            reporter.writeUnit(au);
+          }
 
-        if (byteCount > 256_000_000) {
-          // Commit the created/modified units to offers and create actions
+          byte[] bytes = JsonService.collToBytes(storedUnits.values(), JsonConfig.DEFAULT);
+          storageObjects.add(new ByteStorageObject(bytes, opId, StorageObjectType.uni));
+          byteCount += bytes.length;
+
+          if (byteCount > 256_000_000) {
+            // Commit the created/modified units to offers and create actions
+            storageDao
+                .putStorageObjects(tenant, offers, storageObjects)
+                .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
+            storageObjects = new ArrayList<>();
+            byteCount = 0;
+          }
+        }
+
+        // Commit the created/modified units to offers and create actions
+        if (!storageObjects.isEmpty()) {
           storageDao
               .putStorageObjects(tenant, offers, storageObjects)
               .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
-          storageObjects = new ArrayList<>();
-          byteCount = 0;
         }
+
+        // Index Archive units in Search Engine (properties are already built in each archive)
+        if (isFirst && !listIterator.hasNext()) {
+          searchService.bulkIndexRefresh(indexedUnits);
+        } else {
+          searchService.bulkIndex(indexedUnits);
+          needRefresh = true;
+        }
+        isFirst = false;
       }
 
-      // Commit the created/modified units to offers and create actions
-      if (!storageObjects.isEmpty()) {
-        storageDao
-            .putStorageObjects(tenant, offers, storageObjects)
-            .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
+      if (needRefresh) {
+        searchService.refresh();
       }
-
-      // Index Archive units in Search Engine (properties are already built in each archive)
-      if (isFirst && !listIterator.hasNext()) {
-        searchService.bulkIndexRefresh(indexedUnits);
-      } else {
-        searchService.bulkIndex(indexedUnits);
-        needRefresh = true;
-      }
-      isFirst = false;
     }
 
-    if (needRefresh) {
-      searchService.refresh();
-    }
+    // Write delete report to offer
+    List<StorageObject> psois =
+        List.of(new PathStorageObject(reportPath, operationId, StorageObjectType.rep));
+    storageDao
+        .putStorageObjects(tenant, offers, psois)
+        .forEach(e -> operation.addAction(StorageAction.create(ActionType.CREATE, e)));
   }
 
   // TODO finaliser le update rule. Add  delete et update (bien parser avec les valeurs)

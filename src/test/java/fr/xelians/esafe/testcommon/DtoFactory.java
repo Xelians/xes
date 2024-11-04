@@ -6,6 +6,8 @@
 
 package fr.xelians.esafe.testcommon;
 
+import static fr.xelians.esafe.organization.domain.Role.GlobalRole.ROLE_ADMIN;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +21,6 @@ import fr.xelians.esafe.archive.domain.search.update.JsonPatchBuilder;
 import fr.xelians.esafe.archive.domain.unit.ArchiveUnit;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.operation.dto.vitam.VitamExternalEventDto;
-import fr.xelians.esafe.organization.domain.role.GlobalRole;
 import fr.xelians.esafe.organization.dto.OrganizationDto;
 import fr.xelians.esafe.organization.dto.SignupDto;
 import fr.xelians.esafe.organization.dto.TenantDto;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class DtoFactory {
 
-  private static final AtomicLong counter = new AtomicLong();
+  private static final AtomicLong counter = new AtomicLong(2);
   private static final ObjectMapper mapper;
 
   static {
@@ -85,7 +86,7 @@ public class DtoFactory {
     tenantDto.setDescription("My Tenant Description");
     tenantDto.setStorageOffers(new ArrayList<>(List.of("S3:minio01", "FS:FS01")));
     //        tenantDto.setStorageOffers(new ArrayList<>(List.of("FS:FS01")));
-    tenantDto.setEncrypted(false);
+    tenantDto.setEncrypted(true);
     tenantDto.setStatus(Status.ACTIVE);
     return tenantDto;
   }
@@ -111,7 +112,7 @@ public class DtoFactory {
     userDto.setLastName("Dupond");
     userDto.setEmail("jean.dupont_" + identifier + "@mymail.com");
     userDto.setStatus(Status.ACTIVE);
-    userDto.getGlobalRoles().add(GlobalRole.ROLE_ADMIN);
+    userDto.getGlobalRoles().add(ROLE_ADMIN);
     return userDto;
   }
 
@@ -213,6 +214,14 @@ public class DtoFactory {
   }
 
   // Access Contract
+  public static AccessContractDto createAccessContractDto(Path path) {
+    try {
+      return mapper.readValue(path.toFile(), new TypeReference<>() {});
+    } catch (IOException e) {
+      throw new InternalException("AccessContractDto creation failed", "Failed with exception:", e);
+    }
+  }
+
   public static AccessContractDto createAccessContractDto(int n) {
     String str = TestUtils.pad(n);
 
@@ -229,6 +238,14 @@ public class DtoFactory {
   }
 
   // Ingest Contract
+  public static IngestContractDto createIngestContractDto(Path path) {
+    try {
+      return mapper.readValue(path.toFile(), new TypeReference<>() {});
+    } catch (IOException e) {
+      throw new InternalException("IngestContractDto creation failed", "Failed with exception:", e);
+    }
+  }
+
   public static IngestContractDto createIngestContractDto(int n) {
     String str = TestUtils.pad(n);
     IngestContractDto ingestContractDto = new IngestContractDto();
@@ -269,6 +286,14 @@ public class DtoFactory {
   }
 
   // ProfileDto
+  public static ProfileDto createProfileDto(Path path) {
+    try {
+      return mapper.readValue(path.toFile(), new TypeReference<>() {});
+    } catch (IOException e) {
+      throw new InternalException("ProfileDto creation failed", "Failed with exception:", e);
+    }
+  }
+
   public static ProfileDto createProfileDto(int n) {
     String str = TestUtils.pad(n);
     ProfileDto profileDto = new ProfileDto();

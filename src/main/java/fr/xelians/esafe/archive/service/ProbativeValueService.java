@@ -11,6 +11,8 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fr.xelians.esafe.admin.domain.report.*;
+import fr.xelians.esafe.admin.domain.report.AtrDetail;
+import fr.xelians.esafe.admin.domain.report.BinaryObjectDetail;
 import fr.xelians.esafe.admin.domain.scanner.LbkIterator;
 import fr.xelians.esafe.admin.domain.scanner.iterator.probative.ProbativeLbkIterator;
 import fr.xelians.esafe.archive.domain.atr.ArchiveTransferReply;
@@ -41,6 +43,7 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
 import fr.xelians.esafe.referential.service.OntologyService;
@@ -50,7 +53,8 @@ import fr.xelians.esafe.storage.domain.dao.StorageDao;
 import fr.xelians.esafe.storage.domain.object.PathStorageObject;
 import fr.xelians.esafe.storage.domain.object.StorageObject;
 import fr.xelians.esafe.storage.service.StorageService;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -61,6 +65,9 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -120,6 +127,10 @@ public class ProbativeValueService {
   public Path check(OperationDb operation, TenantDb tenantDb) {
 
     Long tenant = tenantDb.getId();
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          "Failed to get probative value", String.format("Tenant '%s' is not active", tenant));
+    }
 
     // Get the accessContact and the mapper
     AccessContractDb accessContract =
@@ -329,7 +340,7 @@ public class ProbativeValueService {
 
     ArchiveTransferReply atr = JsonService.toArchiveTransferReply(atrBytes);
     for (DataObjectGroupReply dogReply : atr.getDataObjectGroupReplys()) {
-      for (BinaryDataObjectReply bdoReply : dogReply.getBinaryDataObjectReplys()) {
+      for (BinaryDataObjectReply bdoReply : dogReply.getBinaryDataObjects()) {
         bdorMap.put(bdoReply.getSystemId(), new AtrBinaryObject(atr.getGrantDate(), bdoReply));
       }
     }

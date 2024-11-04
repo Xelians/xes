@@ -8,7 +8,7 @@ package fr.xelians.esafe.operation;
 
 import static fr.xelians.esafe.common.constant.Api.*;
 import static fr.xelians.esafe.common.constant.Header.*;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ADMIN;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_MANAGER;
 
 import fr.xelians.esafe.common.domain.SortDir;
 import fr.xelians.esafe.common.utils.SearchUtils;
@@ -26,14 +26,16 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RestController
 @RequestMapping(ADMIN_EXTERNAL)
-@Secured(ROLE_ADMIN)
 @RequiredArgsConstructor
 @Validated
 public class OperationController {
@@ -42,6 +44,7 @@ public class OperationController {
 
   // Vitam Operations
   @Operation(summary = "Get VITAM operation. Use only if you need VITAM compatibility.")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(V1 + OPERATIONS_ID)
   public OperationResult<VitamOperationDto> getVitamOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId) {
@@ -51,6 +54,7 @@ public class OperationController {
   @Operation(
       summary = "Search for VITAM operations with (GET). Use only if you need VITAM compatibility.",
       hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(V1 + OPERATIONS)
   public OperationResult<VitamOperationListDto> searchVitamOperationsWithGet(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody OperationQuery operationQuery) {
@@ -58,6 +62,7 @@ public class OperationController {
   }
 
   @Operation(summary = "Search for VITAM operations. Use only if you need VITAM compatibility.")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(V1 + OPERATIONS)
   public OperationResult<VitamOperationListDto> searchVitamOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody OperationQuery operationQuery) {
@@ -66,6 +71,7 @@ public class OperationController {
 
   // Operations
   @Operation(summary = "Get operation")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(V2 + OPERATIONS_ID)
   public OperationDto getOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId) {
@@ -73,6 +79,7 @@ public class OperationController {
   }
 
   @Operation(summary = "Search for operations")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(V2 + OPERATIONS)
   public SliceResult<OperationDto> searchOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -87,8 +94,8 @@ public class OperationController {
     return operationService.searchOperationDtos(tenant, operationQuery, pageRequest);
   }
 
-  // Operations status
   @Operation(summary = "Get operation status")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(V1 + OPERATIONS_ID_STATUS)
   public OperationStatusDto getOperationStatus(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId) {
@@ -96,6 +103,7 @@ public class OperationController {
   }
 
   @Operation(summary = "Search for operations status")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(V1 + OPERATIONS_STATUS)
   public SliceResult<OperationStatusDto> searchOperationsStatus(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,

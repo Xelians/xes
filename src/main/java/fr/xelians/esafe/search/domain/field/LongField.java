@@ -8,7 +8,11 @@ package fr.xelians.esafe.search.domain.field;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
+import fr.xelians.esafe.common.utils.NumUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class LongField extends Field {
 
   public static final String MAPPING_PREFIX = "Long";
@@ -60,6 +64,11 @@ public class LongField extends Field {
     }
     throw new BadRequestException(
         "As value failed", String.format("Value '%s' is not a valid long number", node.asText()));
+  }
+
+  @Override
+  public Long asValue(Object value) {
+    return NumUtils.toLong(value);
   }
 
   @Override

@@ -24,6 +24,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class TaskPoolExecutor extends ThreadPoolExecutor {
   private final Object lock = new Object();

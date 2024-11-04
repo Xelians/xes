@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.exception.technical;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class InternalException extends TechnicalException {
 
   public InternalException(String title, String message) {

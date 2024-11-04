@@ -12,6 +12,9 @@ import lombok.Getter;
 import lombok.ToString;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -36,5 +39,9 @@ public final class ByteStorageObject extends StorageObject {
     super(id, type, ignoreChecksum, ignoreEncryption);
     Assert.notNull(bytes, "Bytes cannot be null");
     this.bytes = bytes;
+  }
+
+  public long getSize() {
+    return bytes.length;
   }
 }

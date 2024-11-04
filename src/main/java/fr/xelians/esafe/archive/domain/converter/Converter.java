@@ -8,6 +8,9 @@ package fr.xelians.esafe.archive.domain.converter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface Converter {
 
   JsonNode convert(JsonNode srcNode);

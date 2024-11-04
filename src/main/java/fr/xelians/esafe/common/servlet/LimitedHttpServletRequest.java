@@ -11,6 +11,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class LimitedHttpServletRequest extends HttpServletRequestWrapper {
   private final long maxLength;
 

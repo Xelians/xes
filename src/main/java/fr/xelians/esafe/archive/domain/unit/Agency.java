@@ -11,6 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.common.utils.Utils;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Agency(
     @JsonProperty("Identifier") String identifier, @JsonProperty("Name") String name) {
 

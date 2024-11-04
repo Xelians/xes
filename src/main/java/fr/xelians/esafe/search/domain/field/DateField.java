@@ -9,8 +9,12 @@ package fr.xelians.esafe.search.domain.field;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.utils.DateUtils;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class DateField extends Field {
 
   public static final String MAPPING_PREFIX = "Date";
@@ -54,5 +58,12 @@ public class DateField extends Field {
   @Override
   public LocalDateTime asValue(JsonNode value) {
     return DateUtils.parseToLocalDateTime(value.asText());
+  }
+
+  @Override
+  public LocalDateTime asValue(Object value) {
+    if (value instanceof LocalDateTime ldt) return ldt;
+    if (value instanceof LocalDate ld) return ld.atStartOfDay();
+    return DateUtils.parseToLocalDateTime(value.toString());
   }
 }

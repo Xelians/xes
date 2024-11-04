@@ -11,15 +11,19 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import fr.xelians.esafe.archive.domain.ingest.OntologyMapper;
 import fr.xelians.esafe.archive.domain.search.ArchiveUnitParser;
+import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import fr.xelians.esafe.search.domain.dsl.parser.eql.RootQuery;
-import io.jsonwebtoken.lang.Assert;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class EliminationParser extends ArchiveUnitParser {
 
   public EliminationParser(
@@ -37,7 +41,9 @@ public class EliminationParser extends ArchiveUnitParser {
   }
 
   public EliminationRequest createRequest(EliminationQuery eliminationQuery) {
-    if (isEmpty(eliminationQuery.queryNode())) {
+
+    SearchQuery searchQuery = eliminationQuery.searchQuery();
+    if (isEmpty(searchQuery.queryNode())) {
       throw new BadRequestException(CREATION_FAILED, QUERY_IS_EMPTY_OR_NOT_DEFINED);
     }
 
@@ -48,32 +54,32 @@ public class EliminationParser extends ArchiveUnitParser {
     }
 
     // The context of this query
-    SearchContext searchContext = new SearchContext(eliminationQuery.type());
-
-    return new EliminationRequest(doCreateSearchRequest(searchContext, eliminationQuery));
+    SearchContext searchContext = new SearchContext(searchQuery.type());
+    return new EliminationRequest(
+        doCreateSearchRequest(searchContext, searchQuery), eliminationQuery.eliminationDate());
   }
 
   private SearchRequest doCreateSearchRequest(
-      SearchContext searchContext, EliminationQuery eliminationQuery) {
+      SearchContext searchContext, SearchQuery searchQuery) {
 
     // Obtain root units
     List<Long> roots =
-        eliminationQuery.roots() == null
+        searchQuery.roots() == null
             ? Collections.emptyList()
-            : eliminationQuery.roots().stream().filter(id -> id >= 0).toList();
+            : searchQuery.roots().stream().filter(id -> id >= 0).toList();
 
     // Obtain root query
-    RootQuery rootQuery = createRootQuery(searchContext, eliminationQuery.queryNode());
+    RootQuery rootQuery = createRootQuery(searchContext, searchQuery.queryNode());
     int depth = Math.max(0, rootQuery.depth());
 
     // Create filter queries
     List<Query> filterQueries = createFilterQueries(searchContext, roots, depth);
 
     // Create sort options
-    List<SortOptions> sortOptions = createSortOptions(searchContext, eliminationQuery.filterNode());
+    List<SortOptions> sortOptions = createSortOptions(searchContext, searchQuery.filterNode());
 
     // Create from & size
-    int[] limits = createLimits(eliminationQuery.filterNode());
+    int[] limits = createLimits(searchQuery.filterNode());
 
     // Create search request
     return SearchRequest.of(

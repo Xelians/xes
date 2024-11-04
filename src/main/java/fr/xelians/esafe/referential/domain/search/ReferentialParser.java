@@ -19,6 +19,9 @@ import jakarta.persistence.criteria.Path;
 import java.util.List;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ReferentialParser<T> extends SqlParser<T> {
 
   private ReferentialParser(

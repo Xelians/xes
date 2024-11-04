@@ -41,6 +41,8 @@ import lombok.Builder;
  * <p>$projections précise l'ensemble des champs devant être retournés
  *
  * <p>$facets représente n tableau de requêtes d'agrégation
+ *
+ * @author Emmanuel Deviller
  */
 @Builder
 public record SearchQuery(

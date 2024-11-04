@@ -13,6 +13,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateQuery(
     @JsonProperty("$roots") @Size(max = 1024) List<Long> roots,
     @JsonProperty("$type") @Size(max = 1024) String type,

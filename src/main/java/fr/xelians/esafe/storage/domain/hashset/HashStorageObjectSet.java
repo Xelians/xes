@@ -18,6 +18,9 @@ import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class HashStorageObjectSet implements StorageObjectSet {
 

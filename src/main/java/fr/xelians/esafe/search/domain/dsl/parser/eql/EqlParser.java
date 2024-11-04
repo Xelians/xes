@@ -25,7 +25,11 @@ import java.util.Map.Entry;
 import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
 
-/** Elastic Query Language Parser */
+/**
+ * Elastic Query Language Parser *
+ *
+ * @author Emmanuel Deviller
+ */
 public abstract class EqlParser extends DslParser<Query> {
 
   // TODO MAX_FACETS & LIMIT_MAX must be configurable - 1000 is the default
@@ -196,7 +200,9 @@ public abstract class EqlParser extends DslParser<Query> {
       case "$date_range" -> createDateRangeAggregation(searchContext, entry.getValue());
       case "$filters" -> createFiltersAggregation(searchContext, entry.getValue());
       default -> throw new BadRequestException(
-          CREATION_FAILED, String.format("Failed to process $facets - unknown field '%s'", name));
+          CREATION_FAILED,
+          String.format(
+              "Failed to process $facets '%s'- unknown field '%s' ", name, entry.getKey()));
     };
   }
 

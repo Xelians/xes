@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.utils;
 import java.util.List;
 import java.util.concurrent.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ThreadUtils {
 
   private ThreadUtils() {}

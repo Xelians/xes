@@ -1,0 +1,15 @@
+[
+	{
+		"Identifier":"IC-000008",
+		"Name":"Contrat d'entree Max Physique",
+		"Description":"Contrat d'entree Max Physique",
+		"Status":"ACTIVE",
+		"EveryDataObjectVersion":true,
+		"ArchiveProfiles":["PR-000007", "PR-000022"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

@@ -11,12 +11,12 @@ import static fr.xelians.esafe.common.exception.Category.TECHNICAL;
 import static fr.xelians.esafe.common.utils.ExceptionsUtils.format;
 import static org.springframework.http.HttpStatus.*;
 
-import fr.xelians.esafe.authentication.domain.AuthContext;
 import fr.xelians.esafe.common.exception.Category;
 import fr.xelians.esafe.common.exception.EsafeException;
 import fr.xelians.esafe.common.exception.functional.ForbiddenException;
 import fr.xelians.esafe.common.servlet.PbDetail;
 import fr.xelians.esafe.common.utils.ExceptionsUtils;
+import fr.xelians.esafe.security.resourceserver.AuthContext;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.Objects;
@@ -33,6 +33,9 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -45,7 +48,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     return pb;
   }
 
-  @ExceptionHandler({ForbiddenException.class, AccessDeniedException.class})
+  @ExceptionHandler(AccessDeniedException.class)
+  public ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
+    String title = "Access to resource is denied";
+    PbDetail pb = createPbDetail(FORBIDDEN, title, ExceptionsUtils.getMessages(ex));
+    log.warn(format(pb, ex.getMessage()), ex);
+    return pb;
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
   public ProblemDetail handleForbidden(ForbiddenException ex) {
     String title = "Access to resource is forbidden";
     PbDetail pb = createPbDetail(FORBIDDEN, title, ExceptionsUtils.getMessages(ex));

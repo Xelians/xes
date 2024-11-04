@@ -13,6 +13,9 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class CheckLbkIterator extends AllLbkIterator {
 
   public CheckLbkIterator(TenantDb tenantDb, List<String> offers, StorageService storageService) {

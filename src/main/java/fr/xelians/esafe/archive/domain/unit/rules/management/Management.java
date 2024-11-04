@@ -15,17 +15,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode
 @ToString
 public class Management {
-
-  @JsonProperty("OriginatingAgencyIdentifier")
-  protected String originatingAgencyIdentifier;
-
-  @JsonProperty("SubmissionAgencyIdentifier")
-  protected String submissionAgencyIdentifier;
 
   @JsonProperty("AccessRule")
   protected AccessRules accessRules;

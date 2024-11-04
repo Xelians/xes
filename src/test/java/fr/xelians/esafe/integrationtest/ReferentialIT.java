@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.xelians.esafe.authentication.service.AuthenticationService;
 import fr.xelians.esafe.referential.dto.OntologyDto;
 import fr.xelians.esafe.referential.service.AgencyService;
 import fr.xelians.esafe.referential.service.IngestContractService;
@@ -24,7 +23,6 @@ import fr.xelians.esafe.testcommon.DtoFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -41,23 +39,12 @@ class ReferentialIT extends BaseIT {
   private static final String ONTOLOGIES_URL = ADMIN_EXTERNAL + V1 + ONTOLOGIES;
 
   @Autowired private MockMvc mvc;
-
   @Autowired private ObjectMapper objectMapper;
-
   @MockBean private OntologyService ontologyService;
-
   @MockBean private AgencyService agencyService;
-
   @MockBean private IngestContractService ingestContractService;
-
   @MockBean private ProfileService profileService;
-
   @MockBean private RuleService ruleService;
-
-  @MockBean private AuthenticationService userDetailsService;
-
-  @BeforeEach
-  void beforeEach() {}
 
   //    @Test
   void whenInputIsValid_thenReturnsStatus200() throws Exception {

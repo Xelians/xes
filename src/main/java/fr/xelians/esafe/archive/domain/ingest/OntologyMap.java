@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.ingest;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OntologyMap {
 
   String get(String src);

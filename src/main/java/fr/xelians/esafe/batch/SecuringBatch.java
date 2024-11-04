@@ -6,8 +6,8 @@
 
 package fr.xelians.esafe.batch;
 
-import fr.xelians.esafe.cluster.domain.NodeFeature;
-import fr.xelians.esafe.cluster.service.ServerNodeService;
+import fr.xelians.esafe.cluster.domain.JobType;
+import fr.xelians.esafe.cluster.service.ClusterService;
 import fr.xelians.esafe.common.utils.Hash;
 import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import fr.xelians.esafe.operation.domain.OperationFactory;
@@ -29,6 +29,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -37,7 +40,7 @@ public class SecuringBatch {
   private static final int LBK_MAX_SIZE = 100_000;
   private static final Duration PT24H = Duration.ofHours(24);
 
-  private final ServerNodeService serverNodeService;
+  private final ClusterService clusterService;
   private final OperationService operationService;
   private final TenantService tenantService;
   private final SecuringService securingService;
@@ -58,7 +61,7 @@ public class SecuringBatch {
       initialDelayString = "${app.batch.secure.initialDelay:PT1S}")
   public void run() {
     try {
-      if (serverNodeService.hasFeature(NodeFeature.TRACEABILITY)) {
+      if (clusterService.isActive(JobType.TRACEABILITY)) {
         secureOperations();
       }
     } catch (Exception ex) {
@@ -70,7 +73,7 @@ public class SecuringBatch {
 
   private void secureOperations() {
     LocalDateTime now = LocalDateTime.now().minusMinutes(0);
-    log.info("Batch start " + now);
+    log.debug("Batch start " + now);
 
     // Fetch operations in database that need securing before now date sorted by tenant and id
     List<OperationDb> ops = operationService.findForSecuring(-1L, -1L, now);
@@ -142,6 +145,10 @@ public class SecuringBatch {
 
     // Write operations to logbook
     List<String> offers = tenantService.getTenantDb(tenant).getStorageOffers();
+    if (offers.isEmpty()) {
+      return;
+    }
+
     long secureNum = securingService.writeLbk(securingOp, operations, offers, Hash.SHA256);
 
     // TODO Check when starting the batch that operationSe into lbk and index are coherents

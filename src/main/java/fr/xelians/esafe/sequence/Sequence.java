@@ -6,7 +6,11 @@
 
 package fr.xelians.esafe.sequence;
 
-// Sequence is thread-safe
+/*
+ * Sequence is thread-safe
+ *
+ * @author Emmanuel Deviller
+ */
 public class Sequence {
 
   public static final int ALLOCATION_SIZE = 50;

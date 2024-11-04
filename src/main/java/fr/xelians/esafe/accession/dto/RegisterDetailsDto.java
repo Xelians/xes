@@ -1,3 +1,9 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
+ */
+
 package fr.xelians.esafe.accession.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,6 +12,9 @@ import fr.xelians.esafe.accession.domain.model.RegisterStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RegisterDetailsDto(
     @JsonProperty("#tenant") Long tenant,
@@ -20,7 +29,7 @@ public record RegisterDetailsDto(
     @JsonProperty("StartDate") LocalDateTime startDate,
     @JsonProperty("LastUpdate") LocalDateTime lastUpdate,
     @JsonProperty("Status") RegisterStatus status,
-    @JsonProperty("TotalObjectGroups") ValueDetailDto totalObjectsGroups,
+    @JsonProperty("TotalObjectGroups") ValueDetailDto totalObjectGroups,
     @JsonProperty("TotalUnits") ValueDetailDto totalUnits,
     @JsonProperty("TotalObjects") ValueDetailDto totalObjects,
     @JsonProperty("ObjectSize") ValueDetailDto objectSize,
@@ -38,4 +47,4 @@ public record RegisterDetailsDto(
     @JsonProperty("Events") List<ValueEventDto> events,
     @JsonProperty("OperationIds") List<String> operationIds,
     @JsonProperty("obIdIn") String obIdIn,
-    @JsonProperty("Comments") List<String> comments) {}
+    @JsonProperty("Comment") List<String> comments) {}

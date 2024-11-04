@@ -8,4 +8,7 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.entity.ProfileDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface ProfileRepository extends IRepository<ProfileDb>, CustomReferentialRepository {}

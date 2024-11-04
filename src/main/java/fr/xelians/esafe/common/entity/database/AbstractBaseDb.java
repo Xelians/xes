@@ -12,12 +12,17 @@ import fr.xelians.esafe.common.constant.DefaultValue;
 import fr.xelians.esafe.referential.domain.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @MappedSuperclass
@@ -47,7 +52,19 @@ public abstract class AbstractBaseDb implements BaseDb {
 
   protected byte[] lfcs = null;
 
-  protected int autoVersion = AUTO_VERSION;
+  @NotNull protected Integer autoVersion = AUTO_VERSION;
 
   @NotNull protected Long operationId;
+
+  @PrePersist
+  @PreUpdate
+  void preInsert() {
+    if (description == null) description = "";
+    if (creationDate == null) DefaultValue.creationDate();
+    if (lastUpdate == null) DefaultValue.lastUpdate();
+    if (activationDate == null) activationDate = ACTIVATION_DATE;
+    if (deactivationDate == null) deactivationDate = DEACTIVATION_DATE;
+    if (status == null) status = BASE_STATUS;
+    if (autoVersion == null) autoVersion = AUTO_VERSION;
+  }
 }

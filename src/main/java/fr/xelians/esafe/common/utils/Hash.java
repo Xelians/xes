@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.utils;
 import lombok.Getter;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public enum Hash {
   MD5(MessageDigestAlgorithms.MD5),

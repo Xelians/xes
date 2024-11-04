@@ -21,6 +21,10 @@ import org.apache.commons.lang.StringUtils;
 
 // Inspired from
 // https://stackoverflow.com/questions/23462209/stream-api-and-queues-subscribe-to-blockingqueue-stream-style
+
+/*
+ * @author Emmanuel Deviller
+ */
 public class SearchAfterSpliterator<T> implements Spliterator<T> {
 
   private final ElasticsearchClient esClient;

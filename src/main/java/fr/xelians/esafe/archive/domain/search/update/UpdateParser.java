@@ -17,10 +17,13 @@ import fr.xelians.esafe.search.domain.dsl.operator.eql.Patch;
 import fr.xelians.esafe.search.domain.dsl.operator.eql.Set;
 import fr.xelians.esafe.search.domain.dsl.operator.eql.Unset;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
-import io.jsonwebtoken.lang.Assert;
 import java.util.Iterator;
 import java.util.Map;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class UpdateParser extends ArchiveUnitParser {
 
   public UpdateParser(

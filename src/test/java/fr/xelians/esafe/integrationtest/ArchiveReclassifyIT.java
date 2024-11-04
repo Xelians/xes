@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -43,13 +42,10 @@ class ArchiveReclassifyIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void reclassificationTest(@TempDir Path tmpDir) throws IOException, ParsingException {
@@ -240,7 +236,6 @@ class ArchiveReclassifyIT extends BaseIT {
         assertEquals(title2Ids.getFirst(), toLongs(reclassifiedUnit.get("#allunitups")).getFirst());
         assertEquals(2, toLongs(reclassifiedUnit.get("#allunitups")).size());
       } else if (id.equals(title2Ids.getFirst())) {
-        //        assertEquals(2, toLongs(reclassifiedUnit.get("#allunitups")).size());
         assertEquals(1, toLongs(reclassifiedUnit.get("#allunitups")).size());
       }
     }

@@ -17,6 +17,9 @@ import jakarta.persistence.criteria.Root;
 import java.util.Arrays;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Match extends MatchOperator<Predicate> {
 

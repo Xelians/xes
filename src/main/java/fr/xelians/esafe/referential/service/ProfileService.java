@@ -1,9 +1,4 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates and open the template
- * in the editor.
- */
-/*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the Ceccil v2.1 License as published by
  * the CEA, CNRS and INRIA.
@@ -11,7 +6,6 @@
 
 package fr.xelians.esafe.referential.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
@@ -19,7 +13,9 @@ import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.utils.ByteContent;
 import fr.xelians.esafe.common.utils.DroidUtils;
 import fr.xelians.esafe.common.utils.Utils;
+import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
+import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.referential.domain.ProfileFormat;
 import fr.xelians.esafe.referential.domain.search.ReferentialParser;
 import fr.xelians.esafe.referential.dto.ProfileDto;
@@ -37,11 +33,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import uk.gov.nationalarchives.droid.core.interfaces.IdentificationResult;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 public class ProfileService extends AbstractReferentialService<ProfileDto, ProfileDb> {
@@ -58,8 +58,9 @@ public class ProfileService extends AbstractReferentialService<ProfileDto, Profi
   public ProfileService(
       EntityManager entityManager,
       ProfileRepository repository,
-      OperationService operationService) {
-    super(entityManager, repository, operationService);
+      OperationService operationService,
+      TenantService tenantService) {
+    super(entityManager, repository, operationService, tenantService);
   }
 
   @Override
@@ -72,22 +73,42 @@ public class ProfileService extends AbstractReferentialService<ProfileDto, Profi
     return dto;
   }
 
-  public void updateDataByIdentifier(
-      Long tenant, String userIdentifier, String applicationId, String identifier, byte[] data)
-      throws IOException {
+  @Transactional(rollbackFor = Exception.class)
+  public List<ProfileDto> createProfiles(
+      OperationDb operation, Long tenant, List<ProfileDto> dtos) {
+    OperationDb op = saveOperation(operation);
+    return super.create(op, tenant, dtos);
+  }
 
+  @Transactional(rollbackFor = Exception.class)
+  public ProfileDto updateProfile(
+      OperationDb operation, Long tenant, String identifier, ProfileDto dto) {
+    OperationDb op = saveOperation(operation);
+    return super.update(op, tenant, identifier, dto);
+  }
+
+  @Transactional(rollbackFor = Exception.class)
+  public void updateDataByIdentifier(
+      OperationDb operation, Long tenant, String identifier, byte[] data) throws IOException {
     Assert.hasText(identifier, "identifier must not be null or empty");
     Assert.notNull(data, "data must not be null");
 
+    OperationDb op = saveOperation(operation);
     ProfileFormat format = getProfileFormat(data, identifier);
 
     ProfileDb profile = getEntity(tenant, identifier);
     profile.setFormat(format);
     profile.setData(data);
     profile.setLastUpdate(LocalDate.now());
+    op.setProperty01(profile.getId().toString());
     repository.save(profile);
+  }
 
-    // TODO Create an operation (how to  save/restore data?)
+  @Transactional(rollbackFor = Exception.class)
+  public void deleteProfile(OperationDb operation, Long tenant, String identifier) {
+    // TODO Check that profile in not yet used & remove profile binary
+    OperationDb op = saveOperation(operation);
+    super.delete(op, tenant, identifier);
   }
 
   private ProfileFormat getProfileFormat(byte[] data, String identifier) throws IOException {
@@ -129,7 +150,6 @@ public class ProfileService extends AbstractReferentialService<ProfileDto, Profi
     }
   }
 
-  // Internal use
   public ByteContent getProfileData(Long tenant, String identifier) {
     ProfileDb profile = getEntity(tenant, identifier);
     byte[] data = profile.getData();
@@ -146,9 +166,14 @@ public class ProfileService extends AbstractReferentialService<ProfileDto, Profi
     return new ByteContent(name, data);
   }
 
-  public SearchResult<JsonNode> search(Long tenant, SearchQuery query) {
+  public SearchResult<ProfileDto> search(Long tenant, SearchQuery query) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(query, "query must be not null");
     return search(ReferentialParser.createProfileParser(tenant, entityManager), query);
+  }
+
+  @Override
+  protected String getIdentifierPrefix() {
+    return "PR";
   }
 }

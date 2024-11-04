@@ -106,6 +106,7 @@ public class SipFactory {
     unit2.setBinaryVersion("BinaryMaster_2");
     unit2.addTitle("MyTitle2");
     unit2.addDescription("MyDescription2");
+    unit2.addOriginatingSystemId("OSID_12345");
     unit2.addTag("Keyword002", "MyValue2");
     unit1.addArchiveUnit(unit2);
 
@@ -149,12 +150,12 @@ public class SipFactory {
     unit2.addDescription("MyDescription2");
     unit2.addOriginatingSystemId("OSID_12345");
     unit2.addTag("Keyword002", "MyValue2");
-
     LocalDate startDate = LocalDate.now();
     AppraisalRules aRule2 = new AppraisalRules();
     aRule2.addRule("APPRAISALRULE-" + TestUtils.pad(1), startDate);
     aRule2.setFinalAction("Destroy");
     unit2.setAppraisalRules(aRule2);
+
     unit1.addArchiveUnit(unit2);
 
     Path binaryPath3 = tmpDir.resolve("hellolsimplesip_3.pdf");
@@ -167,7 +168,36 @@ public class SipFactory {
     unit3.addTitle("MyTitle3");
     unit3.addDescription("MyDescription3");
     unit3.addTag("Keyword003", "MyValue3");
+
     unit1.addArchiveUnit(unit3);
+
+    archiveTransfer.addArchiveUnit(unit1);
+    return archiveTransfer;
+  }
+
+  public static ArchiveTransfer createSimpleSipWithoutStartDate(Path tmpDir, int n)
+      throws IOException {
+    ArchiveTransfer archiveTransfer = new ArchiveTransfer();
+    archiveTransfer.setArchivalAgreement("IC-" + TestUtils.pad(n));
+    archiveTransfer.setArchivalAgency("AGENCY-" + TestUtils.pad(n), "Archival Agency");
+    archiveTransfer.setTransferringAgency("AGENCY-" + TestUtils.pad(n), "Transferring Agency");
+
+    Path binaryPath2 = tmpDir.resolve("hellolsimplesip_2.pdf");
+    TestUtils.createPdf("Hello Simple Sip 2", binaryPath2);
+
+    ArchiveUnit unit1 = new ArchiveUnit();
+    unit1.setId("UNIT_ID1");
+    unit1.setBinaryPath(binaryPath2);
+    unit1.setBinaryVersion("BinaryMaster");
+    unit1.addTitle("MyTitle2");
+    unit1.addDescription("MyDescription2");
+    unit1.addOriginatingSystemId("OSID_12345");
+    unit1.addTag("Keyword002", "MyValue2");
+
+    AppraisalRules aRule2 = new AppraisalRules();
+    aRule2.addRule("APPRAISALRULE-" + TestUtils.pad(1), null);
+    aRule2.setFinalAction("Destroy");
+    unit1.setAppraisalRules(aRule2);
 
     archiveTransfer.addArchiveUnit(unit1);
     return archiveTransfer;
@@ -315,8 +345,8 @@ public class SipFactory {
     archiveTransfer.setArchivalAgreement(("IC-" + TestUtils.pad(n)));
     archiveTransfer.setArchivalAgency("AGENCY-" + TestUtils.pad(n), "Archival Agency");
     archiveTransfer.setTransferringAgency("AGENCY-" + TestUtils.pad(n), "Transferring Agency");
-    archiveTransfer.setOriginatingAgencyIdentifier("OriginatingAgencyId");
-    archiveTransfer.setSubmissionAgencyIdentifier("SubmissionAgencyId");
+    archiveTransfer.setOriginatingAgencyIdentifier("AGENCY-" + TestUtils.pad(n));
+    archiveTransfer.setSubmissionAgencyIdentifier("AGENCY-" + TestUtils.pad(n));
     // archiveTransfer.setArchivalProfile("My Archival Profile");
     archiveTransfer.setLegalStatus("Public Archive");
     archiveTransfer.setServiceLevel("My Service Level");
@@ -460,10 +490,9 @@ public class SipFactory {
     unit1.addTag("position_type", "SERIAL");
     unit1.addTag("position_enabled", "true");
 
-    Agency oriAgency = new Agency("AGENCY-" + TestUtils.pad(1), "My Transfer Agency");
-    oriAgency.addElement("Address", "Rue de la Jarry - Vincennes");
-    unit1.setOriginatingAgencyIdentifier(oriAgency.getIdentifier());
-    unit1.setSubmissionAgencyIdentifier(oriAgency.getIdentifier());
+    Agency oriAgency = new Agency("AGENCY-" + TestUtils.pad(1), null);
+    unit1.setOriginatingAgency(oriAgency);
+    unit1.setSubmissionAgency(oriAgency);
 
     unit1.addAddressee(
         AgentBuilder.builder()

@@ -6,7 +6,11 @@
 
 package fr.xelians.esafe.admin.domain.report;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum ReportStatus {
   OK,
-  KO
+  KO,
+  RUNNING
 }

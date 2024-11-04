@@ -10,6 +10,9 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class NoHtmlValidator implements ConstraintValidator<NoHtml, String> {
   //    private static final PolicyFactory DISALLOW_ALL = new HtmlPolicyBuilder().toFactory();
 

@@ -13,6 +13,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.sql.SqlParser;
 import jakarta.persistence.criteria.*;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Gt extends GtOperator<Predicate> {
 

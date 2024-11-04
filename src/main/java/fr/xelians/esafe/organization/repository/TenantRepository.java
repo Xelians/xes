@@ -19,6 +19,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface TenantRepository extends JpaRepository<TenantDb, Long> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -41,9 +44,12 @@ public interface TenantRepository extends JpaRepository<TenantDb, Long> {
 
   Optional<TenantDb> findByIdAndOrganizationId(Long id, Long organizationId);
 
+  Optional<TenantDb> findByIdAndOrganizationIdentifier(Long id, String organizationIdentifier);
+
   List<TenantDb> findAllByOrganization(OrganizationDb organization);
 
   // @Query("select t from TenantDb t left join fetch t.organization where t.organization.id
   // =:organizationId")
-  List<TenantDb> getByOrganizationId(Long organizationId);
+
+  List<TenantDb> getByOrganizationIdentifier(String organizationIdentifier);
 }

@@ -1,3 +1,9 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
+ */
+
 package fr.xelians.esafe.logbook.service;
 
 import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
@@ -6,6 +12,9 @@ import fr.xelians.esafe.logbook.dto.VitamLogbookOperationDto;
 import java.util.Collections;
 import org.mapstruct.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Mapper(componentModel = "spring")
 public interface LogbookMapper {
 

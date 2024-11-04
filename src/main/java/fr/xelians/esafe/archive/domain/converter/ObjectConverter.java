@@ -12,6 +12,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class ObjectConverter implements Converter {
 
   public static final ObjectConverter INSTANCE = new ObjectConverter();

@@ -14,6 +14,9 @@ import co.elastic.clients.elasticsearch.core.search.TotalHits;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.common.utils.NumUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Hits(
     @JsonProperty("offset") long offset,
     @JsonProperty("limit") long limit,

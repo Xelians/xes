@@ -11,6 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.operation.domain.OperationType;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LogbookOperationDto(
     @JsonProperty("#id") String id,

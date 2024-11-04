@@ -8,6 +8,9 @@ package fr.xelians.esafe.archive.domain.search.export;
 
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ExportResult<T>(
     List<T> results,
     DipExportType dipExportType,

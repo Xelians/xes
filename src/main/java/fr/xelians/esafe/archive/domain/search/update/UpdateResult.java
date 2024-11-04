@@ -9,5 +9,8 @@ package fr.xelians.esafe.archive.domain.search.update;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateResult<T>(
     String context, Integer from, Integer size, List<T> results, JsonNode jsonPatch) {}

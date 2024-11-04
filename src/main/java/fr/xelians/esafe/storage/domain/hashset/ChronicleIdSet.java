@@ -14,6 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.set.ChronicleSet;
 import net.openhft.chronicle.set.ChronicleSetBuilder;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class ChronicleIdSet implements IdSet {
 

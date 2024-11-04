@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.constant;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Logbook {
 
   public static final char LSEP = ';';

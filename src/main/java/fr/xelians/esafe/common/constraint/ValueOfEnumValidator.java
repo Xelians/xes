@@ -11,6 +11,9 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.List;
 import java.util.stream.Stream;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ValueOfEnumValidator implements ConstraintValidator<ValueOfEnum, CharSequence> {
 
   private List<String> acceptedValues;

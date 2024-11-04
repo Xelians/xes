@@ -1,0 +1,14 @@
+[
+	{
+		"Identifier":"IC-000003",
+		"Name":"Contrat d'entree Marketing Doc sériel",
+		"Description":"Contrat d'entree Marketing Doc sériel",
+		"Status":"ACTIVE",
+		"ArchiveProfiles":["PR-000003"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

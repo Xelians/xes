@@ -21,6 +21,9 @@ import fr.xelians.esafe.search.domain.field.LongField;
 import java.util.List;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class In extends InOperator<Query> {
 

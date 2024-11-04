@@ -8,4 +8,7 @@ package fr.xelians.esafe.referential.domain.search;
 
 import jakarta.persistence.TypedQuery;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Request<T>(TypedQuery<T> mainQuery, TypedQuery<Long> countQuery) {}

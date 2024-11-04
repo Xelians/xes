@@ -6,6 +6,10 @@
 
 package fr.xelians.esafe.archive.domain.search.elimination;
 
+import java.time.LocalDate;
 import java.util.List;
 
-public record EliminationResult<T>(List<T> results) {}
+/*
+ * @author Emmanuel Deviller
+ */
+public record EliminationResult<T>(List<T> results, LocalDate eliminationDate) {}

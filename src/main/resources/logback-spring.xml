@@ -1,68 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <springProfile name="default | dev">
-        <conversionRule conversionWord="clr"
-                        converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
-        <conversionRule conversionWord="wex"
-                        converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
-        <conversionRule conversionWord="wEx"
-                        converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
-        <property name="CONSOLE_LOG_PATTERN"
-                  value="${CONSOLE_LOG_PATTERN:-%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(%X){Yellow} %clr(:){faint} %m${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}} %n"/>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-            </encoder>
-        </appender>
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                </timestamp>
+                <provider
+                        class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                    <pattern>{"message":"%message"}</pattern>
+                </provider>
+                <logLevel>
+                    <fieldName>severity</fieldName>
+                </logLevel>
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                    <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
+                </loggerName>
+                <arguments>
+                    <fieldName/>
+                </arguments>
 
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>20</maxDepthPerThrowable>
+                        <maxLength>10000</maxLength>
+                        <shortenedClassNameLength>30</shortenedClassNameLength>
+                        <rootCauseFirst>true</rootCauseFirst>
+                    </throwableConverter>
+                </stackTrace>
+                <mdc/>
+            </providers>
+        </encoder>
+    </appender>
 
-        <logger name="fr.xelians.esafe" level="INFO"/>
-        <logger name="fr.xelians.esafe.common.filter.LoggingFilter" level="DEBUG"/>
-    </springProfile>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
 
     <springProfile name="prod">
-        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <providers>
-                    <timestamp>
-                        <fieldName>timestamp</fieldName>
-                    </timestamp>
-                    <provider
-                            class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
-                        <pattern>{"message":"%message"}</pattern>
-                    </provider>
-                    <logLevel>
-                        <fieldName>severity</fieldName>
-                    </logLevel>
-                    <loggerName>
-                        <fieldName>logger</fieldName>
-                        <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
-                    </loggerName>
-                    <arguments>
-                        <fieldName/>
-                    </arguments>
-
-                    <stackTrace>
-                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
-                            <maxDepthPerThrowable>20</maxDepthPerThrowable>
-                            <maxLength>10000</maxLength>
-                            <shortenedClassNameLength>30</shortenedClassNameLength>
-                            <rootCauseFirst>true</rootCauseFirst>
-                        </throwableConverter>
-                    </stackTrace>
-                    <mdc/>
-                </providers>
-            </encoder>
-        </appender>
         <root level="INFO">
             <appender-ref ref="CONSOLE_JSON"/>
         </root>
-
-        <logger name="fr.xelians.esafe" level="INFO"/>
-        <logger name="fr.xelians.esafe.common.filter.LoggingFilter" level="DEBUG"/>
     </springProfile>
+
+    <logger name="fr.xelians.esafe" level="INFO"/>
+    <logger name="fr.xelians.esafe.common.filter.LoggingFilter" level="DEBUG"/>
 </configuration>

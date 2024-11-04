@@ -8,6 +8,9 @@ package fr.xelians.esafe.storage.domain.offer.fs;
 
 import lombok.Getter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public enum StorageCapacity {
   SMALL("Small Capacity"),

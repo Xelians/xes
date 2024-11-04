@@ -8,4 +8,7 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.entity.AgencyDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface AgencyRepository extends IRepository<AgencyDb>, CustomReferentialRepository {}

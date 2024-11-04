@@ -15,6 +15,9 @@ import jakarta.persistence.criteria.Predicate;
 import java.util.List;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Or extends AndOperator<Predicate> {
 

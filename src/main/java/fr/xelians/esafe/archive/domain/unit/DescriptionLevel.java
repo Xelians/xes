@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.unit;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum DescriptionLevel {
   Fonds,
   Subfonds,

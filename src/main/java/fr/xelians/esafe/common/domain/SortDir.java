@@ -7,6 +7,9 @@
 package fr.xelians.esafe.common.domain;
 
 // Keep the lowercase
+/*
+ * @author Emmanuel Deviller
+ */
 public enum SortDir {
   asc,
   desc

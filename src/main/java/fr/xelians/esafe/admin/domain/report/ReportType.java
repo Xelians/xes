@@ -6,8 +6,15 @@
 
 package fr.xelians.esafe.admin.domain.report;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum ReportType {
   INGEST,
   ELIMINATION,
-  PROBATIVE_VALUE
+  UPDATE,
+  UPDATE_RULE,
+  TRANSFER,
+  PROBATIVE_VALUE,
+  RULES_REFERENTIAL
 }

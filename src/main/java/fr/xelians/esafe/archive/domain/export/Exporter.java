@@ -11,7 +11,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface Exporter {
 
-  void export(List<ArchiveUnit> srcUnits, Path outpath) throws IOException;
+  void exportDip(List<ArchiveUnit> srcUnits, Path outpath) throws IOException;
+
+  void exportSip(List<ArchiveUnit> srcUnits, Path outpath) throws IOException;
 }

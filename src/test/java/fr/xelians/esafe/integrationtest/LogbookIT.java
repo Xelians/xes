@@ -35,6 +35,7 @@ import nu.xom.ParsingException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -52,89 +53,6 @@ class LogbookIT extends BaseIT {
   void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
-  }
-
-  @BeforeEach
-  void beforeEach() {}
-
-  @Test
-  void emptyQuerySearchTest() throws IOException {
-    Long tenant = nextTenant();
-
-    VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
-    ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
-    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
-
-    String query =
-        """
-          {
-            "$filter": {
-               "$offset": 0,
-               "$limit": 20,
-               "$orderby": { "#id": 1 }
-            },
-            "$projection": {}
-          }
-          """;
-
-    ResponseEntity<SearchResult<JsonNode>> r2 =
-        Awaitility.await()
-            .until(
-                () -> restClient.searchVitamLogbookOperation(tenant, query),
-                r -> r.getBody() != null && r.getBody().hits().size() > 0);
-
-    SearchResult<JsonNode> result = r2.getBody();
-    assertNotNull(result, TestUtils.getBody(r2));
-
-    List<JsonNode> results = result.results();
-    assertFalse(results.isEmpty(), TestUtils.getBody(r2));
-    assertEquals(tenant, results.getFirst().get("#tenant").asLong(), TestUtils.getBody(r2));
-    assertEquals(
-        "EXT_UPDATE_USER", results.getFirst().get("evType").asText(), TestUtils.getBody(r2));
-    assertEquals("OK", results.getFirst().get("outcome").asText(), TestUtils.getBody(r2));
-  }
-
-  @Test
-  void externalOperationTest() throws IOException {
-    Long tenant = nextTenant();
-
-    VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
-    ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
-    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
-
-    String query =
-        """
-        {
-           "$query": [
-             {
-               "$and": [
-                   {"$eq": { "Type": "EXTERNAL" }},
-                   {"$eq": { "ObjectIdentifier": "12678" }}
-                 ]
-             }
-           ],
-           "$filter": {},
-           "$projection": {}
-        }
-        """;
-
-    ResponseEntity<SearchResult<JsonNode>> r2 =
-        Awaitility.await()
-            .until(
-                () -> restClient.searchVitamLogbookOperation(tenant, query),
-                r -> r.getBody() != null && r.getBody().hits().size() > 0);
-
-    SearchResult<JsonNode> result = r2.getBody();
-    assertNotNull(result, TestUtils.getBody(r2));
-
-    System.err.println("r2" + r2);
-
-    List<JsonNode> results = result.results();
-    assertFalse(results.isEmpty(), TestUtils.getBody(r2));
-    assertEquals(tenant, results.getFirst().get("#tenant").asLong(), TestUtils.getBody(r2));
-    assertEquals(
-        "EXT_UPDATE_USER", results.getFirst().get("evType").asText(), TestUtils.getBody(r2));
-    assertEquals("OK", results.getFirst().get("outcome").asText(), TestUtils.getBody(r2));
   }
 
   @Test
@@ -297,12 +215,12 @@ class LogbookIT extends BaseIT {
 
     ResponseEntity<List<AgencyDto>> response =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto(3));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     IngestContractDto ic2 = DtoFactory.createIngestContractDto(3);
     ic2.setLinkParentId(systemId);
     ResponseEntity<List<IngestContractDto>> r2 = restClient.createIngestContract(tenant, ic2);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
     // Create Sip
     Path sipPath = tmpDir.resolve("sip.zip");
@@ -350,5 +268,91 @@ class LogbookIT extends BaseIT {
     assertEquals(vitamLogbookOperation.getEvIdAppSession(), logbookOperation.applicationId());
     assertEquals(vitamLogbookOperation.getOutcome(), logbookOperation.outcome());
     assertEquals(vitamLogbookOperation.getAgId(), logbookOperation.userIdentifier());
+  }
+
+  @Nested
+  class RootAdminTest {
+    @BeforeEach
+    void beforeEach() {
+      signInAsRootAdmin();
+    }
+
+    @Test
+    void emptyQuerySearchTest() {
+      Long tenant = nextTenant();
+
+      VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
+      ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
+      assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
+
+      String query =
+          """
+                {
+                  "$filter": {
+                     "$offset": 0,
+                     "$limit": 20,
+                     "$orderby": { "#id": 1 }
+                  },
+                  "$projection": {}
+                }
+                """;
+
+      ResponseEntity<SearchResult<JsonNode>> r2 =
+          Awaitility.await()
+              .until(
+                  () -> restClient.searchVitamLogbookOperation(tenant, query),
+                  r -> r.getBody() != null && r.getBody().hits().size() > 0);
+
+      SearchResult<JsonNode> result = r2.getBody();
+      assertNotNull(result, TestUtils.getBody(r2));
+
+      List<JsonNode> results = result.results();
+      assertFalse(results.isEmpty(), TestUtils.getBody(r2));
+      assertEquals(tenant, results.getFirst().get("#tenant").asLong(), TestUtils.getBody(r2));
+      assertEquals(
+          "EXT_UPDATE_USER", results.getFirst().get("evType").asText(), TestUtils.getBody(r2));
+      assertEquals("OK", results.getFirst().get("outcome").asText(), TestUtils.getBody(r2));
+    }
+
+    @Test
+    void externalOperationTest() {
+      Long tenant = nextTenant();
+
+      VitamExternalEventDto dto = DtoFactory.createExternalOperationDto();
+      ResponseEntity<JsonNode> r1 = restClient.createExternalOperation(tenant, dto);
+      assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
+
+      String query =
+          """
+              {
+                 "$query": [
+                   {
+                     "$and": [
+                         {"$eq": { "Type": "EXTERNAL" }},
+                         {"$eq": { "ObjectIdentifier": "12678" }}
+                       ]
+                   }
+                 ],
+                 "$filter": {},
+                 "$projection": {}
+              }
+              """;
+
+      ResponseEntity<SearchResult<JsonNode>> r2 =
+          Awaitility.await()
+              .until(
+                  () -> restClient.searchVitamLogbookOperation(tenant, query),
+                  r -> r.getBody() != null && r.getBody().hits().size() > 0);
+
+      SearchResult<JsonNode> result = r2.getBody();
+      assertNotNull(result, TestUtils.getBody(r2));
+
+      List<JsonNode> results = result.results();
+      assertFalse(results.isEmpty(), TestUtils.getBody(r2));
+      assertEquals(tenant, results.getFirst().get("#tenant").asLong(), TestUtils.getBody(r2));
+      assertEquals(
+          "EXT_UPDATE_USER", results.getFirst().get("evType").asText(), TestUtils.getBody(r2));
+      assertEquals("OK", results.getFirst().get("outcome").asText(), TestUtils.getBody(r2));
+    }
   }
 }

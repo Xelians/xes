@@ -13,6 +13,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class Perfs {
 

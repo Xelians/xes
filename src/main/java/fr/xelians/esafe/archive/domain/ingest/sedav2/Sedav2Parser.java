@@ -29,6 +29,7 @@ import fr.xelians.esafe.common.utils.UnitUtils;
 import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.sequence.Sequence;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -47,6 +48,9 @@ import javax.xml.stream.events.XMLEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class Sedav2Parser extends AbstractManifestParser {
 
@@ -70,18 +74,17 @@ public class Sedav2Parser extends AbstractManifestParser {
   public static final String IMPLEMENTATION_VERSION = "5.2";
 
   private final ArchiveTransfer archiveTransfer = new ArchiveTransfer();
-  private final ArrayList<ArchiveUnit> referrerUnits = new ArrayList<>();
-  private final ArrayList<ArchiveUnit> archiveUnits = new ArrayList<>();
-  private final HashMap<Long, ArchiveUnit> rootUnits = new HashMap<>();
-  private final HashMap<String, ArchiveUnit> archiveUnitMap = new HashMap<>();
-  private final HashMap<String, DataObjectGroup> dataObjectGroupMap = new HashMap<>();
+  private final List<ArchiveUnit> referrerUnits = new ArrayList<>();
+  private final List<ArchiveUnit> archiveUnits = new ArrayList<>();
+  private final Map<Long, ArchiveUnit> rootUnits = new HashMap<>();
+  private final Map<String, ArchiveUnit> archiveUnitMap = new HashMap<>();
+  private final Map<String, DataObjectGroup> dataObjectGroupMap = new HashMap<>();
 
-  public String sedaVersion;
+  private String sedaVersion;
   private Path manifestPath;
   private Path sipDir;
   private Sequence sequence;
   private UnitType unitType;
-
   private ManagementMetadata managementMetadata;
 
   public Sedav2Parser(IngestService ingestService, OperationDb operation) {
@@ -144,7 +147,7 @@ public class Sedav2Parser extends AbstractManifestParser {
       if (nextEvent.isStartElement()) {
         StartElement startElement = nextEvent.asStartElement();
         switch (startElement.getName().getLocalPart()) {
-          case MESSAGE_IDENTIFIER -> archiveTransfer.setMessageIdentifier(readText(reader, 512));
+          case MESSAGE_IDENTIFIER -> archiveTransfer.setMessageIdentifier(readText(reader, 1024));
           case COMMENT ->
           // Note. We don't support multiple comments. We only take the last one.
           archiveTransfer.setComment(readText(reader, 4096));
@@ -179,20 +182,13 @@ public class Sedav2Parser extends AbstractManifestParser {
           case ARCHIVE_UNIT -> readArchiveUnit(reader, startElement, null);
           case MANAGEMENT_METADATA -> readManagementMetadata(reader);
           case ARCHIVAL_AGENCY -> {
-            // TODO Si le ORIGINATING_AGENCY_IDENTIFIER n'est pas défini dans l'ArchiveUnit
-            // management
-            // alors, il faut que l'ARCHIVAL_AGENCY de l'archive transfer lui soit appliquée (et à
-            // ses enfants)
-            // ArchivalAgency => Service Producteur
+            // This is the archive producer if the originating agency is
+            // not defined in management metadata
             Agency sp = getAgency(reader);
             checkAgency(sp.identifier());
             archiveTransfer.setArchivalAgency(sp);
           }
           case TRANSFERRING_AGENCY -> {
-            // TODO Si le SUBMISSION_AGENCY_IDENTIFIER n'est pas défini dans l'ArchiveUnit
-            // management
-            // alors, il faut que la TRANSFERRING_AGENCY de l'archive transfer lui soit appliquée
-            // (et à ses enfants)
             Agency sv = getAgency(reader);
             checkAgency(sv.identifier()); // is it necessary ?
             archiveTransfer.setTransferringAgency(sv);
@@ -210,10 +206,10 @@ public class Sedav2Parser extends AbstractManifestParser {
 
   private void closeArchiveTransfer() throws IOException {
 
-    // Check Service Provider
-    Agency sp = archiveTransfer.getArchivalAgency();
     assertNotNull(
-        sp, CLOSE_ARCHIVE_TRANSFER_FAILED, "Archival agency is not defined in archive transfer");
+        archiveTransfer.getArchivalAgency(),
+        CLOSE_ARCHIVE_TRANSFER_FAILED,
+        "Archival agency is not defined in archive transfer");
 
     // Process all referrers units (that reference itself by xml id reference)
     for (ArchiveUnit unit : referrerUnits) {
@@ -240,29 +236,28 @@ public class Sedav2Parser extends AbstractManifestParser {
       archiveUnitMap.remove(unit.getXmlId());
     }
 
-    // Attach the remaining unattached Archive Units
+    ArchiveUnit parentUnit = null;
+
+    // Attach the remaining unattached Archive Units (i.e. units without parent)
     for (ArchiveUnit unit : archiveUnitMap.values()) {
       if (unit.isDetached()) {
-        Long linkId = getAgreementLinkId();
-        ArchiveUnit linkUnit = getLinkUnit(linkId);
-        checkAttachedUnitType(unitType, linkUnit.getUnitType());
-
-        ArchiveUnit parentUnit = rootUnits.putIfAbsent(linkUnit.getId(), linkUnit);
         if (parentUnit == null) {
-          parentUnit = linkUnit;
+          parentUnit = getParentUnit(getAgreementLinkId());
         }
         unit.setParentUnit(parentUnit);
         unit.setParentId(parentUnit.getId());
       }
     }
 
-    // Set Providers and ParentIds
+    // Set Service Providers and ParentIds
+    String sp = getOriginatingAgencyIdentifier();
     for (ArchiveUnit rootUnit : rootUnits.values()) {
-      visitArchiveUnits(rootUnit, sp.identifier(), rootUnit.getServiceProducers());
+      Set<String> rootSps = rootUnit.getServiceProducers();
+      visitArchiveUnits(rootUnit, sp, rootSps);
     }
   }
 
-  private void visitArchiveUnits(ArchiveUnit parentUnit, String sp, HashSet<String> rootSps) {
+  private void visitArchiveUnits(ArchiveUnit parentUnit, String sp, Set<String> rootSps) {
     for (ArchiveUnit unit : parentUnit.getChildUnitMap().values()) {
       unit.addToParentIds(parentUnit.getId());
       unit.addToParentIds(parentUnit.getParentIds());
@@ -281,6 +276,21 @@ public class Sedav2Parser extends AbstractManifestParser {
       archiveUnits.add(unit);
       visitArchiveUnits(unit, sp, rootSps);
     }
+  }
+
+  private @NotNull ArchiveUnit getParentUnit(Long parentId) throws IOException {
+    ArchiveUnit parentUnit = getLinkUnit(parentId);
+    checkAttachedUnitType(unitType, parentUnit.getUnitType());
+    rootUnits.put(parentUnit.getId(), parentUnit);
+    return parentUnit;
+  }
+
+  private String getOriginatingAgencyIdentifier() {
+    if (managementMetadata != null
+        && StringUtils.isNotBlank(managementMetadata.getOriginatingAgencyIdentifier())) {
+      return managementMetadata.getOriginatingAgencyIdentifier();
+    }
+    return archiveTransfer.getArchivalAgency().identifier();
   }
 
   private Agency getAgency(XMLEventReader reader) throws XMLStreamException {
@@ -323,19 +333,30 @@ public class Sedav2Parser extends AbstractManifestParser {
         String localPart = startElement.getName().getLocalPart();
 
         switch (localPart) {
+          case ORIGINATING_AGENCY_IDENTIFIER -> {
+            // This is the archive producer
+            String agencyIdentifier = readText(reader, 512);
+            checkAgency(agencyIdentifier);
+            managementMetadata.setOriginatingAgencyIdentifier(agencyIdentifier);
+          }
+          case SUBMISSION_AGENCY_IDENTIFIER -> {
+            String agencyIdentifier = readText(reader, 512);
+            checkAgency(agencyIdentifier);
+            managementMetadata.setSubmissionAgencyIdentifier(agencyIdentifier);
+          }
           case ARCHIVAL_PROFILE -> {
             archivalProfile = readText(reader, 512);
             managementMetadata.setArchivalProfile(archivalProfile);
           }
-          case "AcquisitionInformation" -> {
+          case ACQUISITION_INFORMATION -> {
             String acquisitionInformation = readText(reader, 512);
             managementMetadata.setAcquisitionInformation(acquisitionInformation);
           }
-          case "ServiceLevel" -> {
+          case SERVICE_LEVEL -> {
             String serviceLevel = readText(reader, 512);
             managementMetadata.setServiceLevel(serviceLevel);
           }
-          case "LegalStatus" -> {
+          case LEGAL_STATUS -> {
             String legalStatus = readText(reader, 512);
             managementMetadata.setLegalStatus(legalStatus);
           }
@@ -524,7 +545,8 @@ public class Sedav2Parser extends AbstractManifestParser {
           if (binaryDataObject.getSize() == 0) {
             binaryDataObject.setSize(Files.size(binaryDataObject.getBinaryPath()));
           } else {
-            checkBinarySize(binaryDataObject.getBinaryPath(), binaryDataObject.getSize());
+            long size = Files.size(binaryDataObject.getBinaryPath());
+            binaryDataObject.setSize(checkBinarySize(size, binaryDataObject.getSize()));
           }
 
           checkBinaryDigest(
@@ -619,13 +641,14 @@ public class Sedav2Parser extends AbstractManifestParser {
     checkMaxArchiveUnits(archiveUnitMap.size());
 
     ArchiveUnit archiveUnit = new ArchiveUnit();
-    archiveUnit.setCreationDate(LocalDateTime.now());
-    archiveUnit.setSedaVersion(sedaVersion);
-    archiveUnit.setImplementationVersion(IMPLEMENTATION_VERSION);
-    archiveUnit.setXmlId(attr.getValue());
     archiveUnit.setId(sequence.nextValue());
     archiveUnit.setTenant(tenant);
     archiveUnit.setUnitType(unitType);
+    archiveUnit.setSedaVersion(sedaVersion);
+    archiveUnit.setImplementationVersion(IMPLEMENTATION_VERSION);
+    archiveUnit.setXmlId(attr.getValue());
+    archiveUnit.setTransferred(Boolean.FALSE);
+    archiveUnit.setCreationDate(LocalDateTime.now());
 
     // Operations
     archiveUnit.setOperationId(operationId);
@@ -650,10 +673,12 @@ public class Sedav2Parser extends AbstractManifestParser {
       if (nextEvent.isStartElement()) {
         StartElement startElement = nextEvent.asStartElement();
         switch (startElement.getName().getLocalPart()) {
+          case "ArchiveUnitProfile" -> archiveUnit.setArchiveUnitProfile(
+              readText(reader, 512)); // Validation is not yet implemented
           case MANAGEMENT -> archiveUnit = readManagement(reader, archiveUnit);
           case CONTENT -> readContent(reader, archiveUnit);
-          case DATA_OBJECT_REFERENCE -> readDataObjectReference(reader, archiveUnit);
-          case DATA_OBJECT_REF -> readDataObjectReference(reader, archiveUnit);
+          case DATA_OBJECT_REFERENCE, DATA_OBJECT_REF -> readDataObjectReference(
+              reader, archiveUnit);
           case ARCHIVE_UNIT -> readArchiveUnit(reader, startElement, archiveUnit);
           case ARCHIVE_UNIT_REF_ID -> {
             archiveUnit.setArchiveUnitRefId(readText(reader, 512));
@@ -900,8 +925,8 @@ public class Sedav2Parser extends AbstractManifestParser {
 
       } else if (event.isEndElement()) {
         ObjectNode beforeNode = nodes.get(nodes.size() - 2);
-        ObjectNode lastNode = nodes.get(nodes.size() - 1);
-        String lastName = names.get(names.size() - 1);
+        ObjectNode lastNode = nodes.getLast();
+        String lastName = names.getLast();
 
         if (isElementStarted) {
           if (StringUtils.isBlank(buffer)) {
@@ -975,18 +1000,6 @@ public class Sedav2Parser extends AbstractManifestParser {
       if (nextEvent.isStartElement()) {
         StartElement startElement = nextEvent.asStartElement();
         switch (startElement.getName().getLocalPart()) {
-            // TODO. ORIGINATING_AGENCY_IDENTIFIER & SUBMISSION_AGENCY_IDENTIFIER doivent être
-            // appliqués  si nécessaires aux enfants
-          case ORIGINATING_AGENCY_IDENTIFIER -> {
-            String agencyIdentifier = readText(reader, 512);
-            checkAgency(agencyIdentifier);
-            management.setOriginatingAgencyIdentifier(agencyIdentifier);
-          }
-          case SUBMISSION_AGENCY_IDENTIFIER -> {
-            String agencyIdentifier = readText(reader, 512);
-            checkAgency(agencyIdentifier);
-            management.setSubmissionAgencyIdentifier(agencyIdentifier);
-          }
           case APPRAISAL_RULE -> management.setAppraisalRules(readAppraisalRules(reader));
           case ACCESS_RULE -> management.setAccessRules(readAccessRules(reader));
           case CLASSIFICATION_RULE -> management.setClassificationRules(
@@ -1304,7 +1317,6 @@ public class Sedav2Parser extends AbstractManifestParser {
                   "Read update operation failed",
                   String.format("Bad SystemId '%s' in update operation", systemId));
             }
-
             ArchiveUnit linkUnit = getLinkUnit(Long.valueOf(systemId));
             archiveUnit = getUpdatedUnit(archiveUnit, linkUnit);
 
@@ -1324,10 +1336,10 @@ public class Sedav2Parser extends AbstractManifestParser {
 
   private ArchiveUnit getUpdatedUnit(ArchiveUnit archiveUnit, ArchiveUnit linkUnit) {
     checkAttachedUnitType(unitType, linkUnit.getUnitType());
-    // This archive unit is already stored on the system
+    // This archive unit already exists and must not be created
     archiveUnitMap.remove(archiveUnit.getXmlId());
-    archiveUnit = rootUnits.putIfAbsent(linkUnit.getId(), linkUnit);
-    return archiveUnit == null ? linkUnit : archiveUnit;
+    rootUnits.put(linkUnit.getId(), linkUnit);
+    return linkUnit;
   }
 
   // This call will leave the reader at the matching END_ELEMENT

@@ -14,6 +14,9 @@ import org.apache.commons.lang.StringUtils;
 
 // This class is thread safe however one ontologyMapper instance must not be shared between multiple
 // tenants
+/*
+ * @author Emmanuel Deviller
+ */
 public class OntologyMapper {
 
   // Cache ontology for DocumentType for the given tenant

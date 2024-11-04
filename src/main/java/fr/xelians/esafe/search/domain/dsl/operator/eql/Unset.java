@@ -27,13 +27,15 @@ import org.apache.commons.lang3.StringUtils;
  * { "$unset": [ "StartDate", "EndDate" ] }
  * {@code </script>}
  * </pre>
+ *
+ * @author Emmanuel Deviller
  */
 public class Unset extends Patch {
 
   private static final String MANAGEMENT = "#management";
 
   private static final String[] excludedFieldNames = {
-    "Title", "PhysicalDataObjects", "BinaryDataObjects", "SystemId"
+    "Title", "PhysicalDataObjects", "BinaryDataObjects", "SystemId", "ArchiveUnitProfile"
   };
 
   private final List<String> fieldNames = new ArrayList<>();

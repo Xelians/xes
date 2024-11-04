@@ -1,0 +1,15 @@
+[
+	{
+		"Identifier":"IC-000009",
+		"Name":"Contrat d'entree Inferieur dans Superieur Physique",
+		"Description":"Contrat d'entree Inferieur dans Superieur Physique",
+		"Status":"ACTIVE",
+		"EveryDataObjectVersion":true,
+		"ArchiveProfiles":["PR-000008"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

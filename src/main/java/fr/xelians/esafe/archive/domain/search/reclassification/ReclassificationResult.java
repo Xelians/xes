@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.search.reclassification;
 
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ReclassificationResult<T>(List<T> results, Long unitUp) {}

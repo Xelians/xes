@@ -9,6 +9,9 @@ package fr.xelians.esafe.storage.domain.pack;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface Packer extends AutoCloseable {
 
   long[] write(Path srcPath) throws IOException;

@@ -8,5 +8,8 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.entity.IngestContractDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface IngestContractRepository
     extends IRepository<IngestContractDb>, CustomReferentialRepository {}

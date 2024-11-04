@@ -8,6 +8,9 @@ package fr.xelians.esafe.operation.domain.vitam;
 
 import fr.xelians.esafe.operation.domain.OperationStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum StatusCode {
   UNKNOWN,
   STARTED,

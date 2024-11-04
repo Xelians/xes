@@ -13,6 +13,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.DslParser;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Not extends NotOperator<Query> {
 
   public Not(DslParser<Query> parser, SearchContext searchContext, JsonNode node) {

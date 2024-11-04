@@ -11,6 +11,9 @@ import fr.xelians.esafe.common.utils.Hash;
 import java.time.LocalDateTime;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

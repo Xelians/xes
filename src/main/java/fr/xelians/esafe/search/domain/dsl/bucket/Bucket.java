@@ -8,4 +8,7 @@ package fr.xelians.esafe.search.domain.dsl.bucket;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Bucket(@JsonProperty("value") String value, @JsonProperty("count") long count) {}

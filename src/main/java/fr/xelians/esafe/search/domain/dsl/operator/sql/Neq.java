@@ -15,6 +15,9 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Neq extends EqOperator<Predicate> {
 

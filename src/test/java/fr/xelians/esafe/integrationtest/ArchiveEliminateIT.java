@@ -10,7 +10,7 @@ import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import fr.xelians.esafe.admin.domain.report.EliminationReportDto;
+import fr.xelians.esafe.admin.domain.report.ArchiveReport;
 import fr.xelians.esafe.admin.domain.report.ReportStatus;
 import fr.xelians.esafe.admin.domain.report.ReportType;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
@@ -26,12 +26,12 @@ import fr.xelians.sipg.model.ArchiveTransfer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -51,9 +51,6 @@ class ArchiveEliminateIT extends BaseIT {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void eliminateComplexSipTest(@TempDir Path tmpDir) throws IOException, ParsingException {
@@ -106,20 +103,23 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                 {
-                   "$roots": [],
-                   "$query": [
-                     {
-                          "$and": [
-                            { "$match": { "Title": "MyTitle1" } },
-                            { "$in": { "#id": [ "%s", "%s", "%s"] } }
-                         ]
-                     }
-                   ],
-                   "$filter": {}
-                }
-                """
-            .formatted(id1s.get(0), id1s.get(1), id1s.get(2));
+            {
+              "dslRequest": {
+                 "$roots": [],
+                 "$query": [
+                   {
+                        "$and": [
+                          { "$match": { "Title": "MyTitle1" } },
+                          { "$in": { "#id": [ "%s", "%s", "%s"] } }
+                       ]
+                   }
+                 ],
+                 "$filter": {}
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(id1s.get(0), id1s.get(1), id1s.get(2), LocalDate.now());
 
     ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -133,7 +133,7 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
+    ArchiveReport report = JsonService.to(repPath, ArchiveReport.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
@@ -184,7 +184,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                 {
+            {
+              "dslRequest": {
                    "$roots": [],
                    "$query": [
                      {
@@ -195,9 +196,11 @@ class ArchiveEliminateIT extends BaseIT {
                      }
                    ],
                    "$filter": {}
-                }
-                """
-            .formatted(id1s.get(3), id1s.get(4), id1s.get(5), id1s.get(6));
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(id1s.get(3), id1s.get(4), id1s.get(5), id1s.get(6), LocalDate.now());
 
     ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -211,7 +214,7 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
+    ArchiveReport report = JsonService.to(repPath, ArchiveReport.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
@@ -257,7 +260,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                 {
+            {
+              "dslRequest": {
                    "$roots": [],
                    "$query": [
                      {
@@ -265,8 +269,11 @@ class ArchiveEliminateIT extends BaseIT {
                      }
                    ],
                    "$filter": {}
-                }
-                """;
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(LocalDate.now());
 
     ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -280,7 +287,7 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
+    ArchiveReport report = JsonService.to(repPath, ArchiveReport.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
@@ -332,7 +339,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                 {
+            {
+              "dslRequest": {
                    "$roots": [],
                    "$query": [
                      {
@@ -340,9 +348,11 @@ class ArchiveEliminateIT extends BaseIT {
                      }
                    ],
                    "$filter": {}
-                }
-                """
-            .formatted(id1);
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(id1, LocalDate.now());
 
     ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -375,7 +385,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                 {
+            {
+              "dslRequest": {
                    "$roots": [],
                    "$query": [
                      {
@@ -383,9 +394,11 @@ class ArchiveEliminateIT extends BaseIT {
                      }
                    ],
                    "$filter": {}
-                }
-                """
-            .formatted(id3);
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(id3, LocalDate.now());
 
     ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -418,7 +431,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                {
+            {
+              "dslRequest": {
                     "$roots": [],
                     "$query": [
                       {
@@ -426,11 +440,13 @@ class ArchiveEliminateIT extends BaseIT {
                       }
                     ],
                     "$filter": {}
-                }
-                """;
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(ids.get("UNIT_ID3"), LocalDate.now());
 
-    String eliQuery = eliminationQuery.formatted(ids.get("UNIT_ID3"));
-    ResponseEntity<String> ro = restClient.eliminateArchive(tenant, acIdentifier, eliQuery);
+    ResponseEntity<String> ro = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, ro.getStatusCode(), TestUtils.getBody(ro));
     String requestId = ro.getHeaders().getFirst(X_REQUEST_ID);
 
@@ -442,7 +458,7 @@ class ArchiveEliminateIT extends BaseIT {
     Path repPath = tmpDir.resolve(requestId + ".elimination_report");
     restClient.downloadReport(tenant, requestId, repPath);
     assertTrue(Files.exists(repPath));
-    EliminationReportDto report = JsonService.to(repPath, EliminationReportDto.class);
+    ArchiveReport report = JsonService.to(repPath, ArchiveReport.class);
     assertEquals(tenant, report.tenant());
     assertEquals(requestId, report.operationId().toString());
     assertEquals(ReportType.ELIMINATION, report.type());
@@ -452,19 +468,19 @@ class ArchiveEliminateIT extends BaseIT {
     // Search units
     String searchQuery =
         """
-                    {
-                      "$roots": [],
-                      "$query": [
-                        {
-                          "$eq": {
-                            "#id": "%s"
-                          }
-                        }
-                      ],
-                      "$filter": {},
-                      "$projection": {}
-                    }
-                    """;
+            {
+              "$roots": [],
+              "$query": [
+                {
+                  "$eq": {
+                    "#id": "%s"
+                  }
+                }
+              ],
+              "$filter": {},
+              "$projection": {}
+            }
+            """;
 
     String query0 = searchQuery.formatted(ids.get("UNIT_ID3"));
     ResponseEntity<SearchResult<JsonNode>> r3 =
@@ -497,6 +513,9 @@ class ArchiveEliminateIT extends BaseIT {
 
     // Init
     Scenario.createScenario02(restClient, tenant, userDto);
+    Map<String, Long> ids0 =
+        Scenario.uploadSip(
+            restClient, tenant, tmpDir, SipFactory.createSimpleSipWithoutStartDate(tmpDir, 1));
     Map<String, Long> ids1 =
         Scenario.uploadSip(restClient, tenant, tmpDir, SipFactory.createSimpleSip(tmpDir, 1));
     Map<String, Long> ids2 =
@@ -509,7 +528,8 @@ class ArchiveEliminateIT extends BaseIT {
     // Eliminate
     String eliminationQuery =
         """
-                {
+            {
+              "dslRequest": {
                     "$roots": [],
                     "$query": [
                       {
@@ -517,28 +537,42 @@ class ArchiveEliminateIT extends BaseIT {
                       }
                     ],
                     "$filter": {}
-                }
-                """;
+              },
+              "date": "%s"
+            }
+            """;
 
-    String eliQuery1 = eliminationQuery.formatted(ids1.get("UNIT_ID3"));
+    LocalDate now = LocalDate.now();
+
+    // MaxEndDate is undefined
+    String eliQuery0 = eliminationQuery.formatted(ids0.get("UNIT_ID1"), now);
+    ResponseEntity<String> r0 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery0);
+    assertEquals(HttpStatus.ACCEPTED, r0.getStatusCode(), TestUtils.getBody(r0));
+    String requestId0 = r0.getHeaders().getFirst(X_REQUEST_ID);
+    OperationStatusDto status0 =
+        restClient.waitForOperationStatus(tenant, requestId0, 10, RestClient.OP_FINAL);
+    assertEquals(OperationStatus.ERROR_CHECK, status0.status(), TestUtils.getBody(r0));
+    assertTrue(status0.message().contains("'undefined' appraisal max end date"));
+
+    // No appraisal rule
+    String eliQuery1 = eliminationQuery.formatted(ids1.get("UNIT_ID3"), now);
     ResponseEntity<String> r1 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery1);
     assertEquals(HttpStatus.ACCEPTED, r1.getStatusCode(), TestUtils.getBody(r1));
     String requestId1 = r1.getHeaders().getFirst(X_REQUEST_ID);
-
-    String eliQuery2 = eliminationQuery.formatted(ids2.get("UNIT_ID2"));
-    ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery2);
-    assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
-    String requestId2 = r2.getHeaders().getFirst(X_REQUEST_ID);
-
-    // No appraisal rule
     OperationStatusDto status1 =
         restClient.waitForOperationStatus(tenant, requestId1, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.ERROR_CHECK, status1.status(), TestUtils.getBody(r1));
+    assertTrue(status1.message().contains("archive unit without appraisal rule"));
 
     // MaxEndDate is bad
+    String eliQuery2 = eliminationQuery.formatted(ids2.get("UNIT_ID2"), now);
+    ResponseEntity<String> r2 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery2);
+    assertEquals(HttpStatus.ACCEPTED, r2.getStatusCode(), TestUtils.getBody(r2));
+    String requestId2 = r2.getHeaders().getFirst(X_REQUEST_ID);
     OperationStatusDto status2 =
         restClient.waitForOperationStatus(tenant, requestId2, 10, RestClient.OP_FINAL);
     assertEquals(OperationStatus.ERROR_CHECK, status2.status(), TestUtils.getBody(r2));
+    assertTrue(status2.message().contains("appraisal max end date"));
 
     // Reclassify
     String reclassificationQuery =
@@ -582,11 +616,11 @@ class ArchiveEliminateIT extends BaseIT {
     assertEquals(HttpStatus.ACCEPTED, r5.getStatusCode(), TestUtils.getBody(r5));
     String requestId5 = r5.getHeaders().getFirst(X_REQUEST_ID);
 
-    ResponseEntity<String> r6 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery2);
+    ResponseEntity<String> r6 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery0);
     assertEquals(HttpStatus.ACCEPTED, r6.getStatusCode(), TestUtils.getBody(r6));
     String requestId6 = r6.getHeaders().getFirst(X_REQUEST_ID);
 
-    String eliQuery3 = eliminationQuery.formatted(ids2.get("UNIT_ID1"));
+    String eliQuery3 = eliminationQuery.formatted(ids2.get("UNIT_ID1"), now);
     ResponseEntity<String> r7 = restClient.eliminateArchive(tenant, acIdentifier, eliQuery3);
     assertEquals(HttpStatus.ACCEPTED, r7.getStatusCode(), TestUtils.getBody(r7));
     String requestId7 = r7.getHeaders().getFirst(X_REQUEST_ID);
@@ -606,7 +640,7 @@ class ArchiveEliminateIT extends BaseIT {
     // Get elimination report
     Path repPath5 = tmpDir.resolve(requestId5 + ".elimination_report");
     restClient.downloadReport(tenant, requestId5, repPath5);
-    EliminationReportDto report5 = JsonService.to(repPath5, EliminationReportDto.class);
+    ArchiveReport report5 = JsonService.to(repPath5, ArchiveReport.class);
     assertEquals(tenant, report5.tenant());
     assertEquals(requestId5, report5.operationId().toString());
     assertEquals(ids1.get("UNIT_ID3").toString(), report5.archiveUnits().getFirst().systemId());

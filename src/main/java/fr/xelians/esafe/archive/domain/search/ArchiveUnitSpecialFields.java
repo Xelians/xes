@@ -10,6 +10,9 @@ import fr.xelians.esafe.common.utils.CollUtils;
 import fr.xelians.esafe.search.domain.dsl.parser.FieldContext;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class ArchiveUnitSpecialFields {
 
   private static final Map<String, String> BASE_FIELDS = createBaseFields();
@@ -62,7 +65,8 @@ public final class ArchiveUnitSpecialFields {
         Map.entry("#mimetype", "_qualifiers.versions.FormatIdentification.MimeType"),
         Map.entry("#type", "DocumentType"),
         Map.entry("#full_search", "_fullSearch"),
-        Map.entry("#score", "_score"));
+        Map.entry("#score", "_score"),
+        Map.entry("#transferred", "_transferred"));
   }
 
   // Query supported special fields - Unsupported fields : #nbunits

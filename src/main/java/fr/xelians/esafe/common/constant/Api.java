@@ -6,20 +6,19 @@
 
 package fr.xelians.esafe.common.constant;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Api {
 
   public static final String V1 = "/v1";
   public static final String V2 = "/v2";
 
-  // Authentification
+  // Authentication
   public static final String SIGNUP = "/signup";
-  public static final String SIGNIN = "/signin";
-  public static final String REFRESH = "/refresh";
-  public static final String LOGOUT = "/logout";
 
   // Organization
   public static final String ORGANIZATIONS = "/organizations";
-  public static final String TENANT = "/tenant";
   public static final String TENANTS = "/tenants";
   public static final String USERS = "/users";
   public static final String ME = "/me";
@@ -43,6 +42,8 @@ public final class Api {
   public static final String ELIMINATION_ANALYSIS = "/elimination/analysis";
   public static final String ELIMINATION_ACTION = "/elimination/action";
   public static final String EXPORT = "/dipexport";
+  public static final String TRANSFER = "/transfers";
+  public static final String TRANSFER_REPLY = "/transfers/reply";
   public static final String PROBATIVE_VALUE_EXPORT = "/probativevalueexport";
 
   public static final String OBJECTS = "/objects";
@@ -60,13 +61,16 @@ public final class Api {
   public static final String ADMIN_EXTERNAL = "/admin-external";
 
   // Accession register (Admin)
+  public static final String ACCESSION_REGISTERS = "/accessionregisters";
   public static final String ACCESSION_REGISTER_SUMMARY = "/accessionregisters";
+  public static final String ACCESSION_REGISTER_SYMBOLIC = "/accessionregisterssymbolic";
   public static final String ACCESSION_REGISTER_DETAILS = "/accessionregisterdetails";
 
   // Referential (Admin)
   public static final String ONTOLOGIES = "/ontologies";
   public static final String AGENCIES = "/agencies";
   public static final String RULES = "/rules";
+  public static final String RULES_REPORT = "/rulesreport";
   public static final String PROFILES = "/profiles";
   public static final String INGEST_CONTRACTS = "/ingestcontracts";
   public static final String ACCESS_CONTRACTS = "/accesscontracts";
@@ -87,6 +91,9 @@ public final class Api {
   public static final String CHECK_COHERENCE = "/admin/coherency/check/{delay}/{duration}";
   public static final String REPAIR_COHERENCE = "/admin/coherency/repair";
   public static final String ADD_STORAGE_OFFER = "/admin/storageoffer/{offer}";
+
+  // User
+  public static final String USER_TOKEN = "/access-key";
 
   private Api() {
     // do nothing

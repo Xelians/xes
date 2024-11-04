@@ -21,17 +21,18 @@ public class ItInit implements ApplicationContextInitializer<ConfigurableApplica
 
   // Ressources
   public static final String RESOURCES = "src/test/resources/";
-  public static final String REFERENTIEL = RESOURCES + "/referentiel/";
-  public static final String RULE = REFERENTIEL + "rule/";
-  public static final String AGENCY = REFERENTIEL + "agency/";
-  public static final String ONTOLOGY = REFERENTIEL + "ontology/";
-  public static final String PROFILE = REFERENTIEL + "profile/";
-  public static final String INGESTCONTRACT = REFERENTIEL + "ingestcontract/";
-  public static final String ACCESSCONTRACT = REFERENTIEL + "accesscontract/";
+
+  public static final String REFERENTIAL = RESOURCES + "/referentiel/";
+  public static final String RULE = REFERENTIAL + "rule/";
+  public static final String AGENCY = REFERENTIAL + "agency/";
+  public static final String ONTOLOGY = REFERENTIAL + "ontology/";
+  public static final String PROFILE = REFERENTIAL + "profile/";
+  public static final String INGEST_CONTRACT = REFERENTIAL + "ingestcontract/";
+  public static final String ACCESS_CONTRACT = REFERENTIAL + "accesscontract/";
   public static final String SEDA_SIP = RESOURCES + "sedav2/sip/";
   public static final String SEDA_FILING = RESOURCES + "sedav2/filing/";
   public static final String SEDA_HOLDING = RESOURCES + "sedav2/holding/";
-  public static final String PDF = RESOURCES + "/pdf/";
+  public static final String PDF = RESOURCES + "pdf/";
 
   // TestContainers
   private static final ClamAVContainer clamav;
@@ -39,7 +40,7 @@ public class ItInit implements ApplicationContextInitializer<ConfigurableApplica
   private static final ElasticsearchContainer elastic;
   private static final MinioContainer minio;
 
-  private static final String POSTGRES_IMAGE = "postgres:16.0-alpine";
+  private static final String POSTGRES_IMAGE = "postgres:16.1-alpine";
   private static final String ELASTIC_IMAGE =
       "docker.elastic.co/elasticsearch/elasticsearch:8.13.0";
 
@@ -96,6 +97,7 @@ public class ItInit implements ApplicationContextInitializer<ConfigurableApplica
         .applyTo(ctx.getEnvironment());
 
     TestPropertyValues.of(
+            "app.storage.offer.s3[0].provider=MINIO",
             "app.storage.offer.s3[0].name=minio01",
             "app.storage.offer.s3[0].region=US_EAST_1",
             "app.storage.offer.s3[0].endpoint=http://" + minio.getHostAddress(),

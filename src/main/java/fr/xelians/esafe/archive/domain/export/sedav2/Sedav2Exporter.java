@@ -11,9 +11,9 @@ import static fr.xelians.esafe.common.constant.Sedav2.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.export.ExportConfig;
 import fr.xelians.esafe.archive.domain.export.Exporter;
+import fr.xelians.esafe.archive.domain.export.RequestParameters;
 import fr.xelians.esafe.archive.domain.search.export.DataObjectVersionToExport;
 import fr.xelians.esafe.archive.domain.search.export.DipExportType;
-import fr.xelians.esafe.archive.domain.search.export.DipRequestParameters;
 import fr.xelians.esafe.archive.domain.unit.*;
 import fr.xelians.esafe.archive.domain.unit.ArchiveUnit;
 import fr.xelians.esafe.archive.domain.unit.object.*;
@@ -28,13 +28,14 @@ import fr.xelians.esafe.archive.domain.unit.rules.management.DisseminationRules;
 import fr.xelians.esafe.archive.domain.unit.rules.management.HoldRules;
 import fr.xelians.esafe.archive.domain.unit.rules.management.ReuseRules;
 import fr.xelians.esafe.archive.domain.unit.rules.management.StorageRules;
+import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
+import fr.xelians.esafe.common.utils.SipUtils;
 import fr.xelians.esafe.storage.domain.dao.StorageDao;
 import fr.xelians.sipg.model.*;
 import fr.xelians.sipg.model.Agency;
 import fr.xelians.sipg.model.RelatedObjectRef;
 import fr.xelians.sipg.service.sedav2.Sedav2Service;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,55 +46,129 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Sedav2Exporter implements Exporter {
 
+  public static final String FAILED_TO_EXPORT = "Failed to export archives";
   public static final String KEY_IS_NOT_A_VALUE_NODE = "Key %s is not a value node";
 
   private final Long tenant;
+  private final Long operationId;
   private final StorageDao storageDao;
   private final List<String> storageOffers;
   private final ExportConfig exportConfig;
 
   public Sedav2Exporter(
-      Long tenant, List<String> storageOffers, StorageDao storageDao, ExportConfig exportConfig) {
+      Long tenant,
+      Long operationId,
+      List<String> storageOffers,
+      StorageDao storageDao,
+      ExportConfig exportConfig) {
+
     this.tenant = tenant;
+    this.operationId = operationId;
     this.storageOffers = storageOffers;
     this.storageDao = storageDao;
     this.exportConfig = exportConfig;
   }
 
-  public void export(List<ArchiveUnit> srcUnits, Path path) throws IOException {
+  public void exportDip(List<ArchiveUnit> srcUnits, Path path) {
 
-    DipRequestParameters params = exportConfig.dipRequestParameters();
+    RequestParameters rp = exportConfig.requestParameters();
 
-    fr.xelians.sipg.model.ArchiveTransfer archiveTransfer =
-        new fr.xelians.sipg.model.ArchiveTransfer();
-    archiveTransfer.setArchivalAgreement(params.archivalAgreement());
-    archiveTransfer.setOriginatingAgencyIdentifier(params.originatingAgencyIdentifier());
-    archiveTransfer.setSubmissionAgencyIdentifier(params.submissionAgencyIdentifier());
-    archiveTransfer.setArchivalAgency(params.archivalAgencyIdentifier(), null);
-    archiveTransfer.setTransferringAgency(params.archivalAgencyIdentifier(), null);
-    archiveTransfer.setMessageIdentifier(params.messageRequestIdentifier());
-    archiveTransfer.setComment(params.comment());
+    fr.xelians.sipg.model.ArchiveDeliveryRequestReply delivery =
+        new fr.xelians.sipg.model.ArchiveDeliveryRequestReply();
+    delivery.setMessageIdentifier(SipUtils.randomMessageIdentifier());
+
+    delivery.setArchivalAgreement(rp.archivalAgreement());
+    delivery.setArchivalAgency(rp.archivalAgencyIdentifier(), null);
+    delivery.setComment(rp.comment());
+
+    delivery.setUnitIdentifier(""); // Not Implemented
+    delivery.setRequester(new Agency(rp.requester(), null));
+    delivery.setMessageRequestIdentifier(rp.messageRequestIdentifier());
+
+    AtomicLong nb = new AtomicLong(0L);
+    AtomicReference<String> ref = new AtomicReference<>(null);
 
     for (ArchiveUnit srcUnit : srcUnits) {
       fr.xelians.sipg.model.ArchiveUnit dstUnit = toArchiveUnit(srcUnit);
-      archiveTransfer.addArchiveUnit(dstUnit);
-      visitArchiveUnits(srcUnit, dstUnit);
+      delivery.addArchiveUnit(dstUnit);
+      checkNumberOfUnits(nb);
+      checkAgencyIdentifier(ref, srcUnit.getServiceProducer());
+      visitArchiveUnits(srcUnit, dstUnit, nb, ref);
     }
 
-    Sedav2Service.getV22Instance().write(archiveTransfer, path);
+    String id = rp.originatingAgencyIdentifier();
+    delivery.setOriginatingAgencyIdentifier(StringUtils.isBlank(id) ? ref.get() : id);
+
+    Sedav2Service.getV22Instance().write(delivery, path);
   }
 
-  // Convert to SEDA
-  private void visitArchiveUnits(ArchiveUnit srcUnit, fr.xelians.sipg.model.ArchiveUnit dstUnit) {
+  public void exportSip(List<ArchiveUnit> srcUnits, Path path) {
+
+    RequestParameters rp = exportConfig.requestParameters();
+
+    fr.xelians.sipg.model.ArchiveTransfer transfer = new fr.xelians.sipg.model.ArchiveTransfer();
+
+    // In order to retrieve the report of the transfer operation, the message identifier must be
+    // the operationId. This message identifier is given back in the ATR uploaded by the
+    // transfer reply operation.
+    transfer.setMessageIdentifier(operationId.toString());
+    transfer.setArchivalAgreement(rp.archivalAgreement());
+    transfer.setOriginatingAgencyIdentifier(rp.originatingAgencyIdentifier());
+    transfer.setSubmissionAgencyIdentifier(rp.submissionAgencyIdentifier());
+    transfer.setArchivalAgency(rp.archivalAgencyIdentifier(), null);
+    transfer.setTransferringAgency(rp.transferringAgency(), null);
+    transfer.setComment(rp.comment());
+
+    AtomicLong nb = new AtomicLong(0L);
+    AtomicReference<String> ref = new AtomicReference<>(null);
+
+    for (ArchiveUnit srcUnit : srcUnits) {
+      fr.xelians.sipg.model.ArchiveUnit dstUnit = toArchiveUnit(srcUnit);
+      transfer.addArchiveUnit(dstUnit);
+      visitArchiveUnits(srcUnit, dstUnit, nb, ref);
+    }
+
+    Sedav2Service.getV22Instance().write(transfer, path);
+  }
+
+  private void visitArchiveUnits(
+      ArchiveUnit srcUnit,
+      fr.xelians.sipg.model.ArchiveUnit dstUnit,
+      AtomicLong nb,
+      AtomicReference<String> ref) {
+
     for (ArchiveUnit srcChildUnit : srcUnit.getChildUnitMap().values()) {
       fr.xelians.sipg.model.ArchiveUnit dstChildUnit = toArchiveUnit(srcChildUnit);
       dstUnit.addArchiveUnit(dstChildUnit);
-      visitArchiveUnits(srcChildUnit, dstChildUnit);
+      checkNumberOfUnits(nb);
+      checkAgencyIdentifier(ref, dstUnit.getOriginatingAgency().getIdentifier());
+      visitArchiveUnits(srcChildUnit, dstChildUnit, nb, ref);
+    }
+  }
+
+  private static void checkNumberOfUnits(AtomicLong nb) {
+    if (nb.incrementAndGet() > 10000L) {
+      throw new BadRequestException(
+          FAILED_TO_EXPORT, "The number of exported archives is greater than 10000");
+    }
+  }
+
+  private static void checkAgencyIdentifier(AtomicReference<String> ref, String ag) {
+    String id = ref.get();
+    if (id == null) {
+      ref.set(ag);
+    } else if (!id.equals(ag)) {
+      ref.set("VITAM");
     }
   }
 

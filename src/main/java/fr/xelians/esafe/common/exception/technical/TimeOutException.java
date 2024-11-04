@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.exception.technical;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class TimeOutException extends TechnicalException {
 
   public TimeOutException(String title, String message) {

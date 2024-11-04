@@ -13,6 +13,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.DslParser;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class LeafOperator<T> implements LeafQueryOperator<T> {
 
   public static final String DOCUMENT_TYPE = "DocumentType";

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.atr.ArchiveTransferReply;
 import fr.xelians.esafe.archive.domain.atr.ArchiveUnitReply;
 import fr.xelians.esafe.archive.domain.atr.BinaryDataObjectReply;
+import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Utils;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.json.JsonService;
 import fr.xelians.esafe.common.utils.Hash;
@@ -23,7 +24,9 @@ import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.operation.dto.OperationResult;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
+import fr.xelians.esafe.organization.dto.TenantContract;
 import fr.xelians.esafe.organization.dto.UserDto;
+import fr.xelians.esafe.referential.dto.AccessContractDto;
 import fr.xelians.esafe.referential.dto.AgencyDto;
 import fr.xelians.esafe.referential.dto.IngestContractDto;
 import fr.xelians.esafe.referential.dto.ProfileDto;
@@ -31,19 +34,16 @@ import fr.xelians.esafe.testcommon.*;
 import fr.xelians.sipg.model.ArchiveTransfer;
 import fr.xelians.sipg.model.ArchiveUnit;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import nu.xom.*;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -55,22 +55,19 @@ class IngestIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
 
-  @BeforeEach
-  void beforeEach() {}
-
   @Test
   void createCsvAgenciesTest() throws IOException {
     Path dir = Paths.get(ItInit.AGENCY);
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".csv")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".csv")) {
       Long tenant = nextTenant();
-      ResponseEntity<List<AgencyDto>> response = restClient.createAgencies(tenant, path);
+      ResponseEntity<List<AgencyDto>> response = restClient.createCsvAgency(tenant, path);
       assertEquals(
-          HttpStatus.OK,
+          HttpStatus.CREATED,
           response.getStatusCode(),
           String.format("path: %s - response: %s", path, TestUtils.getBody(response)));
     }
@@ -81,16 +78,16 @@ class IngestIT extends BaseIT {
     Long tenant = nextTenant();
     Scenario.createScenario01(restClient, tenant, userDto);
 
-    ResponseEntity<List<AgencyDto>> r1 =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto("Identifier4"));
-    assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
-
-    ResponseEntity<List<AgencyDto>> r2 =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto("Identifier5"));
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    String[] agencies = {
+      "FRAN_NP_009915", "Identifier4", "Identifier5", "Service_versant", "Service_producteur"
+    };
+    for (var agency : agencies) {
+      var r0 = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(agency));
+      assertEquals(HttpStatus.CREATED, r0.getStatusCode(), TestUtils.getBody(r0));
+    }
 
     Path dir = Paths.get(ItInit.SEDA_HOLDING);
-    for (Path path : TestUtils.listFiles(dir, "OK_arbre_", ".zip")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_arbre_", ".zip")) {
       ResponseEntity<Void> r3 = restClient.uploadHolding(tenant, path);
       String requestId = r3.getHeaders().getFirst(X_REQUEST_ID);
       OperationStatusDto operation =
@@ -131,7 +128,7 @@ class IngestIT extends BaseIT {
     Scenario.createScenario01(restClient, tenant, userDto);
 
     Path dir = Paths.get(ItInit.SEDA_HOLDING);
-    for (Path path : TestUtils.listFiles(dir, "KO_arbre_", ".zip")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_arbre_", ".zip")) {
       ResponseEntity<Void> response = restClient.uploadHolding(tenant, path);
       String requestId = response.getHeaders().getFirst(X_REQUEST_ID);
       OperationStatusDto operation =
@@ -150,20 +147,18 @@ class IngestIT extends BaseIT {
     Long tenant = nextTenant();
     Scenario.createScenario01(restClient, tenant, userDto);
 
-    ResponseEntity<List<AgencyDto>> response =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto("Identifier4"));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-
-    ResponseEntity<List<AgencyDto>> r2 =
-        restClient.createAgencies(tenant, DtoFactory.createAgencyDto("Identifier5"));
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    String[] agencies = {"Identifier4", "Service_versant", "Service_producteur", "Identifier5"};
+    for (var agency : agencies) {
+      var r0 = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(agency));
+      assertEquals(HttpStatus.CREATED, r0.getStatusCode(), TestUtils.getBody(r0));
+    }
 
     ResponseEntity<List<IngestContractDto>> r3 =
         restClient.createIngestContract(tenant, DtoFactory.createIngestContractDto("IC-000004"));
-    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    assertEquals(HttpStatus.CREATED, r3.getStatusCode(), TestUtils.getBody(r3));
 
     Path dir = Paths.get(ItInit.SEDA_FILING);
-    for (Path path : TestUtils.listFiles(dir, "OK_plan_", ".zip")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_plan_", ".zip")) {
       ResponseEntity<Void> r4 = restClient.uploadFiling(tenant, path);
       String requestId = r4.getHeaders().getFirst(X_REQUEST_ID);
       OperationStatusDto operation =
@@ -172,11 +167,11 @@ class IngestIT extends BaseIT {
       assertEquals(
           OperationStatus.OK,
           operation.status(),
-          String.format("path: %s - response: %s", path, TestUtils.getBody(r4)));
+          String.format("path: %s - r0: %s", path, TestUtils.getBody(r4)));
       assertEquals(
           HttpStatus.ACCEPTED,
           r4.getStatusCode(),
-          String.format("path: %s - response: %s", path, TestUtils.getBody(r4)));
+          String.format("path: %s - r0: %s", path, TestUtils.getBody(r4)));
     }
   }
 
@@ -186,7 +181,7 @@ class IngestIT extends BaseIT {
     Scenario.createScenario01(restClient, tenant, userDto);
 
     Path dir = Paths.get(ItInit.SEDA_FILING);
-    for (Path path : TestUtils.listFiles(dir, "KO", ".zip")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO", ".zip")) {
       ResponseEntity<Void> response = restClient.uploadFiling(tenant, path);
       String requestId = response.getHeaders().getFirst(X_REQUEST_ID);
       OperationStatusDto operation =
@@ -281,7 +276,7 @@ class IngestIT extends BaseIT {
   }
 
   @Test
-  void downloadAtrFromBadSip(@TempDir Path tmpDir) throws IOException, ParsingException {
+  void downloadAtrFromBadSip(@TempDir Path tmpDir) throws IOException {
     Long tenant = nextTenant();
     Scenario.createScenario01(restClient, tenant, userDto);
 
@@ -408,33 +403,35 @@ class IngestIT extends BaseIT {
     restClient.downloadXmlAtr(tenant, requestId, atrPath);
 
     // Retrieve all created archive units from ATR
-    Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
-    XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    try (InputStream is = Files.newInputStream(atrPath)) {
+      Element rootElem = new Builder().build(is).getRootElement();
+      XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
+      xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
 
-    // Check archive units from Xml ATR
-    for (ArchiveUnit unit : smallSip.getArchiveUnits()) {
-      // Get archive unit id (SystemId) from archive unit id attribute
-      String query = "//ns:ArchiveUnit[@id='" + unit.getId() + "']";
-      Nodes nodes = rootElem.query(query, xc);
-      String unitId = nodes.get(0).getValue();
-      if (unit.getBinaryPath() != null) {
-        // Download binary object from Archive Unit
-        Path binPath =
-            Awaitility.given()
-                .ignoreException(HttpClientErrorException.NotFound.class)
-                .until(
-                    () ->
-                        restClient.getBinaryObjectByUnitId(
-                            tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion()),
-                    Objects::nonNull);
+      // Check archive units from Xml ATR
+      for (ArchiveUnit unit : smallSip.getArchiveUnits()) {
+        // Get archive unit id (SystemId) from archive unit id attribute
+        String query = "//ns:ArchiveUnit[@id='" + unit.getId() + "']";
+        Nodes nodes = rootElem.query(query, xc);
+        String unitId = nodes.get(0).getValue();
+        if (unit.getBinaryPath() != null) {
+          // Download binary object from Archive Unit
+          Path binPath =
+              Awaitility.given()
+                  .ignoreException(HttpClientErrorException.NotFound.class)
+                  .until(
+                      () ->
+                          restClient.getBinaryObjectByUnitId(
+                              tenant, tmpDir, acIdentifier, unitId, unit.getBinaryVersion()),
+                      Objects::nonNull);
 
-        assertNotNull(binPath);
-        assertTrue(Files.exists(binPath));
-        assertEquals(Files.size(unit.getBinaryPath()), Files.size(binPath));
-        assertArrayEquals(
-            HashUtils.checksum(Hash.SHA512, unit.getBinaryPath()),
-            HashUtils.checksum(Hash.SHA512, binPath));
+          assertNotNull(binPath);
+          assertTrue(Files.exists(binPath));
+          assertEquals(Files.size(unit.getBinaryPath()), Files.size(binPath));
+          assertArrayEquals(
+              HashUtils.checksum(Hash.SHA512, unit.getBinaryPath()),
+              HashUtils.checksum(Hash.SHA512, binPath));
+        }
       }
 
       String q =
@@ -472,27 +469,27 @@ class IngestIT extends BaseIT {
     Long tenant = nextTenant();
     ResponseEntity<List<AgencyDto>> response =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto("FRAD01"));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     ResponseEntity<List<AgencyDto>> r2 =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto("DGFIP"));
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
-    ResponseEntity<List<ProfileDto>> r4 =
-        restClient.createProfile(tenant, DtoFactory.createProfileDto("Matrice"));
-    assertEquals(HttpStatus.OK, r4.getStatusCode(), TestUtils.getBody(r4));
+    ProfileDto profileDto = DtoFactory.createProfileDto("Matrice");
+    ResponseEntity<List<ProfileDto>> r4 = restClient.createProfile(tenant, profileDto);
+    assertEquals(HttpStatus.CREATED, r4.getStatusCode(), TestUtils.getBody(r4));
 
-    assertNotNull(r4.getBody());
-    ProfileDto profile = r4.getBody().getFirst();
     ResponseEntity<Void> r5 =
         restClient.updateBinaryProfile(
-            tenant, Paths.get(ItInit.PROFILE + "OK_profil_matrice.rng"), profile.getIdentifier());
+            tenant,
+            Paths.get(ItInit.PROFILE + "OK_profil_matrice.rng"),
+            profileDto.getIdentifier());
     assertEquals(HttpStatus.OK, r5.getStatusCode(), TestUtils.getBody(r5));
 
     IngestContractDto icDto = DtoFactory.createIngestContractDto("IC-000004");
     icDto.getArchiveProfiles().add("Matrice");
     ResponseEntity<List<IngestContractDto>> r3 = restClient.createIngestContract(tenant, icDto);
-    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    assertEquals(HttpStatus.CREATED, r3.getStatusCode(), TestUtils.getBody(r3));
 
     ResponseEntity<Void> r6 =
         restClient.uploadSip(tenant, Paths.get(ItInit.SEDA_SIP + "sip_profile.zip"));
@@ -501,9 +498,7 @@ class IngestIT extends BaseIT {
     String requestId = r6.getHeaders().getFirst(X_REQUEST_ID);
     OperationStatusDto operation =
         restClient.waitForOperationStatus(tenant, requestId, 10, RestClient.OP_FINAL);
-
     assertEquals(OperationStatus.OK, operation.status());
-    assertEquals(HttpStatus.ACCEPTED, r6.getStatusCode(), TestUtils.getBody(r6));
   }
 
   @Test
@@ -511,29 +506,27 @@ class IngestIT extends BaseIT {
     Long tenant = nextTenant();
     ResponseEntity<List<AgencyDto>> response =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto("FRAD01"));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     ResponseEntity<List<AgencyDto>> r2 =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto("DGFIP"));
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
-    ResponseEntity<List<ProfileDto>> r4 =
-        restClient.createProfile(tenant, DtoFactory.createProfileDto("MatriceOld"));
-    assertEquals(HttpStatus.OK, r4.getStatusCode(), TestUtils.getBody(r4));
-    assertNotNull(r4.getBody());
-    ProfileDto profile = r4.getBody().getFirst();
+    ProfileDto profileDto = DtoFactory.createProfileDto("MatriceOld");
+    ResponseEntity<List<ProfileDto>> r4 = restClient.createProfile(tenant, profileDto);
+    assertEquals(HttpStatus.CREATED, r4.getStatusCode(), TestUtils.getBody(r4));
 
     ResponseEntity<Void> r5 =
         restClient.updateBinaryProfile(
             tenant,
             Paths.get(ItInit.PROFILE + "OK_profil_matriceOld.rng"),
-            profile.getIdentifier());
+            profileDto.getIdentifier());
     assertEquals(HttpStatus.OK, r5.getStatusCode(), TestUtils.getBody(r5));
 
     IngestContractDto icDto = DtoFactory.createIngestContractDto("IC-000004");
     icDto.getArchiveProfiles().add("MatriceOld");
     ResponseEntity<List<IngestContractDto>> r3 = restClient.createIngestContract(tenant, icDto);
-    assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+    assertEquals(HttpStatus.CREATED, r3.getStatusCode(), TestUtils.getBody(r3));
 
     ResponseEntity<Void> r6 =
         restClient.uploadSip(tenant, Paths.get(ItInit.SEDA_SIP + "sip_old.zip"));
@@ -712,7 +705,7 @@ class IngestIT extends BaseIT {
     restClient.downloadXmlAtr(tenant, requestId, atrPath);
     Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
     XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
 
     Nodes nodes = rootElem.query("//ns:ArchiveUnit[@id='UNIT_ID2']", xc);
     long unitId2 = Long.parseLong(nodes.get(0).getValue());
@@ -794,7 +787,7 @@ class IngestIT extends BaseIT {
 
     ResponseEntity<List<AgencyDto>> response =
         restClient.createAgencies(tenant, DtoFactory.createAgencyDto(3));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     // Wait for indexing
     Utils.sleep(1000);
@@ -802,7 +795,7 @@ class IngestIT extends BaseIT {
     IngestContractDto ic2 = DtoFactory.createIngestContractDto(3);
     ic2.setLinkParentId(systemId);
     ResponseEntity<List<IngestContractDto>> r2 = restClient.createIngestContract(tenant, ic2);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
     Path sipPath = tmpDir.resolve("sip.zip");
     sedaService.write(SipFactory.createSimpleSip(tmpDir, 3), sipPath);
@@ -867,16 +860,117 @@ class IngestIT extends BaseIT {
     }
   }
 
-  private SearchResult<JsonNode> searchArchives(
-      Long tenant, String acIdentifier, String query, long min) {
+  private SearchResult<JsonNode> searchArchives(Long tenant, String acId, String query, long min) {
     return Awaitility.await()
         .until(
-            () -> restClient.searchArchive(tenant, acIdentifier, query),
+            () -> restClient.searchArchive(tenant, acId, query),
             r -> r.getBody() != null && r.getBody().hits().size() >= min)
         .getBody();
   }
 
   private SearchResult<JsonNode> searchArchive(Long tenant, String acIdentifier, String query) {
     return searchArchives(tenant, acIdentifier, query, 1);
+  }
+
+  @Test
+  void ingestSipWithAccessContract(@TempDir Path tmpDir) throws IOException, ParsingException {
+    Long tenant = nextTenant();
+    String systemId = Scenario.createScenario04(restClient, tenant, userDto, tmpDir);
+    String acIdentifier = "AC-" + TestUtils.pad(1);
+    String agency1 = "AGENCY-" + TestUtils.pad(1);
+    String agency2 = "AGENCY-" + TestUtils.pad(2);
+
+    JsonNode archiveUnitDto =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getArchiveUnit(tenant, acIdentifier, systemId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
+
+    assertNotNull(archiveUnitDto);
+    assertEquals(agency1, archiveUnitDto.get("#originating_agency").asText());
+
+    AccessContractDto accessContract200 = DtoFactory.createAccessContractDto(200);
+    accessContract200.setOriginatingAgencies(new HashSet<>(Set.of(agency2)));
+    accessContract200.setEveryOriginatingAgency(false);
+    String acIdentifier200 = accessContract200.getIdentifier();
+    var r1 = restClient.createAccessContract(tenant, accessContract200);
+    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
+
+    userDto.getAccessContracts().add(new TenantContract(tenant, acIdentifier200));
+    var r2 = restClient.updateUser(userDto);
+    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+
+    HttpClientErrorException t1 =
+        assertThrows(
+            HttpClientErrorException.class,
+            () -> restClient.getArchiveUnit(tenant, acIdentifier200, systemId));
+    assertEquals(HttpStatus.NOT_FOUND, t1.getStatusCode(), t1.toString());
+  }
+
+  @Test
+  void ingestChildSipWithAccessContract(@TempDir Path tmpDir) throws IOException, ParsingException {
+    Long tenant = nextTenant();
+    String systemId = Scenario.createScenario04(restClient, tenant, userDto, tmpDir);
+    String acIdentifier = "AC-" + TestUtils.pad(1);
+    String agency1 = "AGENCY-" + TestUtils.pad(1);
+    String agency2 = "AGENCY-" + TestUtils.pad(2);
+
+    JsonNode archiveUnitDto =
+        Awaitility.given()
+            .ignoreException(HttpClientErrorException.NotFound.class)
+            .await()
+            .until(
+                () -> restClient.getArchiveUnit(tenant, acIdentifier, systemId),
+                r -> r.getStatusCode() == HttpStatus.OK)
+            .getBody();
+
+    assertNotNull(archiveUnitDto);
+    assertEquals(agency1, archiveUnitDto.get("#originating_agency").asText());
+
+    AccessContractDto accessContract200 = DtoFactory.createAccessContractDto(200);
+    accessContract200.setOriginatingAgencies(new HashSet<>(Set.of(agency2)));
+    accessContract200.setEveryOriginatingAgency(false);
+    String acIdentifier200 = accessContract200.getIdentifier();
+    var r1 = restClient.createAccessContract(tenant, accessContract200);
+    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
+
+    userDto.getAccessContracts().add(new TenantContract(tenant, acIdentifier200));
+    var r2 = restClient.updateUser(userDto);
+    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+
+    ArchiveTransfer updateSip = SipFactory.createUpdateOperationSimpleSip(tmpDir, 2);
+    Map<String, Long> ids = Scenario.uploadSip(restClient, tenant, tmpDir, updateSip);
+
+    for (var id : ids.values()) {
+      Awaitility.given()
+          .ignoreException(HttpClientErrorException.NotFound.class)
+          .await()
+          .until(
+              () -> restClient.getArchiveUnit(tenant, acIdentifier200, id),
+              r -> r.getStatusCode() == HttpStatus.OK);
+    }
+
+    String query =
+        """
+           {
+             "$roots": [ ],
+             "$query":{ "$exists":"#id" },
+             "$filter": {},
+             "$projection": {}
+          }
+          """;
+
+    SearchResult<JsonNode> searchResult = searchArchives(tenant, acIdentifier, query, 5);
+    assertNotNull(searchResult, "Search Time out");
+    List<JsonNode> units = searchResult.results();
+    assertEquals(5, units.size(), searchResult.toString());
+
+    SearchResult<JsonNode> searchResult200 = searchArchives(tenant, acIdentifier200, query, 2);
+    assertNotNull(searchResult200, "Search Time out");
+    List<JsonNode> units200 = searchResult200.results();
+    assertEquals(2, units200.size(), searchResult200.toString());
   }
 }

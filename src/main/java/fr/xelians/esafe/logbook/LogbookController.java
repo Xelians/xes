@@ -8,7 +8,7 @@ package fr.xelians.esafe.logbook;
 
 import static fr.xelians.esafe.common.constant.Api.*;
 import static fr.xelians.esafe.common.constant.Header.*;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ADMIN;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_READER;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
@@ -25,14 +25,21 @@ import jakarta.validation.constraints.Size;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * The {@code LogbookController} class provides REST API endpoints for retrieving and searching
+ * operations and life cycles that are indexed in the logbook, either through Vitam (a third-party
+ * archive system) or standard logbook operations. These endpoints are restricted to users with the
+ * {@code ROLE_ARCHIVE_READER} role.
+ *
+ * <p>* @author Emmanuel Deviller
+ */
 @Slf4j
 @RestController
 @RequestMapping(LOGBOOK_EXTERNAL)
-@Secured(ROLE_ADMIN)
 @RequiredArgsConstructor
 @Validated
 public class LogbookController {
@@ -43,6 +50,7 @@ public class LogbookController {
 
   // Vitam Logbook
   @Operation(summary = "Get operation indexed in the logbook")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(V1 + LOGBOOK_OPERATIONS + "/{operationId}")
   public VitamLogbookOperationDto getVitamLogbookOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
@@ -51,6 +59,7 @@ public class LogbookController {
   }
 
   @Operation(summary = "Search for one operation indexed in the logbook")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(V1 + LOGBOOK_OPERATIONS + "/{operationId}")
   public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
@@ -59,6 +68,7 @@ public class LogbookController {
   }
 
   @Operation(summary = "Search for operations indexed in the logbook", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
   public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperationsWithGet(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
@@ -67,6 +77,7 @@ public class LogbookController {
   }
 
   @Operation(summary = "Search for operations indexed in the logbook")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(V1 + LOGBOOK_OPERATIONS_SEARCH)
   public SearchResult<VitamLogbookOperationDto> searchVitamLogbookOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
@@ -76,6 +87,7 @@ public class LogbookController {
 
   // Standard Logbook
   @Operation(summary = "Get operation indexed in the logbook")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(V2 + LOGBOOK_OPERATIONS + "/{operationId}")
   public LogbookOperationDto getLogbookOperation(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
@@ -84,6 +96,7 @@ public class LogbookController {
   }
 
   @Operation(summary = "Search for operations indexed in the logbook")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(V2 + LOGBOOK_OPERATIONS_SEARCH)
   public SearchResult<LogbookOperationDto> searchLogbookOperations(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @RequestBody SearchQuery query)
@@ -93,6 +106,7 @@ public class LogbookController {
 
   // Lifecycles
   @Operation(summary = "Search for the given unit life cycles with (GET)", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(V1 + LOGBOOK_UNIT_LIFECYCLES)
   public JsonNode getLogbookUnitLifecycles(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -105,6 +119,7 @@ public class LogbookController {
   }
 
   @Operation(summary = "Search for the given unit life cycles with")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(V1 + LOGBOOK_OBJECT_LIFECYCLES)
   public JsonNode getLogbookObjectLifecycles(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,

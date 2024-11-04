@@ -23,7 +23,11 @@ import java.util.*;
 import java.util.Map.Entry;
 import lombok.Getter;
 
-/** Structured Query Language Parser */
+/**
+ * Structured Query Language Parser *
+ *
+ * @author Emmanuel Deviller
+ */
 @Getter
 public abstract class SqlParser<T> extends DslParser<Predicate> {
 

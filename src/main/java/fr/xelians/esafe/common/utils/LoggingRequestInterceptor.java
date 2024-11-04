@@ -16,6 +16,9 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class LoggingRequestInterceptor implements ClientHttpRequestInterceptor {
 

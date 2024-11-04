@@ -12,6 +12,9 @@ import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import java.nio.file.Path;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ExportTask extends CommitTask {
 
   private final TenantDb tenantDb;

@@ -9,6 +9,9 @@ package fr.xelians.esafe.search.domain.field;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class BooleanField extends Field {
 
   public static final String MAPPING_PREFIX = "Boolean";
@@ -60,6 +63,12 @@ public class BooleanField extends Field {
     }
     throw new BadRequestException(
         "As value failed", String.format("Value '%s' is not a valid boolean", node.asText()));
+  }
+
+  @Override
+  public Boolean asValue(Object value) {
+    if (value instanceof Boolean b) return b;
+    return Boolean.valueOf(value.toString());
   }
 
   @Override

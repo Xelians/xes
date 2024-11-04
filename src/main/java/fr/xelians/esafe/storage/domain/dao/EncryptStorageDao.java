@@ -7,7 +7,7 @@
 package fr.xelians.esafe.storage.domain.dao;
 
 import fr.xelians.esafe.common.utils.NioUtils;
-import fr.xelians.esafe.storage.domain.Aes;
+import fr.xelians.esafe.storage.domain.GcmCipher;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.domain.object.*;
 import fr.xelians.esafe.storage.domain.pack.EncryptFilePacker;
@@ -20,10 +20,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.crypto.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class EncryptStorageDao extends DirectStorageDao {
 
   private SecretKey secretKey;
@@ -42,9 +44,7 @@ public class EncryptStorageDao extends DirectStorageDao {
   public InputStream getObjectStream(
       Long tenant, List<String> offers, Long id, StorageObjectType type) throws IOException {
     InputStream is = super.getObjectStream(tenant, offers, id, type);
-    Cipher cipher = Aes.createCipher();
-    Aes.initReadCipher(cipher, secretKey, is);
-    return new CipherInputStream(is, cipher);
+    return GcmCipher.create(secretKey).decrypt(is);
   }
 
   @Override
@@ -52,30 +52,23 @@ public class EncryptStorageDao extends DirectStorageDao {
       Long tenant, List<String> offers, Long id, long start, long end, StorageObjectType type)
       throws IOException {
     InputStream is = super.getObjectStream(tenant, offers, id, start, end, type);
-    Cipher cipher = Aes.createCipher();
-    Aes.initReadCipher(cipher, secretKey, is);
-    return new CipherInputStream(is, cipher);
+    return GcmCipher.create(secretKey).decrypt(is);
   }
 
   @Override
   public byte[] getObjectByte(Long tenant, List<String> offers, Long id, StorageObjectType type)
       throws IOException {
-    return Aes.decrypt(super.getObjectByte(tenant, offers, id, type), secretKey);
+    return GcmCipher.create(secretKey).decrypt(super.getObjectByte(tenant, offers, id, type));
   }
 
   // Use with great care: limit the list size to avoid OOM.
   @Override
   public List<byte[]> getObjectBytes(
       Long tenant, List<String> offers, List<StorageObjectId> storageObjectIds) throws IOException {
-    Cipher cipher = Aes.createCipher();
+    GcmCipher cipher = GcmCipher.create(secretKey);
     List<byte[]> bytes = new ArrayList<>();
-    try {
-      for (byte[] obs : super.getObjectBytes(tenant, offers, storageObjectIds)) {
-        Aes.initReadCipher(cipher, secretKey, obs);
-        bytes.add(cipher.doFinal(Arrays.copyOfRange(obs, 16, obs.length)));
-      }
-    } catch (IllegalBlockSizeException | BadPaddingException e) {
-      throw new IOException(e);
+    for (byte[] obs : super.getObjectBytes(tenant, offers, storageObjectIds)) {
+      bytes.add(cipher.decrypt(obs));
     }
     return bytes;
   }
@@ -125,7 +118,7 @@ public class EncryptStorageDao extends DirectStorageDao {
   @Override
   public List<ChecksumStorageObject> putStorageObjects(
       Long tenant, List<String> offers, List<StorageObject> storageObjects) throws IOException {
-    Cipher cipher = Aes.createCipher();
+    GcmCipher cipher = GcmCipher.create(secretKey);
 
     List<ChecksumStorageObject> csois = new ArrayList<>();
     List<StorageObject> sois = new ArrayList<>();
@@ -138,6 +131,7 @@ public class EncryptStorageDao extends DirectStorageDao {
           if (!soi.isIgnoreChecksum()) {
             csois.add(createChecksumStorageObjectId(soi));
           }
+
         } else if (soi instanceof PathStorageObject psoi) {
           Path dstPath = NioUtils.createTempFile();
           copy(psoi.getPath(), dstPath, cipher);
@@ -147,27 +141,14 @@ public class EncryptStorageDao extends DirectStorageDao {
           if (!psoi.isIgnoreChecksum()) {
             csois.add(createChecksumStorageObjectId(pathStorageObject));
           }
+
         } else if (soi instanceof ByteStorageObject bsoi) {
-          try {
-            // Init initialization vector & cipher
-            byte[] ivBytes = Aes.initWriteCipher(cipher, secretKey);
-
-            // Encrypt bytes
-            byte[] encBytes = cipher.doFinal(bsoi.getBytes());
-
-            // Prepend initialization vector
-            byte[] storageBytes = new byte[encBytes.length + 16];
-            System.arraycopy(ivBytes, 0, storageBytes, 0, 16);
-            System.arraycopy(encBytes, 0, storageBytes, 16, encBytes.length);
-
-            ByteStorageObject byteStorageObject =
-                new ByteStorageObject(storageBytes, bsoi.getId(), bsoi.getType());
-            sois.add(byteStorageObject);
-            if (!bsoi.isIgnoreChecksum()) {
-              csois.add(createChecksumStorageObjectId(byteStorageObject));
-            }
-          } catch (IllegalBlockSizeException | BadPaddingException e) {
-            throw new IOException(e);
+          byte[] storageBytes = GcmCipher.create(secretKey).encrypt(bsoi.getBytes());
+          ByteStorageObject byteStorageObject =
+              new ByteStorageObject(storageBytes, bsoi.getId(), bsoi.getType());
+          sois.add(byteStorageObject);
+          if (!bsoi.isIgnoreChecksum()) {
+            csois.add(createChecksumStorageObjectId(byteStorageObject));
           }
         }
       }
@@ -234,25 +215,11 @@ public class EncryptStorageDao extends DirectStorageDao {
   //    return csois;
   //  }
 
-  private void copy(Path srcPath, Path dstPath, Cipher cipher) throws IOException {
-    byte[] buffer = new byte[8192];
-
-    // Init initialization vector & cipher
-    byte[] ivBytes = Aes.initWriteCipher(cipher, secretKey);
-
+  private void copy(Path srcPath, Path dstPath, GcmCipher cipher) throws IOException {
     // Encrypt stream
     try (InputStream is = Files.newInputStream(srcPath);
-        OutputStream os = Files.newOutputStream(dstPath, StandardOpenOption.WRITE);
-        CipherOutputStream cos = new CipherOutputStream(os, cipher)) {
-
-      // Prepend initialization vector
-      os.write(ivBytes);
-
-      // Encrypt bytes
-      int length;
-      while ((length = is.read(buffer)) > 0) {
-        cos.write(buffer, 0, length);
-      }
+        OutputStream os = Files.newOutputStream(dstPath, StandardOpenOption.WRITE); ) {
+      cipher.encrypt(is, os);
     }
   }
 

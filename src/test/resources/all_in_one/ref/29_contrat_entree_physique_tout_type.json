@@ -1,0 +1,15 @@
+[
+	{
+	"Identifier":"IC-000013",
+	"Name":"Contrat d'entree Physique Tout Type",
+	"Description":"Contrat d'entree Physique Tout Type",
+	"Status":"ACTIVE",
+	"ArchiveProfiles":["PR-000012" , "PR-000013", "PR-000014", "PR-000015", "PR-000016", "PR-000017", "PR-000018", "PR-000019", "PR-000020", "PR-000021"],
+	"LastUpdate":"10/12/2016",
+	"CreationDate":"10/12/2016",
+	"ActivationDate":"10/12/2016",
+	"DeactivationDate":"10/12/2016",
+	"EveryDataObjectVersion" : true,
+	"ComputeInheritedRulesAtIngest": true
+	}
+]

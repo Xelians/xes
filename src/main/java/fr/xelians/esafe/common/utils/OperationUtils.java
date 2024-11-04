@@ -17,6 +17,9 @@ import fr.xelians.esafe.storage.domain.hashset.*;
 import java.io.IOException;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class OperationUtils {
 
   private OperationUtils() {}

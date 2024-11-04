@@ -17,6 +17,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class LocalDateTimeDeserializer extends StdDeserializer<LocalDateTime> {
 
   private static final DateTimeFormatter ALTERNATIVE_DATE_FORMATTER =

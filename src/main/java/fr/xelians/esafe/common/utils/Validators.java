@@ -26,6 +26,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Validators {
 
   private Validators() {}

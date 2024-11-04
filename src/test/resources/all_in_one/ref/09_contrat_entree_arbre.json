@@ -1,0 +1,16 @@
+[
+	{
+		"Identifier": "IC-000001",
+		"Name": "Contrat Entree Arbre",
+		"Description": "Contrat d’entrée pour verser l’arbre du tenant uniquement",
+		"Status": "ACTIVE",
+		"ArchiveProfiles": [
+			"PR-000001", "PR-000023"
+		],
+		"LastUpdate": "10/12/2016",
+		"CreationDate": "10/12/2016",
+		"ActivationDate": "10/12/2016",
+		"DeactivationDate": "10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

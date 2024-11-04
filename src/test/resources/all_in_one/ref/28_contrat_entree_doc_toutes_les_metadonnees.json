@@ -1,0 +1,14 @@
+[
+	{
+		"Identifier":"IC-000012",
+		"Name":"Contrat d'entree Doc Toutes les métadonnées",
+		"Description":"Contrat d'entree Doc Toutes les métadonnées",
+		"Status":"ACTIVE",
+		"ArchiveProfiles":["PR-000011"],
+		"LastUpdate":"06/04/2020",
+		"CreationDate":"06/04/2020",
+		"ActivationDate":"06/04/2020",
+		"DeactivationDate":"06/04/2020",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

@@ -8,7 +8,7 @@ package fr.xelians.esafe.organization.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import fr.xelians.esafe.common.entity.database.AbstractBaseDb;
-import fr.xelians.esafe.organization.domain.role.GlobalRole;
+import fr.xelians.esafe.organization.domain.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +32,8 @@ import org.hibernate.validator.constraints.Length;
  *
  * <p>To manage concurrency in a distributed Restful environment, see
  * https://blog.novatec-gmbh.de/managing-concurrency-in-a-distributed-restful-environment-with-spring-boot-and-angular2/
+ *
+ * @author Emmanuel Deviller
  */
 @Getter
 @Setter
@@ -49,6 +51,9 @@ import org.hibernate.validator.constraints.Length;
           name = "unique_user_email",
           columnNames = {"email"})
     })
+/*
+ * @author Emmanuel Deviller
+ */
 public class UserDb extends AbstractBaseDb {
 
   @Id
@@ -84,9 +89,9 @@ public class UserDb extends AbstractBaseDb {
   @Length(min = 8, max = 256)
   private String password;
 
-  @NotNull private HashSet<String> apiKey = new HashSet<>();
+  private String accessKey;
 
-  @NotNull private HashSet<GlobalRole> globalRoles = new HashSet<>();
+  @NotNull private HashSet<Role.GlobalRole> globalRoles = new HashSet<>();
 
   @NotNull private HashSet<String> tenantRoles = new HashSet<>();
 

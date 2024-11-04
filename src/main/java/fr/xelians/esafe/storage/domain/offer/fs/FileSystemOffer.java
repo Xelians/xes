@@ -40,6 +40,9 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.io.input.BoundedInputStream;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class FileSystemOffer extends AbstractStorageOffer {
 

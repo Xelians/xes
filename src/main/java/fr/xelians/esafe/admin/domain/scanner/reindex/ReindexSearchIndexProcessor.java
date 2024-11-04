@@ -19,13 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class ReindexSearchIndexProcessor implements OperationProcessor {
 
-  private final IdSet idSet;
-
   public static final int BULK_INDEX_SIZE = 5000;
 
+  private final IdSet idSet;
   private final LogbookService logbookService;
   private final List<LogbookOperation> operations;
 

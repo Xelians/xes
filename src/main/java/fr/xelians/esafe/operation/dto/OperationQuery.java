@@ -16,6 +16,9 @@ import fr.xelians.esafe.operation.domain.OperationType;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @JsonIgnoreProperties(value = {"workflows", "listSteps", "listProcessTypes"})
 public record OperationQuery(
     @JsonProperty("id") String id,

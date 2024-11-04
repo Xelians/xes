@@ -8,4 +8,7 @@ package fr.xelians.esafe.common.utils;
 
 import java.io.InputStream;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record StreamContent(String name, String mimetype, InputStream inputStream) {}

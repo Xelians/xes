@@ -9,4 +9,7 @@ package fr.xelians.esafe.archive.domain.search.update;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRequest(SearchRequest searchRequest, JsonNode jsonPatch) {}

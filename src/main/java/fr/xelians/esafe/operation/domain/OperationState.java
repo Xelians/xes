@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.operation.domain;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum OperationState {
 
   // Not used

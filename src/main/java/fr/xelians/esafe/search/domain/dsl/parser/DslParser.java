@@ -22,6 +22,9 @@ import java.util.Set;
 import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class DslParser<T> {
 
   protected static final String CREATION_FAILED = "Failed to create query";

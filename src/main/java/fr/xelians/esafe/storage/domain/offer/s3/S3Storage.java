@@ -7,10 +7,8 @@
 package fr.xelians.esafe.storage.domain.offer.s3;
 
 import fr.xelians.esafe.storage.domain.StorageType;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import fr.xelians.esafe.storage.domain.offer.StorageClass;
+import jakarta.validation.constraints.*;
 import java.net.URI;
 import java.time.Duration;
 import lombok.Data;
@@ -25,6 +23,9 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.*;
 import software.amazon.awssdk.services.s3.crt.S3CrtHttpConfiguration;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Data
 @Validated
 public class S3Storage {
@@ -46,11 +47,19 @@ public class S3Storage {
 
   @NotBlank private String secretAccessKey;
 
+  @NotNull private S3Provider provider;
+
   @Min(1)
   @Max(1024)
   private int concurrency = 32;
 
   private boolean isActive = true;
+
+  private StorageClass storageClass;
+
+  public String getOwner() {
+    return accessKeyId;
+  }
 
   public StorageType getStorageTye() {
     return StorageType.S3;

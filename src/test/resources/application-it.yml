@@ -1,13 +1,55 @@
 spring:
   application:
     name: eSafe (Integration)
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          public-key-location: classpath:dev/access-token-signing-validation.pub
+      authorization-server:
+        client:
+          test-client:
+            token:
+              access-token-time-to-live: PT10M
+              refresh-token-time-to-live: PT2H
+            registration:
+              client-id: "test-client-id"
+              client-secret: "{noop}test-client-secret"
+              client-authentication-methods:
+                - "client_secret_post"
+              authorization-grant-types:
+                - "refresh_token"
+                - "access_key"
+              scopes:
+                - "openid"
+
+authn:
+  access-key:
+    issuer-uri: http://localhost:8080
+    time-to-live: P5D
+    public-key: classpath:dev/access-key-signing-validation.pub
+    private-key: classpath:dev/access-key-signing-private.key
+  oauth2:
+    jwk:
+      public-key: classpath:dev/access-token-signing-validation.pub
+      private-key: classpath:dev/access-token-signing-private.key
 
 app:
+  # Root Admin
+  rootAdmin:
+    username: root
+    password: password
+    email: toto@mail.fr
+    tenant:
+      storageOffers: FS:FS01, S3:minio01
+      isEncrypted: false
+
   indexing:
     threads: 32
     on-start:
       reset: true
       create-if-missing: true
+
   # Batchs (delay in milli-sec)
   batch:
     accession:
@@ -25,14 +67,20 @@ app:
     secure:
       fixedDelay: PT0.5S
       initialDelay: PT0.1S
-    servernode:
-      fixedDelay: 1000
+    cluster:
+      fixedDelay: 2000
       initialDelay: 0
     store:
       operation:
         fixedDelay: 100
         initialDelay: 200
-  # JWT Authentification (sec)
-  jwt:
-    accessTokenExpiration: 2
-    refreshTokenExpiration: 300
+elasticsearch:
+  host: localhost
+  password: elastic
+  port: 9200
+  username: elastic
+
+logging:
+  pattern:
+    # Suppress this property if you want to include traceId and spanId in the logs
+    correlation: ''

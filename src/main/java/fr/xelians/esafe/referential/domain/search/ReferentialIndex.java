@@ -11,6 +11,9 @@ import fr.xelians.esafe.search.domain.field.*;
 import fr.xelians.esafe.search.domain.index.Searchable;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ReferentialIndex implements Searchable {
 
   public static final String NAME = "Ontology";
@@ -32,11 +35,29 @@ public class ReferentialIndex implements Searchable {
           Map.entry("DeactivationDate", new DateField("deactivationDate", true)),
           Map.entry("Status", new StatusField("status", true)));
 
+  private static final Map<String, Field> PRO_FIELDS =
+      Map.ofEntries(
+          Map.entry("tenant", new LongField("#tenant", true)),
+          Map.entry("identifier", new KeywordField("Identifier", true)),
+          Map.entry("operationId", new LongField("OperationId", true)),
+          Map.entry("autoVersion", new IntegerField("AutoVersion", true)),
+          Map.entry("name", new KeywordField("Name", true)),
+          Map.entry("description", new TextField("Description", true)),
+          Map.entry("creationDate", new DateField("CreationDate", true)),
+          Map.entry("lastUpdate", new DateField("LastUpdate", true)),
+          Map.entry("activationDate", new DateField("ActivationDate", true)),
+          Map.entry("deactivationDate", new DateField("DeactivationDate", true)),
+          Map.entry("status", new StatusField("Status", true)));
+
   private static final Map<String, Field> ALIAS_FIELDS = Map.ofEntries();
 
   public static final ReferentialIndex INSTANCE = new ReferentialIndex();
 
   private ReferentialIndex() {}
+
+  public static Field getProjectionField(String fieldName) {
+    return PRO_FIELDS.get(fieldName);
+  }
 
   @Override
   public boolean isSpecialField(String fieldName) {

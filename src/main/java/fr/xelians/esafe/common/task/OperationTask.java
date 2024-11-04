@@ -8,6 +8,9 @@ package fr.xelians.esafe.common.task;
 
 import fr.xelians.esafe.operation.entity.OperationDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OperationTask extends CleanableTask {
 
   OperationDb getOperation();

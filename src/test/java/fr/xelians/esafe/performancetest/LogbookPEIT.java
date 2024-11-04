@@ -44,7 +44,7 @@ class LogbookPEIT extends BasePEIT {
   @BeforeAll
   void beforeAll() {
     sedaService = Sedav2Service.getInstance();
-    super.signupSignin();
+    super.signUpSignIn();
   }
 
   @BeforeEach

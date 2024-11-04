@@ -10,16 +10,13 @@ CREATE SEQUENCE IF NOT EXISTS logbook_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE IF NOT EXISTS message_seq START WITH 1 INCREMENT BY 50;
 
 -- changeset Emmanuel_Deviller:1717137657894-4
-CREATE SEQUENCE IF NOT EXISTS server_node_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE IF NOT EXISTS job_seq START WITH 1 INCREMENT BY 1;
 
 -- changeset Emmanuel_Deviller:1717137657894-5
 CREATE SEQUENCE IF NOT EXISTS organization_seq START WITH 1 INCREMENT BY 50;
 
 -- changeset Emmanuel_Deviller:1717137657894-6
 CREATE SEQUENCE IF NOT EXISTS referential_seq START WITH 1 INCREMENT BY 50;
-
--- changeset Emmanuel_Deviller:1717137657894-7
-CREATE SEQUENCE IF NOT EXISTS refresh_token_seq START WITH 1 INCREMENT BY 50;
 
 -- changeset Emmanuel_Deviller:1717137657894-8
 CREATE SEQUENCE IF NOT EXISTS task_lock_seq START WITH 1 INCREMENT BY 50;
@@ -172,7 +169,7 @@ CREATE TABLE operation
     property01          TEXT,
     property02          TEXT,
     events              TEXT,
-    actions             BYTEA         NOT NULL,
+    actions             BYTEA        NOT NULL,
     CONSTRAINT pk_operation PRIMARY KEY (id)
 );
 
@@ -216,16 +213,6 @@ CREATE TABLE profile
     CONSTRAINT pk_profile PRIMARY KEY (id)
 );
 
--- changeset Emmanuel_Deviller:1717137657894-20
-CREATE TABLE refresh_token
-(
-    id          BIGINT       NOT NULL,
-    user_id     BIGINT       NOT NULL,
-    token       VARCHAR(255) NOT NULL,
-    expiry_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    CONSTRAINT pk_refresh_token PRIMARY KEY (id)
-);
-
 -- changeset Emmanuel_Deviller:1717137657894-21
 CREATE TABLE rule
 (
@@ -257,12 +244,12 @@ CREATE TABLE secret_key
 );
 
 -- changeset Emmanuel_Deviller:1717137657894-23
-CREATE TABLE server_node
+CREATE TABLE job
 (
-    feature    VARCHAR(255) NOT NULL,
+    job_type   VARCHAR(255) NOT NULL,
     identifier BIGINT,
-    delay      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    CONSTRAINT pk_server_node PRIMARY KEY (feature)
+    expire     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    CONSTRAINT pk_job PRIMARY KEY (job_type)
 );
 
 -- changeset Emmanuel_Deviller:1717137657894-24
@@ -321,7 +308,7 @@ CREATE TABLE user_account
     last_name         VARCHAR(256),
     email             VARCHAR(256) NOT NULL,
     password          VARCHAR(256),
-    api_key           BYTEA        NOT NULL,
+    access_key        VARCHAR(256),
     global_roles      BYTEA        NOT NULL,
     tenant_roles      BYTEA        NOT NULL,
     access_contracts  BYTEA        NOT NULL,
@@ -415,7 +402,7 @@ ALTER TABLE operation
 -- changeset Emmanuel_Deviller:1717137657894-49
 ALTER TABLE operation
     ADD CONSTRAINT operation_type_check CHECK ((type)::text = ANY
-    ((ARRAY ['INGEST_ARCHIVE':: character varying, 'INGEST_FILING':: character varying, 'INGEST_HOLDING':: character varying, 'UPDATE_ARCHIVE':: character varying, 'UPDATE_ARCHIVE_RULES':: character varying, 'RECLASSIFY_ARCHIVE':: character varying, 'ELIMINATE_ARCHIVE':: character varying, 'PROBATIVE_VALUE':: character varying, 'EXPORT_ARCHIVE':: character varying, 'TRANSFER_ARCHIVE':: character varying, 'TRACEABILITY':: character varying, 'REBUILD_SEARCH_ENGINE':: character varying, 'RESET_INDEX':: character varying, 'RESET_INDEX_CHUNK':: character varying, 'CREATE_AGENCY':: character varying, 'UPDATE_AGENCY':: character varying, 'CREATE_ONTOLOGY':: character varying, 'UPDATE_ONTOLOGY':: character varying, 'CREATE_ACCESSCONTRACT':: character varying, 'UPDATE_ACCESSCONTRACT':: character varying, 'CREATE_INGESTCONTRACT':: character varying, 'UPDATE_INGESTCONTRACT':: character varying, 'CREATE_PROFILE':: character varying, 'UPDATE_PROFILE':: character varying, 'CREATE_RULE':: character varying, 'UPDATE_RULE':: character varying, 'CREATE_ROLE':: character varying, 'UPDATE_ROLE':: character varying, 'CREATE_USER':: character varying, 'UPDATE_USER':: character varying, 'CREATE_ORGANIZATION':: character varying, 'UPDATE_ORGANIZATION':: character varying, 'CREATE_TENANT':: character varying, 'UPDATE_TENANT':: character varying, 'EXTERNAL':: character varying, 'ADD_OFFER':: character varying, 'ADD_OFFER_CHUNK':: character varying, 'DELETE_OFFER':: character varying, 'CHECK_COHERENCY':: character varying, 'CHECK_TENANT_COHERENCY':: character varying, 'REPAIR_COHERENCY':: character varying, 'AUDIT':: character varying, 'SYNC':: character varying])::text[]));
+    ((ARRAY ['INGEST_ARCHIVE':: character varying, 'INGEST_FILING':: character varying, 'INGEST_HOLDING':: character varying, 'UPDATE_ARCHIVE':: character varying, 'UPDATE_ARCHIVE_RULES':: character varying, 'RECLASSIFY_ARCHIVE':: character varying, 'ELIMINATE_ARCHIVE':: character varying, 'PROBATIVE_VALUE':: character varying, 'EXPORT_ARCHIVE':: character varying, 'TRANSFER_ARCHIVE':: character varying, 'TRACEABILITY':: character varying, 'REBUILD_SEARCH_ENGINE':: character varying, 'RESET_INDEX':: character varying, 'RESET_INDEX_CHUNK':: character varying, 'CREATE_AGENCY':: character varying, 'UPDATE_AGENCY':: character varying, 'CREATE_ONTOLOGY':: character varying, 'UPDATE_ONTOLOGY':: character varying, 'CREATE_ACCESSCONTRACT':: character varying, 'UPDATE_ACCESSCONTRACT':: character varying, 'CREATE_INGESTCONTRACT':: character varying, 'UPDATE_INGESTCONTRACT':: character varying, 'CREATE_PROFILE':: character varying, 'UPDATE_PROFILE':: character varying, 'CREATE_RULE':: character varying, 'UPDATE_RULE':: character varying, 'DELETE_RULE':: character varying, 'CREATE_ROLE':: character varying, 'UPDATE_ROLE':: character varying, 'CREATE_USER':: character varying, 'UPDATE_USER':: character varying, 'CREATE_ORGANIZATION':: character varying, 'UPDATE_ORGANIZATION':: character varying, 'CREATE_TENANT':: character varying, 'UPDATE_TENANT':: character varying, 'EXTERNAL':: character varying, 'ADD_OFFER':: character varying, 'ADD_OFFER_CHUNK':: character varying, 'DELETE_OFFER':: character varying, 'CHECK_COHERENCY':: character varying, 'CHECK_TENANT_COHERENCY':: character varying, 'REPAIR_COHERENCY':: character varying, 'AUDIT':: character varying, 'SYNC':: character varying])::text[]));
 
 -- changeset Emmanuel_Deviller:1717137657894-50
 ALTER TABLE organization
@@ -485,17 +472,9 @@ ALTER TABLE user_account
 ALTER TABLE user_account
     ADD CONSTRAINT unique_user_username UNIQUE (username);
 
--- changeset Emmanuel_Deviller:1717137657894-67
-ALTER TABLE refresh_token
-    ADD CONSTRAINT uc_refresh_token_token UNIQUE (token);
-
--- changeset Emmanuel_Deviller:1717137657894-68
-ALTER TABLE refresh_token
-    ADD CONSTRAINT FK_REFRESH_TOKEN_ON_USER FOREIGN KEY (user_id) REFERENCES user_account (id);
-
 -- changeset Emmanuel_Deviller:1717137657894-69
-ALTER TABLE server_node
-    ADD CONSTRAINT server_node_feature_check CHECK ((feature)::text = ANY
+ALTER TABLE job
+    ADD CONSTRAINT job_type_check CHECK ((job_type)::text = ANY
     ((ARRAY ['ACCESSION':: character varying, 'AUDIT':: character varying, 'BACKUP':: character varying, 'CLEAN':: character varying, 'RETRY':: character varying, 'TRACEABILITY':: character varying, 'STORE':: character varying])::text[]));
 
 -- changeset Emmanuel_Deviller:1717137657894-70
@@ -521,5 +500,3 @@ ALTER TABLE ontology_mapping
 -- changeset Emmanuel_Deviller:1717137657894-75
 CREATE INDEX idx_operation_tenant_id ON operation (tenant, id);
 
--- changeset Emmanuel_Deviller:1717137657894-76
-CREATE INDEX idx_refresh_token ON refresh_token (token);

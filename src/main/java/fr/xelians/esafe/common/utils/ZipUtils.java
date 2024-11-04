@@ -18,6 +18,9 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import lombok.SneakyThrows;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class ZipUtils {
 
   private ZipUtils() {}

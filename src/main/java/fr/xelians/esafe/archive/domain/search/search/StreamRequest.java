@@ -14,6 +14,9 @@ import fr.xelians.esafe.search.service.SearchEngineService;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class StreamRequest {
 
   private final SearchRequest request;

@@ -9,6 +9,9 @@ package fr.xelians.esafe.archive.domain.search.updaterule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRule(
     @JsonProperty("OldRule") String oldRule,
     @JsonProperty("Rule") String rule,

@@ -7,5 +7,9 @@
 package fr.xelians.esafe.archive.domain.search.elimination;
 
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import java.time.LocalDate;
 
-public record EliminationRequest(SearchRequest searchRequest) {}
+/*
+ * @author Emmanuel Deviller
+ */
+public record EliminationRequest(SearchRequest searchRequest, LocalDate eliminationDate) {}

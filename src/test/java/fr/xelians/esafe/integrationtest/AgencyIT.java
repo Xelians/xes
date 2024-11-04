@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,19 +30,16 @@ class AgencyIT extends BaseIT {
   private static final Path AGENCY1 = Paths.get(ItInit.AGENCY + "OK_agencies_init.csv");
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void createCsvAgenciesTest() throws IOException {
     Path dir = Paths.get(ItInit.AGENCY);
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".csv")) {
-      ResponseEntity<List<AgencyDto>> response = restClient.createAgencies(nextTenant(), path);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".csv")) {
+      ResponseEntity<List<AgencyDto>> response = restClient.createCsvAgency(nextTenant(), path);
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
   }
 
@@ -51,21 +47,21 @@ class AgencyIT extends BaseIT {
   void doubleCreateCsvAgenciesTest() throws IOException {
     Long tenant = nextTenant();
 
-    ResponseEntity<List<AgencyDto>> r1 = restClient.createAgencies(tenant, AGENCY1);
-    assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+    ResponseEntity<List<AgencyDto>> r1 = restClient.createCsvAgency(tenant, AGENCY1);
+    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
 
-    ResponseEntity<List<AgencyDto>> r2 = restClient.createAgencies(tenant, AGENCY1);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    ResponseEntity<List<AgencyDto>> r2 = restClient.createCsvAgency(tenant, AGENCY1);
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
   }
 
   @Test
   void createBadCsvAgenciesTest() throws IOException {
     Path dir = Paths.get(ItInit.AGENCY);
-    for (Path path : TestUtils.listFiles(dir, "KO_", ".csv")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_", ".csv")) {
       Long tenant = nextTenant();
       HttpClientErrorException thrown =
           assertThrows(
-              HttpClientErrorException.class, () -> restClient.createAgencies(tenant, path));
+              HttpClientErrorException.class, () -> restClient.createCsvAgency(tenant, path));
       assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode(), thrown.toString());
     }
   }
@@ -74,8 +70,8 @@ class AgencyIT extends BaseIT {
   void findCsvAgenciesTest() throws IOException {
     Long tenant = nextTenant();
 
-    ResponseEntity<List<AgencyDto>> r1 = restClient.createAgencies(nextTenant(), AGENCY1);
-    assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+    ResponseEntity<List<AgencyDto>> r1 = restClient.createCsvAgency(nextTenant(), AGENCY1);
+    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
 
     ResponseEntity<String> r2 = restClient.getCsvAgencies(tenant);
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
@@ -88,7 +84,7 @@ class AgencyIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AgencyDto>> response =
           restClient.createAgencies(tenant, DtoFactory.createAgencyDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     Map<String, Object> params = Map.of("sortby", "name", "sortdir", "desc");
@@ -132,7 +128,7 @@ class AgencyIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AgencyDto>> response =
           restClient.createAgencies(tenant, DtoFactory.createAgencyDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAgencies(tenant, query);

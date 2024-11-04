@@ -9,6 +9,9 @@ package fr.xelians.esafe.archive.domain.atr;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

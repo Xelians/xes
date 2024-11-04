@@ -29,6 +29,9 @@ import java.util.*;
 import java.util.function.Function;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class ArchiveUnitParser extends EqlParser {
 
   protected static final String TENANT_MUST_BE_NOT_NULL = "Tenant must be not null";
@@ -44,11 +47,11 @@ public abstract class ArchiveUnitParser extends EqlParser {
   protected static final String UP = "_up";
   protected static final String US = "_us";
   protected static final String SP = "_sp";
+  protected static final String SPS = "_sps";
   protected static final String MGT = "_mgt";
   protected static final String UPS_UP = "_ups._up";
 
   private static final String DOCUMENT_TYPE = "DocumentType";
-  private static final String ORIGINATING_AGENCY_IDENTIFIER = "OriginatingAgencyIdentifier";
 
   private static final String EXT = Field.EXT + ".*";
   private static final String UPS = "_ups.*";
@@ -186,9 +189,8 @@ public abstract class ArchiveUnitParser extends EqlParser {
 
   private static Query createOriAgenciesQuery(Set<String> oriAgencies) {
     List<FieldValue> values = oriAgencies.stream().map(FieldValue::of).toList();
-    TermsQuery q1 =
-        TermsQuery.of(t -> t.field(ORIGINATING_AGENCY_IDENTIFIER).terms(v -> v.value(values)));
-    return BoolQuery.of(b -> b.should(q1._toQuery()))._toQuery();
+    TermsQuery tq1 = TermsQuery.of(t -> t.field(SPS).terms(v -> v.value(values)));
+    return BoolQuery.of(b -> b.should(tq1._toQuery()))._toQuery();
   }
 
   private static Query createAllowedQuery(Set<Long> units) {

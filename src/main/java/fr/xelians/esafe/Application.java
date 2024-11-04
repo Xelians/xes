@@ -18,8 +18,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
-// ElasticsearchClientAutoConfiguration.class is excluded in order to
-// configure Elastic from specific properties (see. ElasticSearchConfig)
+/*
+ * ElasticsearchClientAutoConfiguration.class is excluded in order to configure Elastic
+ * from specific properties (see. ElasticSearchConfig)
+ *
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @SpringBootApplication(exclude = ElasticsearchClientAutoConfiguration.class)
 public class Application implements CommandLineRunner {

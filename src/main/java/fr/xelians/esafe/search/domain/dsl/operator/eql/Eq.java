@@ -19,6 +19,9 @@ import fr.xelians.esafe.search.domain.field.IntegerField;
 import fr.xelians.esafe.search.domain.field.LongField;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Eq extends EqOperator<Query> {
 

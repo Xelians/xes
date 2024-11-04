@@ -14,6 +14,9 @@ import fr.xelians.esafe.referential.domain.RuleType;
 import lombok.*;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)

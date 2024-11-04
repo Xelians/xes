@@ -37,7 +37,7 @@ app:
     secure:
       fixedDelay: PT3600S
       initialDelay: PT60S
-    servernode:
+    cluster:
       fixedDelay: 60000
       initialDelay: 0
     store:
@@ -56,6 +56,7 @@ app:
         - accessKeyId: hvA0vo3Nu8yruvQ3
           cpuConcurrency: 32
           endpoint: http://192.168.1.153:9000
+          provider: MINIO
           name: minio01
           region: US_EAST_1
           secretAccessKey: VYo8QiN40bd4PKyC

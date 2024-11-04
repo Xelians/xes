@@ -7,14 +7,15 @@
 package fr.xelians.esafe.integrationtest;
 
 import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_MANAGER;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_READER;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
-import fr.xelians.esafe.organization.domain.role.TenantRole;
-import fr.xelians.esafe.organization.domain.role.TenantRoleName;
+import fr.xelians.esafe.organization.domain.TenantRole;
 import fr.xelians.esafe.organization.dto.UserDto;
 import fr.xelians.esafe.testcommon.*;
 import fr.xelians.sipg.model.ArchiveTransfer;
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -37,13 +37,10 @@ class UpdateRuleIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void updateRuleTest(@TempDir Path tmpDir) throws IOException, ParsingException {
@@ -51,8 +48,8 @@ class UpdateRuleIT extends BaseIT {
     Scenario.createScenario02(restClient, tenant, userDto);
 
     // Init User
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_WRITER));
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_READER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_MANAGER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_READER));
     ResponseEntity<?> response = restClient.updateUser(userDto);
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 
@@ -163,8 +160,8 @@ class UpdateRuleIT extends BaseIT {
     Scenario.createScenario02(restClient, tenant, userDto);
 
     // Init User
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_WRITER));
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_READER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_MANAGER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_READER));
     ResponseEntity<?> response = restClient.updateUser(userDto);
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 

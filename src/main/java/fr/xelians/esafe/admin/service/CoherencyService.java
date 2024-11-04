@@ -40,6 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -219,7 +222,7 @@ public class CoherencyService {
     // 2. offers are shuffled to optimize IO concurrency
     // 3. thread creation takes time, so test before implementing //   .
 
-    List<String> shuffleOffers = offers.size() > 1 ? CollUtils.shuffleList(offers) : offers;
+    List<String> shuffleOffers = offers.size() > 1 ? CollUtils.shuffle(offers) : offers;
     for (String offer : shuffleOffers) {
       byte[] checksum =
           storageService.getChecksum(

@@ -10,20 +10,35 @@ import co.elastic.clients.json.JsonpSerializable;
 import co.elastic.clients.json.jackson.JacksonJsonpGenerator;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.unit.KeyTag;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public final class JsonUtils {
 
   private JsonUtils() {}
+
+  public static void writeStringsField(
+      JsonGenerator generator, String fieldName, Collection<String> values) throws IOException {
+    generator.writeFieldName(fieldName);
+    generator.writeStartArray();
+    for (String str : values) {
+      generator.writeString(str);
+    }
+    generator.writeEndArray();
+  }
 
   public static List<Long> toLongs(JsonNode jsonNode) {
     if (jsonNode.isArray()) {

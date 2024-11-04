@@ -26,6 +26,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 // This filter permits to prevent big requests except multipart ones
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class BigRequestFilter extends OncePerRequestFilter {
 

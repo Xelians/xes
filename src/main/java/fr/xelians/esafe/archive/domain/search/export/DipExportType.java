@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.search.export;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum DipExportType {
   MINIMAL,
   FULL

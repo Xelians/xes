@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import jakarta.validation.constraints.NotNull;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRuleQuery(
     @NotNull @JsonProperty("dslRequest") SearchQuery searchQuery,
     @NotNull @JsonProperty("ruleActions") RuleActions ruleActions) {}

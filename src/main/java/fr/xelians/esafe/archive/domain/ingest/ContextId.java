@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.ingest;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum ContextId {
   DEFAULT_WORKFLOW,
   FILING_SCHEME,

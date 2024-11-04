@@ -17,7 +17,7 @@ app:
     secure:
       fixedDelay: PT0.2S
       initialDelay: PT0.2S
-    servernode:
+    cluster:
       fixedDelay: 1000
       initialDelay: 0
     store:

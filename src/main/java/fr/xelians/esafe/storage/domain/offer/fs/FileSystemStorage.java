@@ -12,6 +12,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Data
 public class FileSystemStorage {
 

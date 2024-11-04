@@ -6,4 +6,7 @@
 
 package fr.xelians.esafe.common.utils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Key<K1, K2>(K1 key1, K2 key2) {}

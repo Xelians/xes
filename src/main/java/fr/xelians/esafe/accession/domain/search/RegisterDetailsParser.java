@@ -7,8 +7,11 @@
 package fr.xelians.esafe.accession.domain.search;
 
 import fr.xelians.esafe.search.domain.dsl.parser.eql.SimpleEqlParser;
-import io.jsonwebtoken.lang.Assert;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class RegisterDetailsParser extends SimpleEqlParser {
 
   private RegisterDetailsParser(Long tenant) {

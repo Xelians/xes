@@ -19,6 +19,9 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.service.TenantService;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public abstract class CommitIndexTask extends AbstractOperationTask {
 

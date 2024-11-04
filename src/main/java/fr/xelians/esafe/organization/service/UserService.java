@@ -1,15 +1,12 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates and open the template
- * in the editor.
- */
-/*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the Ceccil v2.1 License as published by
  * the CEA, CNRS and INRIA.
  */
 
 package fr.xelians.esafe.organization.service;
+
+import static fr.xelians.esafe.organization.domain.Role.GlobalRole.ROLE_ADMIN;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.flipkart.zjsonpatch.JsonDiff;
@@ -22,8 +19,7 @@ import fr.xelians.esafe.operation.domain.OperationFactory;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
-import fr.xelians.esafe.organization.domain.role.GlobalRole;
-import fr.xelians.esafe.organization.domain.role.TenantRole;
+import fr.xelians.esafe.organization.domain.TenantRole;
 import fr.xelians.esafe.organization.dto.TenantContract;
 import fr.xelians.esafe.organization.dto.UserDto;
 import fr.xelians.esafe.organization.entity.OrganizationDb;
@@ -33,10 +29,7 @@ import fr.xelians.esafe.organization.repository.UserRepository;
 import fr.xelians.esafe.referential.service.AccessContractService;
 import fr.xelians.esafe.referential.service.IngestContractService;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +39,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -57,7 +53,8 @@ public class UserService {
   public static final String TENANT_MUST_BE_NOT_NULL = "tenant must be not null";
   public static final String USER_IDENTIFIER_MUST_BE_NOT_NULL =
       "userIdentifier must be not null nor empty";
-  public static final String ORGANIZATION_ID_MUST_BE_NOT_NULL = "organizationId must be not null";
+  public static final String ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL =
+      "organizationIdentifier must be not null";
 
   private final UserRepository repository;
   private final PasswordEncoder passwordEncoder;
@@ -66,7 +63,6 @@ public class UserService {
   private final TenantService tenantService;
   private final AccessContractService accessContractService;
   private final IngestContractService ingestContractService;
-  private final ApiKeyService apiKeyService;
 
   public UserDto toDto(UserDb userDb) {
     UserDto userDto = Utils.copyProperties(userDb, new UserDto());
@@ -158,7 +154,7 @@ public class UserService {
   // Internal use only
   // Create User
   @Transactional
-  public UserDb createEntity(UserDto userDto, OrganizationDb organizationDb, TenantDb tenantDb) {
+  public UserDb createEntity(UserDto userDto, OrganizationDb organizationDb) {
     Assert.notNull(userDto, String.format("%s dto cannot be null", ENTITY_NAME));
 
     UserDb userDb = toEntity(userDto);
@@ -166,25 +162,25 @@ public class UserService {
     userDb.setCreationDate(LocalDate.now());
     userDb.setLastUpdate(userDb.getCreationDate());
     userDb.setAutoVersion(1);
-    // TODO
-    // This is unsafe, implements real feature for set an apikey for a user
-    userDb.getApiKey().add(apiKeyService.buildApiKey(tenantDb.getId().toString()));
-    userDb.getGlobalRoles().add(GlobalRole.ROLE_ADMIN);
+    userDb.getGlobalRoles().add(ROLE_ADMIN);
     userDb.setOrganization(organizationDb);
     return repository.save(userDb);
   }
 
   @Transactional
   public List<UserDto> create(
-      Long organizationId, String userIdentifier, String applicationId, List<UserDto> userDtos) {
+      String organizationIdentifier,
+      String userIdentifier,
+      String applicationId,
+      List<UserDto> userDtos) {
 
-    Assert.notNull(organizationId, ORGANIZATION_ID_MUST_BE_NOT_NULL);
+    Assert.notNull(organizationIdentifier, ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.hasText(userIdentifier, USER_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.notNull(userDtos, String.format("%s userDtos must be not null", ENTITY_NAME));
 
     // Get all tenants from organization
     Set<Long> tenants =
-        tenantService.getTenantDbs(organizationId).stream()
+        tenantService.getTenantDbs(organizationIdentifier).stream()
             .map(TenantDb::getId)
             .collect(Collectors.toCollection(HashSet::new));
 
@@ -207,7 +203,8 @@ public class UserService {
         userDtos.stream().flatMap(e -> e.getIngestContracts().stream()).toList();
     ingestContractService.checkTenantContractExists(tenants, ics);
 
-    OrganizationDb organizationDb = organizationService.getOrganizationDbById(organizationId);
+    OrganizationDb organizationDb =
+        organizationService.getOrganizationDbByIdentifier(organizationIdentifier);
     Long tenant = organizationDb.getTenant();
     OperationDb operation = createOperation(tenant, userIdentifier, applicationId);
     List<Long> userDbIds = new ArrayList<>(userDtos.size());
@@ -233,9 +230,9 @@ public class UserService {
 
   @Transactional
   public UserDto update(
-      Long organizationId, String userIdentifier, String applicationId, UserDto userDto) {
+      String organizationIdentifier, String userIdentifier, String applicationId, UserDto userDto) {
 
-    Assert.notNull(organizationId, ORGANIZATION_ID_MUST_BE_NOT_NULL);
+    Assert.notNull(organizationIdentifier, ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.hasText(userIdentifier, USER_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.notNull(userDto, "userDto must be not null");
 
@@ -249,7 +246,7 @@ public class UserService {
 
     // Get all tenants from organization
     Set<Long> tenants =
-        tenantService.getTenantDbs(organizationId).stream()
+        tenantService.getTenantDbs(organizationIdentifier).stream()
             .map(TenantDb::getId)
             .collect(Collectors.toCollection(HashSet::new));
 
@@ -271,15 +268,16 @@ public class UserService {
     ingestContractService.checkTenantContractExists(tenants, ics);
 
     // Get entity from db
-    UserDb userDb = getUserDbByIdentifier(organizationId, userIdentifier);
+    UserDb userDb = getUserDbByIdentifier(organizationIdentifier, userIdentifier);
     UserDb oriUserDb = copyDtoToEntity(userDto, userDb);
-    if (!userDb.getPassword().equals(oriUserDb.getPassword())) {
+    if (!Objects.equals(userDb.getPassword(), oriUserDb.getPassword())) {
       // TODO Manage password (password seems to change at every update)
       oriUserDb.setPassword("********");
     }
 
     // Create operation
-    OrganizationDb organizationDb = organizationService.getOrganizationDbById(organizationId);
+    OrganizationDb organizationDb =
+        organizationService.getOrganizationDbByIdentifier(organizationIdentifier);
     Long tenant = organizationDb.getTenant();
     OperationDb operation = updateOperation(tenant, userIdentifier, applicationId);
     operation.setProperty01(userDb.getId().toString());
@@ -317,25 +315,12 @@ public class UserService {
   }
 
   @Transactional
-  public UserDto getUserDtoById(Long userId) {
-    Assert.notNull(userId, "userId must be not null");
-
-    return repository
-        .findById(userId)
-        .map(this::toDto)
-        .orElseThrow(
-            () ->
-                new NotFoundException(
-                    USER_NOT_FOUND, String.format("%s with id %s not found", ENTITY_NAME, userId)));
-  }
-
-  @Transactional
-  public UserDto getUserDtoByIdentifier(Long organizationId, String userIdentifier) {
-    Assert.notNull(organizationId, ORGANIZATION_ID_MUST_BE_NOT_NULL);
+  public UserDto getUserDtoByIdentifier(String organizationIdentifier, String userIdentifier) {
+    Assert.notNull(organizationIdentifier, ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.hasText(userIdentifier, USER_IDENTIFIER_MUST_BE_NOT_NULL);
 
     return repository
-        .findByIdentifierAndOrganizationId(userIdentifier, organizationId)
+        .findByIdentifierAndOrganizationIdentifier(userIdentifier, organizationIdentifier)
         .map(this::toDto)
         .orElseThrow(
             () ->
@@ -345,12 +330,12 @@ public class UserService {
   }
 
   @Transactional
-  public UserDb getUserDbByIdentifier(Long organizationId, String userIdentifier) {
-    Assert.notNull(organizationId, ORGANIZATION_ID_MUST_BE_NOT_NULL);
+  public UserDb getUserDbByIdentifier(String organizationIdentifier, String userIdentifier) {
+    Assert.notNull(organizationIdentifier, ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL);
     Assert.hasText(userIdentifier, USER_IDENTIFIER_MUST_BE_NOT_NULL);
 
     return repository
-        .findByIdentifierAndOrganizationId(userIdentifier, organizationId)
+        .findByIdentifierAndOrganizationIdentifier(userIdentifier, organizationIdentifier)
         .orElseThrow(
             () ->
                 new NotFoundException(
@@ -367,8 +352,10 @@ public class UserService {
   }
 
   @Transactional
-  public List<UserDto> getUserDtos(Long organizationId) {
-    Assert.notNull(organizationId, ORGANIZATION_ID_MUST_BE_NOT_NULL);
-    return repository.findByOrganizationId(organizationId).stream().map(this::toDto).toList();
+  public List<UserDto> getUserDtos(String organizationIdentifier) {
+    Assert.notNull(organizationIdentifier, ORGANIZATION_IDENTIFIER_MUST_BE_NOT_NULL);
+    return repository.findByOrganizationIdentifier(organizationIdentifier).stream()
+        .map(this::toDto)
+        .toList();
   }
 }

@@ -7,8 +7,11 @@
 package fr.xelians.esafe.logbook.domain.search;
 
 import fr.xelians.esafe.search.domain.dsl.parser.eql.SimpleEqlParser;
-import io.jsonwebtoken.lang.Assert;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class LogbookParser extends SimpleEqlParser {
 
   private LogbookParser(Long tenant) {

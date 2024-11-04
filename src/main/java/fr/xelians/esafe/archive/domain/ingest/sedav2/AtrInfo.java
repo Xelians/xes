@@ -8,6 +8,9 @@ package fr.xelians.esafe.archive.domain.ingest.sedav2;
 
 import fr.xelians.esafe.archive.domain.unit.ArchiveTransfer;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record AtrInfo(
     String messageIdentifier,
     String archivalAgreement,

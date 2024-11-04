@@ -8,6 +8,9 @@ package fr.xelians.esafe.operation.domain;
 
 import lombok.Getter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public enum ActionType {
   CREATE,

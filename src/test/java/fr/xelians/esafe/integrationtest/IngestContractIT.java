@@ -35,39 +35,41 @@ class IngestContractIT extends BaseIT {
   private static final Path OK_PROFILE3 = Paths.get(ItInit.PROFILE + "OK_profil_matriceOld.json");
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
 
   @BeforeEach
-  void beforeEach() {}
+  void beforeEach() {
+    // Nothing to init
+  }
 
   @Test
   void createIngestContractTest() throws IOException {
-    Path dir = Paths.get(ItInit.INGESTCONTRACT);
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".json")) {
+    Path dir = Paths.get(ItInit.INGEST_CONTRACT);
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".json")) {
       Long tenant = nextTenant();
       ResponseEntity<List<ProfileDto>> r1 = restClient.createProfile(tenant, OK_PROFILE);
       assertEquals(
-          HttpStatus.OK,
+          HttpStatus.CREATED,
           r1.getStatusCode(),
           String.format("path: %s - r1: %s", path, TestUtils.getBody(r1)));
 
       ResponseEntity<List<ProfileDto>> r2 = restClient.createProfile(tenant, OK_PROFILE2);
       assertEquals(
-          HttpStatus.OK,
+          HttpStatus.CREATED,
           r2.getStatusCode(),
           String.format("path: %s - r2: %s", path, TestUtils.getBody(r2)));
 
       ResponseEntity<List<ProfileDto>> r3 = restClient.createProfile(tenant, OK_PROFILE3);
       assertEquals(
-          HttpStatus.OK,
+          HttpStatus.CREATED,
           r3.getStatusCode(),
           String.format("path: %s - r3: %s", path, TestUtils.getBody(r3)));
 
       ResponseEntity<List<IngestContractDto>> r4 = restClient.createIngestContract(tenant, path);
       assertEquals(
-          HttpStatus.OK,
+          HttpStatus.CREATED,
           r4.getStatusCode(),
           String.format("path: %s - r4: %s", path, TestUtils.getBody(r4)));
 
@@ -87,18 +89,18 @@ class IngestContractIT extends BaseIT {
 
   @Test
   void createBadIngestContractTest() throws IOException {
-    Path dir = Paths.get(ItInit.INGESTCONTRACT);
-    for (Path path : TestUtils.listFiles(dir, "KO_", ".json")) {
+    Path dir = Paths.get(ItInit.INGEST_CONTRACT);
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_", ".json")) {
 
       Long tenant = nextTenant();
       ResponseEntity<List<ProfileDto>> r1 = restClient.createProfile(tenant, OK_PROFILE);
-      assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+      assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
 
       ResponseEntity<List<ProfileDto>> r2 = restClient.createProfile(tenant, OK_PROFILE2);
-      assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+      assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
       ResponseEntity<List<ProfileDto>> r3 = restClient.createProfile(tenant, OK_PROFILE3);
-      assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
+      assertEquals(HttpStatus.CREATED, r3.getStatusCode(), TestUtils.getBody(r3));
 
       assertThrows(
           HttpClientErrorException.class,
@@ -114,7 +116,7 @@ class IngestContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<IngestContractDto>> response =
           restClient.createIngestContract(tenant, DtoFactory.createIngestContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     Map<String, Object> params = Map.of("sortby", "name", "sortdir", "desc");
@@ -158,7 +160,7 @@ class IngestContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<IngestContractDto>> response =
           restClient.createIngestContract(tenant, DtoFactory.createIngestContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchIngestContracts(tenant, query);

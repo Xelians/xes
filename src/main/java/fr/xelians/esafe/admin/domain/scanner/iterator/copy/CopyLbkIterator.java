@@ -14,6 +14,9 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class CopyLbkIterator extends AllLbkIterator {
 
   public CopyLbkIterator(TenantDb tenantDb, List<String> offers, StorageService storageService) {

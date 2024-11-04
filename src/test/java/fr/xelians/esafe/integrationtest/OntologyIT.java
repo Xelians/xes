@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,12 +36,9 @@ class OntologyIT extends BaseIT {
   private static final Path BAD_ONTOLOGY = Paths.get(ItInit.ONTOLOGY + "KO_indexmap_1.json");
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void createOneOntologyTest() throws IOException {
@@ -50,7 +46,7 @@ class OntologyIT extends BaseIT {
 
     Long tenant = nextTenant();
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     List<OntologyDto> outputDtos = response.getBody();
     assertNotNull(outputDtos);
@@ -63,7 +59,7 @@ class OntologyIT extends BaseIT {
       assertNotNull(outputDto);
       assertEquals(dto.getName(), outputDto.getName());
       assertEquals(dto.getStatus(), outputDto.getStatus());
-      assertEquals(dto.getLastUpdate(), outputDto.getLastUpdate());
+      assertNotEquals(dto.getLastUpdate(), outputDto.getLastUpdate());
       // TODO dedup && sort && compare
       // assertEquals(Utils.sortedList(dto.getMappings(), c),
       // Utils.sortedList(outputDto.getMappings(), c));
@@ -74,9 +70,9 @@ class OntologyIT extends BaseIT {
   @Test
   void createOntologyTest() throws IOException {
     Path dir = Paths.get(ItInit.ONTOLOGY);
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".json")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".json")) {
       ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(nextTenant(), path);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
   }
 
@@ -93,7 +89,7 @@ class OntologyIT extends BaseIT {
   @Test
   void createBadOntologyMapTest() throws IOException {
     Path dir = Paths.get(ItInit.ONTOLOGY);
-    for (Path path : TestUtils.listFiles(dir, "KO_", ".json")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_", ".json")) {
       Long tenant = nextTenant();
       HttpClientErrorException thrown =
           assertThrows(
@@ -107,7 +103,7 @@ class OntologyIT extends BaseIT {
     Long tenant = nextTenant();
 
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     HttpClientErrorException thrown =
         assertThrows(
@@ -120,8 +116,7 @@ class OntologyIT extends BaseIT {
     List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response =
         restClient.createOntologies(nextTenant(), ONTOLOGY_NO_ID1);
-
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     List<OntologyDto> outputDtos = response.getBody();
     assertNotNull(outputDtos);
@@ -135,11 +130,11 @@ class OntologyIT extends BaseIT {
     List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response =
         restClient.createOntologies(tenant, ONTOLOGY_NO_ID1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     List<OntologyDto> outputDtos1 = response.getBody();
 
     response = restClient.createOntologies(tenant, ONTOLOGY_NO_ID2);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     List<OntologyDto> outputDtos2 = response.getBody();
 
     assertNotNull(outputDtos1);
@@ -150,22 +145,19 @@ class OntologyIT extends BaseIT {
   @Test
   void getAllOntologiesTest() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos1 = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
+    List<OntologyDto> ontologyDtos2 = DtoFactory.createOntologyDtos(ONTOLOGY2);
     response = restClient.createOntologies(tenant, ONTOLOGY2);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    List<OntologyDto> outputDtos2 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     ResponseEntity<PageResult<OntologyDto>> response2 = restClient.getOntologies(tenant);
     PageResult<OntologyDto> outputDtos3 = response2.getBody();
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
-    assertNotNull(outputDtos1);
-    assertNotNull(outputDtos2);
-    assertNotNull(outputDtos3);
-    assertEquals(outputDtos1.size() + outputDtos2.size(), outputDtos3.hits().total());
+    assertEquals(ontologyDtos1.size() + ontologyDtos2.size(), outputDtos3.hits().total());
   }
 
   @Test
@@ -197,10 +189,10 @@ class OntologyIT extends BaseIT {
             """;
 
     ResponseEntity<List<OntologyDto>> r1 = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+    assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
 
     ResponseEntity<List<OntologyDto>> r2 = restClient.createOntologies(tenant, ONTOLOGY2);
-    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    assertEquals(HttpStatus.CREATED, r2.getStatusCode(), TestUtils.getBody(r2));
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchOntologies(tenant, query);
     SearchResult<JsonNode> result3 = r3.getBody();
@@ -211,17 +203,13 @@ class OntologyIT extends BaseIT {
     assertEquals(1, result3.results().size(), TestUtils.getBody(r3));
     assertEquals(2, result3.hits().total(), TestUtils.getBody(r3));
     assertEquals(tenant, result.get("#tenant").asLong(), TestUtils.getBody(r2));
-
-    System.err.println(r3);
   }
 
   @Test
   void getOntologiesByStatusTest() throws IOException {
     Long tenant = nextTenant();
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     Map<String, Object> params =
         Map.of("status", Status.INACTIVE, "sortby", "name", "sortdir", "desc");
@@ -229,7 +217,6 @@ class OntologyIT extends BaseIT {
     PageResult<OntologyDto> outputDtos3 = response2.getBody();
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
-    assertNotNull(outputDtos1);
     assertNotNull(outputDtos3);
     assertEquals(0, outputDtos3.hits().total());
   }
@@ -237,10 +224,9 @@ class OntologyIT extends BaseIT {
   @Test
   void getOntologiesByStatusTest2() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     Map<String, Object> params =
         Map.of("status", Status.ACTIVE, "sortby", "name", "sortdir", "desc");
@@ -248,18 +234,15 @@ class OntologyIT extends BaseIT {
     PageResult<OntologyDto> outputDtos3 = response2.getBody();
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
-    assertNotNull(outputDtos1);
     assertNotNull(outputDtos3);
-    assertEquals(outputDtos1.size(), outputDtos3.hits().total());
+    assertEquals(ontologyDtos.size(), outputDtos3.hits().total());
   }
 
   @Test
   void getOntologiesByNameTest() throws IOException {
     Long tenant = nextTenant();
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     Map<String, Object> params =
         Map.of("name", "ZzzzzzZ", "sortby", "creationDate", "sortdir", "desc");
@@ -267,7 +250,6 @@ class OntologyIT extends BaseIT {
     PageResult<OntologyDto> outputDtos3 = response2.getBody();
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
-    assertNotNull(outputDtos1);
     assertNotNull(outputDtos3);
     assertEquals(0, outputDtos3.hits().total());
   }
@@ -275,31 +257,30 @@ class OntologyIT extends BaseIT {
   @Test
   void getOntologiesByNameTest2() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
-    String name = outputDtos1.getFirst().getName();
+    var ontologyDto = ontologyDtos.getFirst();
+    String name = ontologyDto.getName();
     Map<String, Object> params = Map.of("name", name, "sortby", "creationDate", "sortdir", "asc");
     ResponseEntity<PageResult<OntologyDto>> response2 = restClient.getOntologies(tenant, params);
     PageResult<OntologyDto> outputDtos3 = response2.getBody();
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
-    assertNotNull(outputDtos1);
     assertNotNull(outputDtos3);
-    assertEquals(1, outputDtos3.hits().total());
+    assertEquals(ontologyDtos.size(), outputDtos3.hits().total());
   }
 
   @Test
   void getOntologiesByNameTest3() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    List<OntologyDto> outputDtos1 = response.getBody();
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
-    String name = outputDtos1.getFirst().getName();
+    var ontologyDto = ontologyDtos.getFirst();
+    String name = ontologyDto.getName();
     ResponseEntity<PageResult<OntologyDto>> response2 = restClient.getOntologyByName(tenant, name);
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
     assertNotNull(response2.getBody());
@@ -310,35 +291,34 @@ class OntologyIT extends BaseIT {
   @Test
   void getOntologiesByIdentifierTest() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
-    assertNotNull(response.getBody());
-    OntologyDto outputDtos1 = response.getBody().getFirst();
-
-    ResponseEntity<OntologyDto> response2 =
-        restClient.getOntologyByIdentifier(tenant, outputDtos1.getIdentifier());
+    var ontologyDto = ontologyDtos.getFirst();
+    String identifier = ontologyDto.getIdentifier();
+    ResponseEntity<OntologyDto> response2 = restClient.getOntologyByIdentifier(tenant, identifier);
     OntologyDto outputDtos2 = response2.getBody();
 
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
 
     assertNotNull(outputDtos2);
-    assertEquals(outputDtos1.getName(), outputDtos2.getName());
-    assertEquals(outputDtos1.getStatus(), outputDtos2.getStatus());
-    assertEquals(outputDtos1.getCreationDate(), outputDtos2.getCreationDate());
-    assertEquals(outputDtos1.getLastUpdate(), outputDtos2.getLastUpdate());
+    assertEquals(ontologyDto.getName(), outputDtos2.getName());
+    assertEquals(ontologyDto.getStatus(), outputDtos2.getStatus());
+    assertNotEquals(ontologyDto.getCreationDate(), outputDtos2.getCreationDate());
+    assertNotEquals(ontologyDto.getLastUpdate(), outputDtos2.getLastUpdate());
   }
 
   @Test
   void getOneOntologyBadTenantTest() throws IOException {
+
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response =
         restClient.createOntologies(nextTenant(), ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    List<OntologyDto> outputDtos1 = response.getBody();
-    assertNotNull(outputDtos1);
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     Long tenant = nextTenant();
-    String identifier = outputDtos1.getFirst().getIdentifier();
+    String identifier = ontologyDtos.getFirst().getIdentifier();
     HttpClientErrorException thrown =
         assertThrows(
             HttpClientErrorException.class,
@@ -350,7 +330,7 @@ class OntologyIT extends BaseIT {
   void getOneOntologyBadIdentifierTest() throws IOException {
     Long tenant = nextTenant();
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     HttpClientErrorException thrown =
         assertThrows(
@@ -362,12 +342,12 @@ class OntologyIT extends BaseIT {
   @Test
   void updateOntologyIdentifierTest() throws IOException {
     Long tenant = nextTenant();
-    ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    List<OntologyDto> outputDtos1 = response.getBody();
-    assertNotNull(outputDtos1);
 
-    OntologyDto indexMap = outputDtos1.getFirst();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
+    ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
+
+    OntologyDto indexMap = ontologyDtos.getFirst();
     String identifier = indexMap.getIdentifier();
     indexMap.setIdentifier(identifier + "_BAD");
     HttpClientErrorException thrown =
@@ -380,21 +360,25 @@ class OntologyIT extends BaseIT {
   @Test
   void updateOntologyNameTest() throws IOException {
     Long tenant = nextTenant();
+    List<OntologyDto> ontologyDtos = DtoFactory.createOntologyDtos(ONTOLOGY1);
     ResponseEntity<List<OntologyDto>> response = restClient.createOntologies(tenant, ONTOLOGY1);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
-    assertNotNull(response.getBody());
-    OntologyDto outputDtos1 = response.getBody().getFirst();
-    outputDtos1.setName("NewIndexMapName");
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
-    ResponseEntity<OntologyDto> response2 = restClient.updateOntology(tenant, outputDtos1);
+    OntologyDto ontologyDto = ontologyDtos.getFirst();
+    ontologyDto.setName("NewIndexMapName");
+
+    ResponseEntity<OntologyDto> response2 = restClient.updateOntology(tenant, ontologyDto);
     assertEquals(HttpStatus.OK, response2.getStatusCode(), TestUtils.getBody(response2));
-    OntologyDto outputDtos2 = response2.getBody();
 
-    assertNotNull(outputDtos2);
-    assertEquals(outputDtos1.getIdentifier(), outputDtos2.getIdentifier());
-    assertEquals(outputDtos1.getName(), outputDtos2.getName());
-    assertEquals(outputDtos1.getCreationDate(), outputDtos2.getCreationDate());
-    assertEquals(outputDtos1.getStatus(), outputDtos2.getStatus());
-    assertEquals(1, outputDtos2.getLifeCycles().size());
+    String identifier = ontologyDto.getIdentifier();
+    ResponseEntity<OntologyDto> response3 = restClient.getOntologyByIdentifier(tenant, identifier);
+    OntologyDto outputDtos3 = response3.getBody();
+
+    assertNotNull(outputDtos3);
+    assertEquals(ontologyDto.getIdentifier(), outputDtos3.getIdentifier());
+    assertEquals(ontologyDto.getName(), outputDtos3.getName());
+    assertNotEquals(ontologyDto.getCreationDate(), outputDtos3.getCreationDate());
+    assertEquals(ontologyDto.getStatus(), outputDtos3.getStatus());
+    assertEquals(1, outputDtos3.getLifeCycles().size());
   }
 }

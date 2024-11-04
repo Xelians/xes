@@ -8,6 +8,9 @@ package fr.xelians.esafe.operation.domain;
 
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum OperationStatus {
 
   // Initialization => RUN, ERROR_INIT

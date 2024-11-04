@@ -23,6 +23,9 @@ import org.apache.commons.lang3.Validate;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @Entity

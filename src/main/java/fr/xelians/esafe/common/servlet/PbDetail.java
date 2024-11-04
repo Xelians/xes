@@ -17,6 +17,9 @@ import lombok.Builder;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class PbDetail extends ProblemDetail {
 
   private static final String CODE = "Code";

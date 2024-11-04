@@ -12,6 +12,9 @@ import fr.xelians.esafe.common.exception.functional.BadRequestException;
 // The undefined field is typically used in index mapping to identify intermediate
 // object fields without predefined type. This is useful for operators that access
 // the field but don't need its type (as the 'exist' operator)
+/*
+ * @author Emmanuel Deviller
+ */
 public class UndefinedField extends Field {
 
   public static final String TYPE = "Undefined";
@@ -40,6 +43,12 @@ public class UndefinedField extends Field {
 
   @Override
   public Void asValue(JsonNode node) {
+    throw new BadRequestException(
+        "As value failed", String.format("Undefined field '%s' cannot return value", name));
+  }
+
+  @Override
+  public Void asValue(Object value) {
     throw new BadRequestException(
         "As value failed", String.format("Undefined field '%s' cannot return value", name));
   }

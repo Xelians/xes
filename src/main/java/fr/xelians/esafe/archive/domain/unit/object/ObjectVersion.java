@@ -13,6 +13,9 @@ import java.util.List;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

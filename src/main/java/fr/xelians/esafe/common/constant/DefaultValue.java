@@ -10,6 +10,9 @@ import fr.xelians.esafe.referential.domain.CheckParentLinkStatus;
 import fr.xelians.esafe.referential.domain.Status;
 import java.time.LocalDate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class DefaultValue {
 
   private DefaultValue() {}
@@ -41,7 +44,7 @@ public final class DefaultValue {
 
   public static final Boolean FORMAT_UNIDENTIFIED_AUTHORIZED = Boolean.FALSE;
 
-  public static final int AUTO_VERSION = 1;
+  public static final Integer AUTO_VERSION = 1;
 
   public static final LocalDate ACTIVATION_DATE = LocalDate.ofYearDay(1970, 1);
 

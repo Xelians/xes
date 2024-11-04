@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.search.updaterule;
 
 import fr.xelians.esafe.referential.domain.RuleType;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record RuleTypeName(RuleType ruleType, String ruleName) {}

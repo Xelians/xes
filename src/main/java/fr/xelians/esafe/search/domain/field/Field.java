@@ -12,7 +12,11 @@ import fr.xelians.esafe.common.utils.Utils;
 import java.util.Objects;
 import lombok.Getter;
 
-/** The type Field. */
+/**
+ * The type Field. *
+ *
+ * @author Emmanuel Deviller
+ */
 @Getter
 public abstract class Field {
 
@@ -94,13 +98,12 @@ public abstract class Field {
   public abstract Object asValue(JsonNode node);
 
   /**
-   * Gets name.
+   * As value t.
    *
-   * @return the name
+   * @param object the node
+   * @return the t
    */
-  public String getName() {
-    return name;
-  }
+  public abstract Object asValue(Object object);
 
   public String getFullName() {
     return isStandard ? name : EXT + "." + name;

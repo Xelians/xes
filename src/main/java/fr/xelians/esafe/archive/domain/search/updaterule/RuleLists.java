@@ -11,6 +11,9 @@ import fr.xelians.esafe.referential.domain.RuleType;
 import java.util.List;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record RuleLists(
     List<RuleTypeName> deleteRules,
     Map<RuleType, UpdateRules> updateRules,

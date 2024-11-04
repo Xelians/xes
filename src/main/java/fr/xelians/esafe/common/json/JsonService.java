@@ -32,6 +32,9 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class JsonService {
 
   private static final ObjectMapper writeMapper;

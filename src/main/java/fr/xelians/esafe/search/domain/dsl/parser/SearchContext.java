@@ -8,6 +8,9 @@ package fr.xelians.esafe.search.domain.dsl.parser;
 
 import lombok.Getter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public class SearchContext {
 

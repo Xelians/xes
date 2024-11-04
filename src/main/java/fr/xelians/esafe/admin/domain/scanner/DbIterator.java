@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public abstract class DbIterator implements Iterator<OperationDb> {
 

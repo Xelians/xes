@@ -6,6 +6,7 @@
 
 package fr.xelians.esafe.referential.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.referential.domain.ProfileFormat;
 import jakarta.validation.constraints.NotNull;
@@ -14,10 +15,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProfileDto extends AbstractReferentialDto {
 
   @NotNull

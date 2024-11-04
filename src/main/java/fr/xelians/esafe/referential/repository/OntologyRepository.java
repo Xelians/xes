@@ -8,4 +8,7 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.entity.OntologyDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OntologyRepository extends IRepository<OntologyDb>, CustomReferentialRepository {}

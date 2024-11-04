@@ -9,6 +9,9 @@ package fr.xelians.esafe.referential.domain;
 import java.util.Arrays;
 import java.util.Optional;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum RuleType {
   AppraisalRule,
   AccessRule,

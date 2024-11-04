@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import fr.xelians.esafe.organization.dto.OrganizationDto;
 import fr.xelians.esafe.organization.dto.UserInfoDto;
 import fr.xelians.esafe.testcommon.TestUtils;
-import java.io.IOException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -21,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 class OrganizationIT extends BaseIT {
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
 

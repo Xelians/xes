@@ -1,9 +1,4 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates and open the template
- * in the editor.
- */
-/*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the Ceccil v2.1 License as published by
  * the CEA, CNRS and INRIA.
@@ -13,7 +8,6 @@ package fr.xelians.esafe.referential.service;
 
 import static java.util.stream.Collectors.toMap;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.ingest.Mapping;
 import fr.xelians.esafe.archive.domain.ingest.OntologyMapper;
 import fr.xelians.esafe.archive.domain.search.ArchiveUnitIndex;
@@ -22,7 +16,9 @@ import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.utils.FieldUtils;
 import fr.xelians.esafe.common.utils.Utils;
+import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
+import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.referential.domain.search.ReferentialParser;
 import fr.xelians.esafe.referential.dto.OntologyDto;
 import fr.xelians.esafe.referential.entity.OntologyDb;
@@ -34,6 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Service
 public class OntologyService extends AbstractReferentialService<OntologyDto, OntologyDb> {
 
@@ -43,8 +42,9 @@ public class OntologyService extends AbstractReferentialService<OntologyDto, Ont
   public OntologyService(
       EntityManager entityManager,
       OntologyRepository repository,
-      OperationService operationService) {
-    super(entityManager, repository, operationService);
+      OperationService operationService,
+      TenantService tenantService) {
+    super(entityManager, repository, operationService, tenantService);
   }
 
   @Override
@@ -58,36 +58,39 @@ public class OntologyService extends AbstractReferentialService<OntologyDto, Ont
 
   @Override
   public OntologyDb toEntity(OntologyDto dto) {
-    OntologyDb entity = Utils.copyProperties(dto, createEntity());
+    OntologyDb entity = super.toEntity(dto);
     entity.setMappings(dto.getMappings().stream().collect(toMap(Mapping::src, Mapping::dst)));
     return entity;
   }
 
   @Override
-  public OntologyDb copyDtoToEntity(OntologyDto dto, OntologyDb entity) {
-    OntologyDb oriEntity = super.copyDtoToEntity(dto, entity);
-    entity.setMappings(dto.getMappings().stream().collect(toMap(Mapping::src, Mapping::dst)));
-    return oriEntity;
+  public OntologyDb updateDtoToEntity(OntologyDto dto, OntologyDb entity) {
+    OntologyDb trgEntity = super.updateDtoToEntity(dto, entity);
+    trgEntity.setMappings(dto.getMappings().stream().collect(toMap(Mapping::src, Mapping::dst)));
+    return trgEntity;
   }
 
-  @Override
-  @Transactional
-  public List<OntologyDto> create(
-      Long tenant, String userIdentifier, String applicationId, List<OntologyDto> dtos) {
+  @Transactional(rollbackFor = Exception.class)
+  public List<OntologyDto> createOntology(
+      OperationDb operation, Long tenant, List<OntologyDto> dtos) {
     dtos.forEach(this::checkOntology);
-    return super.create(tenant, userIdentifier, applicationId, dtos);
+    OperationDb op = saveOperation(operation);
+    return super.create(op, tenant, dtos);
   }
 
-  @Override
-  @Transactional
-  public OntologyDto update(
-      Long tenant,
-      String userIdentifier,
-      String applicationId,
-      String identifier,
-      OntologyDto dto) {
+  @Transactional(rollbackFor = Exception.class)
+  public OntologyDto updateOntology(
+      OperationDb operation, Long tenant, String identifier, OntologyDto dto) {
     checkOntology(dto);
-    return super.update(tenant, userIdentifier, applicationId, identifier, dto);
+    OperationDb op = saveOperation(operation);
+    return super.update(op, tenant, identifier, dto);
+  }
+
+  @Transactional(rollbackFor = Exception.class)
+  public void deleteOntology(OperationDb operation, Long tenant, String identifier) {
+    // TODO Check if it used
+    OperationDb op = saveOperation(operation);
+    super.delete(op, tenant, identifier);
   }
 
   private void checkOntology(OntologyDto ontology) {
@@ -149,7 +152,7 @@ public class OntologyService extends AbstractReferentialService<OntologyDto, Ont
     return new OntologyMapper(this, tenant);
   }
 
-  public SearchResult<JsonNode> search(Long tenant, SearchQuery query) {
+  public SearchResult<OntologyDto> search(Long tenant, SearchQuery query) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(query, "query must be not null");
     return search(ReferentialParser.createOntologyParser(tenant, entityManager), query);

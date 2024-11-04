@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.unit;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum UnitType {
   INGEST,
   FILING_UNIT,

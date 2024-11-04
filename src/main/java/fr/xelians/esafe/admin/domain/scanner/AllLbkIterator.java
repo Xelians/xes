@@ -12,6 +12,9 @@ import fr.xelians.esafe.storage.service.StorageService;
 import java.io.IOException;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class AllLbkIterator extends LbkIterator {
 
   private List<Long> lbkIds;

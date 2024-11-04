@@ -9,4 +9,7 @@ package fr.xelians.esafe.storage.repository;
 import fr.xelians.esafe.storage.entity.StorageDb;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface StorageRepository extends JpaRepository<StorageDb, Long> {}

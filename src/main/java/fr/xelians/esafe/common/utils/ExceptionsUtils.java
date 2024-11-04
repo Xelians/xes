@@ -21,6 +21,9 @@ import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpStatusCode;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class ExceptionsUtils {
 
   private ExceptionsUtils() {}

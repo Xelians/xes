@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,9 +36,6 @@ class PerfIT extends BaseIT {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   // @Test
   void ingestSimpleSip(@TempDir Path tmpDir) throws IOException {
@@ -57,14 +53,10 @@ class PerfIT extends BaseIT {
         .parallel()
         .forEach(
             i -> {
-              try {
-                ResponseEntity<Void> r = restClient.uploadSip(tenant, sipPath);
-                assertEquals(HttpStatus.ACCEPTED, r.getStatusCode());
-                String requestId = r.getHeaders().getFirst(X_REQUEST_ID);
-                rs.add(requestId);
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
+              ResponseEntity<Void> r = restClient.uploadSip(tenant, sipPath);
+              assertEquals(HttpStatus.ACCEPTED, r.getStatusCode());
+              String requestId = r.getHeaders().getFirst(X_REQUEST_ID);
+              rs.add(requestId);
             });
 
     for (String r : rs) {
@@ -92,14 +84,10 @@ class PerfIT extends BaseIT {
         .parallel()
         .forEach(
             i -> {
-              try {
-                ResponseEntity<Void> r = restClient.uploadSip(tenant, sipPath);
-                assertEquals(HttpStatus.ACCEPTED, r.getStatusCode());
-                String requestId = r.getHeaders().getFirst(X_REQUEST_ID);
-                rs.add(requestId);
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
+              ResponseEntity<Void> r = restClient.uploadSip(tenant, sipPath);
+              assertEquals(HttpStatus.ACCEPTED, r.getStatusCode());
+              String requestId = r.getHeaders().getFirst(X_REQUEST_ID);
+              rs.add(requestId);
             });
 
     for (String r : rs) {

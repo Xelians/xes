@@ -11,6 +11,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -26,4 +29,6 @@ public abstract sealed class StorageObject extends StorageObjectId
     this.ignoreChecksum = ignoreChecksum;
     this.ignoreEncryption = ignoreEncryption;
   }
+
+  public abstract long getSize();
 }

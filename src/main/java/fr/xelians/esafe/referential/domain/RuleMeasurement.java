@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.referential.domain;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum RuleMeasurement {
   DAY,
   MONTH,

@@ -8,4 +8,7 @@ package fr.xelians.esafe.search.domain.dsl.parser.eql;
 
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record AggCount(Aggregation aggregation, int count) {}

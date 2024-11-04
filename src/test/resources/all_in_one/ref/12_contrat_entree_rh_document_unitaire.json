@@ -1,0 +1,14 @@
+[
+	{
+		"Identifier":"IC-000004",
+		"Name":"Contrat d'entree RH Document unitaire",
+		"Description":"Contrat d'entree RH Document unitaire",
+		"Status":"ACTIVE",
+		"ArchiveProfiles":["PR-000004"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

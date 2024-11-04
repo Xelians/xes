@@ -9,6 +9,9 @@ package fr.xelians.esafe.admin.domain.scanner;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface IteratorFactory {
 
   LbkIterator createLbkIterator(TenantDb tenantDb, List<String> offers);

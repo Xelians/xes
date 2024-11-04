@@ -9,15 +9,17 @@ package fr.xelians.esafe.archive.domain.ingest.sedav2.ontology;
 import fr.xelians.esafe.archive.domain.ingest.BasicOntologyMap;
 import fr.xelians.esafe.archive.domain.ingest.Mapping;
 import fr.xelians.esafe.archive.domain.ingest.OntologyMap;
-import fr.xelians.esafe.search.domain.field.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class XamOntology {
 
   public static final List<String> EXT_KEYS =
-      createKeys(
+      createExtKeys(
           List.of(
               "PhysicalType=keyword",
               "PhysicalStatus=keyword",
@@ -120,10 +122,12 @@ public class XamOntology {
 
   public static final OntologyMap MAPPING = new BasicOntologyMap(MAPPINGS);
 
-  private static List<String> createKeys(List<String> keys) {
-    List<String> k = new ArrayList<>(Sedav2Ontology.EXT_KEYS);
-    k.addAll(keys);
-    return Collections.unmodifiableList(k);
+  private static List<String> createExtKeys(List<String> keys) {
+    int size = Sedav2Ontology.EXT_KEYS.size() + keys.size();
+    List<String> extKeys = new ArrayList<>(size);
+    extKeys.addAll(keys);
+    extKeys.addAll(Sedav2Ontology.EXT_KEYS);
+    return Collections.unmodifiableList(extKeys);
   }
 
   private XamOntology() {}

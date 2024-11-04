@@ -9,6 +9,9 @@ package fr.xelians.esafe.storage.domain.hashset;
 import java.util.Iterator;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface IdSet extends Iterable<Long>, AutoCloseable {
 
   void add(long id);

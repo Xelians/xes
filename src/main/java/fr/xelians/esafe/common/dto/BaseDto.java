@@ -11,6 +11,9 @@ import fr.xelians.esafe.referential.domain.Status;
 import java.time.LocalDate;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface BaseDto {
 
   String getName();
@@ -45,9 +48,9 @@ public interface BaseDto {
 
   void setLifeCycles(List<LifeCycle> lifeCycles);
 
-  int getAutoVersion();
+  Integer getAutoVersion();
 
-  void setAutoVersion(int autoVersion);
+  void setAutoVersion(Integer autoVersion);
 
   Long getOperationId();
 

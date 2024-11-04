@@ -13,6 +13,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.DslParser;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Or extends OrOperator<Query> {
 
   public Or(DslParser<Query> parser, SearchContext searchContext, JsonNode node) {

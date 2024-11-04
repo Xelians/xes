@@ -10,6 +10,9 @@ import fr.xelians.esafe.common.utils.SipUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public abstract class RelationRef<T> {
 

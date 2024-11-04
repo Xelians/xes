@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.springframework.data.domain.Slice;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record SliceResult<T>(
     @JsonProperty("$hits") SliceHits hits, @JsonProperty("$results") List<T> results) {
 

@@ -15,6 +15,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.DslParser;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class Range extends RangeOperator<Query> {
 

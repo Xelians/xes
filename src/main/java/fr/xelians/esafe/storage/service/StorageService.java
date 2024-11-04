@@ -37,6 +37,9 @@ import org.apache.commons.lang.BooleanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 public class StorageService {

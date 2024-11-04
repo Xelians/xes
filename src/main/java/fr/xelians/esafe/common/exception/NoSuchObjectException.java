@@ -8,6 +8,9 @@ package fr.xelians.esafe.common.exception;
 
 import java.io.IOException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class NoSuchObjectException extends IOException {
 
   public NoSuchObjectException() {

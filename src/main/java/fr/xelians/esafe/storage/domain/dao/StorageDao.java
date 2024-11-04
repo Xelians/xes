@@ -18,6 +18,9 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface StorageDao extends AutoCloseable {
 
   List<AgencyDb> getAgencies(Long tenant, List<String> offers) throws IOException;

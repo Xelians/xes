@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import lombok.Getter;
 import lombok.Setter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @Entity

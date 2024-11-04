@@ -16,6 +16,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface BaseDb {
 
   String getName();
@@ -50,9 +53,9 @@ public interface BaseDb {
 
   void setLfcs(byte[] lifeCycles);
 
-  int getAutoVersion();
+  Integer getAutoVersion();
 
-  void setAutoVersion(int autoVersion);
+  void setAutoVersion(Integer autoVersion);
 
   Long getOperationId();
 

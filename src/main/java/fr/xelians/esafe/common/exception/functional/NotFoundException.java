@@ -9,7 +9,14 @@ package fr.xelians.esafe.common.exception.functional;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class NotFoundException extends FunctionalException {
+
+  public NotFoundException(String message) {
+    super(message, URI.create(ABOUT_BLANK));
+  }
 
   public NotFoundException(String title, String message) {
     super(title, message, URI.create(ABOUT_BLANK));

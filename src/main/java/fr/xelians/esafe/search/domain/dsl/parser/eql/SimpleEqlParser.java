@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class SimpleEqlParser extends EqlParser {
 
   private static final JsonNode QUERY_ALL = queryAll();

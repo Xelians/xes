@@ -9,6 +9,7 @@ package fr.xelians.esafe.testcommon;
 import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import fr.xelians.esafe.organization.dto.TenantContract;
@@ -40,18 +41,18 @@ public class Scenario {
     for (int i = 1; i <= 2; i++) {
       ResponseEntity<?> response =
           restClient.createOntologies(tenant, DtoFactory.createOntologyDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       IngestContractDto ingestContractDto = DtoFactory.createIngestContractDto(i);
       response = restClient.createIngestContract(tenant, ingestContractDto);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       AccessContractDto accessContractDto = DtoFactory.createAccessContractDto(i);
       response = restClient.createAccessContract(tenant, accessContractDto);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       userDto
           .getAccessContracts()
@@ -73,25 +74,25 @@ public class Scenario {
 
     for (int i = 1; i <= 4; i++) {
       ResponseEntity<?> response = restClient.createRule(tenant, DtoFactory.createAccessRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createAppraisalRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createReuseRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createClassificationRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createDisseminationRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createStorageRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
       response = restClient.createRule(tenant, DtoFactory.createHoldRule(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
   }
 
@@ -119,7 +120,7 @@ public class Scenario {
 
     Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
     XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
     Nodes nodes =
         rootElem.query(
             "//ns:ArchiveUnit[@id='" + holding.getArchiveUnits().get(0).getId() + "']", xc);
@@ -150,7 +151,7 @@ public class Scenario {
 
     Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
     XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
     Nodes nodes =
         rootElem.query(
             "//ns:ArchiveUnit[@id='" + simpleSip.getArchiveUnits().getFirst().getId() + "']", xc);
@@ -165,12 +166,12 @@ public class Scenario {
     long systemId = Scenario.createScenario03(restClient, tenant, userDto, tmpDir);
 
     ResponseEntity<?> response = restClient.createAgencies(tenant, DtoFactory.createAgencyDto(2));
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
 
     IngestContractDto ic2 = DtoFactory.createIngestContractDto(2);
     ic2.setLinkParentId(systemId);
     response = restClient.createIngestContract(tenant, ic2);
-    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(HttpStatus.CREATED, response.getStatusCode());
   }
 
   public static Map<String, Long> uploadSip(
@@ -218,7 +219,7 @@ public class Scenario {
     restClient.downloadXmlAtr(tenant, requestId, atrPath);
     Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
     XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
 
     Map<String, Long> map = new HashMap<>();
     Nodes nodes = rootElem.query("//ns:ArchiveUnit", xc);

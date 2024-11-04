@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Utils;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.utils.JsonUtils;
 import fr.xelians.esafe.common.utils.Utils;
@@ -37,7 +38,6 @@ import nu.xom.Element;
 import nu.xom.ParsingException;
 import nu.xom.XPathContext;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Execution;
@@ -94,14 +94,11 @@ class ArchiveUpdateIT extends BaseIT {
       restClient.downloadXmlAtr(tenant, requestId, atrPath);
       Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
       XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-      xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+      xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
     }
 
     Utils.sleep(1000);
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void updateManagementTest() {

@@ -8,6 +8,7 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.ReferentialDb;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.Param;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @NoRepositoryBean
 public interface IRepository<E extends ReferentialDb>
     extends JpaRepository<E, Long>, CustomReferentialRepository {
@@ -41,10 +45,10 @@ public interface IRepository<E extends ReferentialDb>
   List<String> findIdentifiersByTenant(Long tenant);
 
   @Query(
-      "SELECT identifier FROM #{#entityName} e WHERE e.tenant = ?1 and e.identifier LIKE CONCAT(?2,'%')")
+      "SELECT identifier FROM #{#entityName} e WHERE e.tenant = ?1 AND e.identifier LIKE CONCAT(?2,'%')")
   List<String> findIdentifiersByTenantAndStartingWith(Long tenant, String start);
 
-  @Query("SELECT id FROM #{#entityName} e WHERE e.tenant = ?1 and e.identifier = ?2")
+  @Query("SELECT id FROM #{#entityName} e WHERE e.tenant = ?1 AND e.identifier = ?2")
   Optional<Long> findIdByTenantAndIdentifier(Long tenant, String identifier);
 
   @Query("SELECT id FROM #{#entityName} e WHERE e.tenant=:tenant AND e.identifier IN :identifiers")
@@ -54,6 +58,19 @@ public interface IRepository<E extends ReferentialDb>
   boolean existsByTenantAndIdentifier(Long tenant, String identifier);
 
   @Modifying
-  @Query("DELETE FROM #{#entityName} e where e.tenant = ?1")
+  @Query(
+      "UPDATE #{#entityName} o SET o.status=:status, o.lastUpdate=:lastUpdate WHERE o.tenant=:tenant AND o.identifier=:identifier")
+  void update(
+      @Param("tenant") Long tenant,
+      @Param("identifier") String identifier,
+      @Param("status") Status status,
+      @Param("lastUpdate") LocalDate lastUpdate);
+
+  @Modifying
+  @Query("DELETE FROM #{#entityName} e WHERE e.tenant = ?1")
   void deleteWithTenant(Long tenant);
+
+  @Modifying
+  @Query("DELETE FROM #{#entityName} e WHERE e.tenant = ?1 AND e.identifier = ?2")
+  void delete(Long tenant, String identifier);
 }

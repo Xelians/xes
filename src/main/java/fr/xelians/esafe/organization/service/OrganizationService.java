@@ -1,9 +1,4 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates and open the template
- * in the editor.
- */
-/*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the Ceccil v2.1 License as published by
  * the CEA, CNRS and INRIA.
@@ -32,6 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -52,9 +50,8 @@ public class OrganizationService {
     return Utils.copyProperties(dto, new OrganizationDb());
   }
 
-  // Internal use only
   @Transactional
-  public OrganizationDb createDefault(OrganizationDto organizationDto) {
+  public OrganizationDb create(OrganizationDto organizationDto) {
     Assert.notNull(organizationDto, String.format("%s dto cannot be null", ENTITY_NAME));
 
     OrganizationDb organizationDb = toEntity(organizationDto);
@@ -67,14 +64,14 @@ public class OrganizationService {
 
   @Transactional
   public OrganizationDto update(
-      Long organizationId,
+      String organizationId,
       String userIdentifier,
       String applicationId,
       OrganizationDto organizationDto) {
     Assert.notNull(organizationDto, String.format("%s dto cannot be null", ENTITY_NAME));
 
     // Get organization from db
-    OrganizationDb organizationDb = getOrganizationDbById(organizationId);
+    OrganizationDb organizationDb = getOrganizationDbByIdentifier(organizationId);
 
     if (organizationDto.getIdentifier() != null
         && !organizationDb.getIdentifier().equals(organizationDto.getIdentifier())) {
@@ -128,15 +125,15 @@ public class OrganizationService {
     return oriOrganizationDb;
   }
 
-  public OrganizationDto getOrganizationDtoById(Long organizationId) {
+  public OrganizationDto getOrganizationDtoByIdentifier(String organizationIdentifier) {
     return repository
-        .findById(organizationId)
+        .findByIdentifier(organizationIdentifier)
         .map(this::toDto)
         .orElseThrow(
             () ->
                 new NotFoundException(
                     ORGANIZATION_NOT_FOUND,
-                    String.format(ID_NOT_FOUND, ENTITY_NAME, organizationId)));
+                    String.format(ID_NOT_FOUND, ENTITY_NAME, organizationIdentifier)));
   }
 
   public OrganizationDto getOrganizationDtoByTenant(Long tenant) {
@@ -157,6 +154,16 @@ public class OrganizationService {
                 new NotFoundException(
                     ORGANIZATION_NOT_FOUND,
                     String.format(ID_NOT_FOUND, ENTITY_NAME, organizationId)));
+  }
+
+  public OrganizationDb getOrganizationDbByIdentifier(String organizationIdentifier) {
+    return repository
+        .findByIdentifier(organizationIdentifier)
+        .orElseThrow(
+            () ->
+                new NotFoundException(
+                    ORGANIZATION_NOT_FOUND,
+                    String.format(ID_NOT_FOUND, ENTITY_NAME, organizationIdentifier)));
   }
 
   // Internal Use only

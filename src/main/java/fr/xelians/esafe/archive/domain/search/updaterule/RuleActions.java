@@ -11,6 +11,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record RuleActions(
     @JsonProperty("add") @Size(max = 64) List<JsonNode> add,
     @JsonProperty("update") @Size(max = 64) List<JsonNode> update,

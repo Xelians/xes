@@ -8,8 +8,12 @@ package fr.xelians.esafe.search.domain.field;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
+import fr.xelians.esafe.common.utils.NumUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class DoubleField extends Field {
 
   public static final String MAPPING_PREFIX = "Double";
@@ -61,6 +65,11 @@ public class DoubleField extends Field {
     }
     throw new BadRequestException(
         "As value failed", String.format("Value '%s' is not a valid double number", node.asText()));
+  }
+
+  @Override
+  public Double asValue(Object value) {
+    return NumUtils.toDouble(value);
   }
 
   @Override

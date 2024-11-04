@@ -1,0 +1,8 @@
+RuleId,RuleType,RuleValue,RuleDescription,RuleDuration,RuleMeasurement
+I5-1,AppraisalRule,Contrat,Contrat,10,YEAR
+I5-2,AppraisalRule,Facture,Facture,10,YEAR
+I6-1,AppraisalRule,Commande,Commande,5,YEAR
+F5-1,AppraisalRule,"Documents préparatoires brouillons","Documents préparatoires",1,YEAR
+R2-1,AppraisalRule,"Dossier d’agent","Dossier d’agent",70,YEAR
+P20-1,AppraisalRule,"Elements Physique","Elements Physique",20,YEAR
+ACC-001,AccessRule,Contrat client,Contrat client,10,YEAR

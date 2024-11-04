@@ -8,4 +8,7 @@ package fr.xelians.esafe.referential.repository;
 
 import fr.xelians.esafe.referential.entity.RuleDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface RuleRepository extends IRepository<RuleDb>, CustomReferentialRepository {}

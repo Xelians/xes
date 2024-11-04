@@ -41,13 +41,15 @@ import org.apache.commons.lang3.StringUtils;
  * }
  * {@code </script>}
  * </pre>
+ *
+ * @author Emmanuel Deviller
  */
 public class Set extends Patch {
 
   private static final String MANAGEMENT = "management";
 
   private static final String[] excludedFieldNames = {
-    "BinaryDataObjects", "SystemId",
+    "BinaryDataObjects", "SystemId", "ArchiveUnitProfile"
   };
 
   private final List<FieldNode> pathFieldNodes = new ArrayList<>();

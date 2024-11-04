@@ -11,6 +11,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Service
 @RequiredArgsConstructor

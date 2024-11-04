@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.exception;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum Category {
   FUNCTIONAL,
   TECHNICAL

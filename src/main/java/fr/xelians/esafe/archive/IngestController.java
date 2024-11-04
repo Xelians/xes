@@ -8,12 +8,12 @@ package fr.xelians.esafe.archive;
 
 import static fr.xelians.esafe.common.constant.Api.*;
 import static fr.xelians.esafe.common.constant.Header.*;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ADMIN;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_MANAGER;
 import static org.springframework.http.MediaType.*;
 
 import fr.xelians.esafe.archive.domain.ingest.ContextId;
 import fr.xelians.esafe.archive.service.IngestService;
-import fr.xelians.esafe.authentication.domain.AuthContext;
+import fr.xelians.esafe.security.resourceserver.AuthContext;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Min;
@@ -27,14 +27,21 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * The {@code IngestController} class provides REST API endpoints for the ingest process related to
+ * Vitam archives. It handles both ingest operations and retrieving manifests and ATR (Archive
+ * Transfer Report) information. The controller is secured and requires a user with the role {@code
+ * ROLE_ARCHIVE_MANAGER}.
+ *
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RestController
-@Secured(ROLE_ADMIN)
 @RequiredArgsConstructor
 @Validated
 public class IngestController {
@@ -42,8 +49,8 @@ public class IngestController {
   private final IngestService ingestService;
 
   @Operation(summary = "Ingest Vitam archive")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = INGEST_EXTERNAL + V1 + INGESTS, consumes = APPLICATION_OCTET_STREAM_VALUE)
-  // @Secured("ROLE_INGEST")
   public ResponseEntity<Void> ingest(
       final HttpServletRequest request,
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -58,8 +65,8 @@ public class IngestController {
   }
 
   @Operation(summary = "Ingest archive")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = INGEST_EXTERNAL + V2 + INGESTS, consumes = MULTIPART_FORM_DATA_VALUE)
-  // @Secured("ROLE_INGEST")
   public ResponseEntity<Void> ingest(
       @RequestParam(X_FILE) MultipartFile multipartFile,
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -81,6 +88,7 @@ public class IngestController {
 
   // Manifest
   @Operation(summary = "Get Xml Manifest from Operation Id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(value = INGEST_EXTERNAL + V1 + MANIFESTS, produces = APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<InputStreamResource> getManifest(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
@@ -93,6 +101,7 @@ public class IngestController {
 
   // ATR
   @Operation(summary = "Get Xml ATR from Operation Id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(value = INGEST_EXTERNAL + V1 + ATR_XML, produces = APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<InputStreamResource> getXmlAtr(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
@@ -104,6 +113,7 @@ public class IngestController {
   }
 
   @Operation(summary = "Get Json ATR from Operation Id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(value = INGEST_EXTERNAL + V1 + ATR_JSON, produces = APPLICATION_JSON_VALUE)
   public ResponseEntity<InputStreamResource> getJsonAtr(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)

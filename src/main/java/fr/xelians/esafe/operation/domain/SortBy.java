@@ -7,6 +7,9 @@
 package fr.xelians.esafe.operation.domain;
 
 // Keep the lowercase
+/*
+ * @author Emmanuel Deviller
+ */
 public enum SortBy {
   id
 }

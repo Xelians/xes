@@ -14,6 +14,9 @@ import fr.xelians.esafe.operation.domain.StorageAction;
 import fr.xelians.esafe.storage.domain.hashset.StorageObjectSet;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class AddOfferProcessor implements OperationProcessor {
 

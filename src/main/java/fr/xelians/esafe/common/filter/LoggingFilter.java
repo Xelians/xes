@@ -11,6 +11,9 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @AllArgsConstructor
 public class LoggingFilter extends CommonsRequestLoggingFilter {
 

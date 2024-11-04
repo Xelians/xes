@@ -17,8 +17,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
@@ -103,14 +109,14 @@ public class ArchiveTransferReply extends Message {
   @JsonIgnore
   public Map<String, PhysicalDataObjectReply> getPhysicalDataObjectMap() {
     return dataObjectGroupReplys.stream()
-        .flatMap(d -> d.getPhysicalDataObjectReplys().stream())
+        .flatMap(d -> d.getPhysicalDataObjects().stream())
         .collect(toMap(PhysicalDataObjectReply::getXmlId, Function.identity()));
   }
 
   @JsonIgnore
   public Map<String, BinaryDataObjectReply> getBinaryDataObjectReplyMap() {
     return dataObjectGroupReplys.stream()
-        .flatMap(d -> d.getBinaryDataObjectReplys().stream())
+        .flatMap(d -> d.getBinaryDataObjects().stream())
         .collect(toMap(BinaryDataObjectReply::getXmlId, Function.identity()));
   }
 }

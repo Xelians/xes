@@ -12,6 +12,9 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Predicator {
 
   private Predicator() {}

@@ -10,8 +10,13 @@ import static fr.xelians.esafe.operation.domain.OperationFactory.rebuildIndexOp;
 import static fr.xelians.esafe.operation.domain.OperationFactory.resetTenantIndexOp;
 
 import fr.xelians.esafe.accession.domain.search.RegisterDetailsIndex;
+import fr.xelians.esafe.accession.domain.search.RegisterIndex;
 import fr.xelians.esafe.accession.domain.search.RegisterSummaryIndex;
-import fr.xelians.esafe.admin.domain.scanner.*;
+import fr.xelians.esafe.accession.domain.search.RegisterSymbolicIndex;
+import fr.xelians.esafe.admin.domain.scanner.DbIterator;
+import fr.xelians.esafe.admin.domain.scanner.IteratorFactory;
+import fr.xelians.esafe.admin.domain.scanner.LbkIterator;
+import fr.xelians.esafe.admin.domain.scanner.OperationProcessor;
 import fr.xelians.esafe.admin.domain.scanner.iterator.capacity.CapacityDbIterator;
 import fr.xelians.esafe.admin.domain.scanner.iterator.capacity.CapacityLbkIterator;
 import fr.xelians.esafe.admin.domain.scanner.reindex.ReindexSearchIndexIteratorFactory;
@@ -51,6 +56,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -76,13 +84,14 @@ public class IndexAdminService {
     createIndex(LogbookIndex.NAME, LogbookIndex.ALIAS, LogbookIndex.MAPPING);
     createIndex(
         RegisterDetailsIndex.NAME, RegisterDetailsIndex.ALIAS, RegisterDetailsIndex.MAPPING);
-    createIndex(
-        RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterSummaryIndex.MAPPING);
+    createIndex(RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterIndex.MAPPING);
+    createIndex(RegisterSymbolicIndex.NAME, RegisterSymbolicIndex.ALIAS, RegisterIndex.MAPPING);
   }
 
   // Delete archive unit and logbook index
   // TODO Check if a rebuild operation is already running  (Status = commit)
   public void deleteAllIndex() throws IOException {
+    searchEngineService.deleteIndexWithPrefix(RegisterSymbolicIndex.NAME);
     searchEngineService.deleteIndexWithPrefix(RegisterSummaryIndex.NAME);
     searchEngineService.deleteIndexWithPrefix(RegisterDetailsIndex.NAME);
     searchEngineService.deleteIndexWithPrefix(LogbookIndex.NAME);
@@ -91,7 +100,8 @@ public class IndexAdminService {
 
   // TODO Check if a rebuild operation is already running  (Status = commit)
   public void resetAllIndex() throws IOException {
-    resetIndex(RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterSummaryIndex.MAPPING);
+    resetIndex(RegisterSymbolicIndex.NAME, RegisterSymbolicIndex.ALIAS, RegisterIndex.MAPPING);
+    resetIndex(RegisterSummaryIndex.NAME, RegisterSummaryIndex.ALIAS, RegisterIndex.MAPPING);
     resetIndex(RegisterDetailsIndex.NAME, RegisterDetailsIndex.ALIAS, RegisterDetailsIndex.MAPPING);
     resetIndex(LogbookIndex.NAME, LogbookIndex.ALIAS, LogbookIndex.MAPPING);
     resetIndex(ArchiveUnitIndex.NAME, ArchiveUnitIndex.ALIAS, ArchiveUnitIndex.MAPPING);

@@ -11,6 +11,9 @@ import lombok.Getter;
 import lombok.ToString;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @ToString
 public class HttpError {

@@ -14,19 +14,21 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode
 @ToString
 public class DataObjectGroupReply {
 
-  //    @JsonIgnore
   @JsonProperty(value = "XmlId", access = JsonProperty.Access.WRITE_ONLY)
   private String xmlId;
 
   @JsonProperty("PhysicalDataObjects")
-  private List<PhysicalDataObjectReply> physicalDataObjectReplys = new ArrayList<>();
+  private List<PhysicalDataObjectReply> physicalDataObjects = new ArrayList<>();
 
   @JsonProperty("BinaryDataObjects")
-  private List<BinaryDataObjectReply> binaryDataObjectReplys = new ArrayList<>();
+  private List<BinaryDataObjectReply> binaryDataObjects = new ArrayList<>();
 }

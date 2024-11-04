@@ -9,6 +9,9 @@ package fr.xelians.esafe.archive.domain.unit;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class EventBuilder {
 
   @JsonProperty("Identifier")

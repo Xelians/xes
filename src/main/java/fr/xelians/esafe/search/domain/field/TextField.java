@@ -9,6 +9,9 @@ package fr.xelians.esafe.search.domain.field;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class TextField extends Field {
 
   public static final String MAPPING_PREFIX = "Text";
@@ -50,6 +53,11 @@ public class TextField extends Field {
           "As value failed", String.format("Value '%s' is not a valid text", node.asText()));
     }
     return node.asText();
+  }
+
+  @Override
+  public String asValue(Object value) {
+    return value.toString();
   }
 
   @Override

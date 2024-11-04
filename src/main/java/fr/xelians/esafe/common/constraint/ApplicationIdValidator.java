@@ -14,6 +14,9 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.hibernate.validator.internal.engine.constraintvalidation.ConstraintValidatorContextImpl;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ApplicationIdValidator implements ConstraintValidator<NoHtml, String> {
 
   @Override

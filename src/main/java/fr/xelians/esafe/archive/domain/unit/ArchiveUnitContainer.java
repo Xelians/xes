@@ -8,6 +8,9 @@ package fr.xelians.esafe.archive.domain.unit;
 
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface ArchiveUnitContainer {
 
   void addArchiveUnit(ArchiveUnit archiveUnit);

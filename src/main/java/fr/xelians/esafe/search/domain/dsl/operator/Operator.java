@@ -23,6 +23,8 @@ package fr.xelians.esafe.search.domain.dsl.operator;
  * <p>query : operator, { $depth : Long }
  *
  * <p>#id :
+ *
+ * @author Emmanuel Deviller
  */
 public interface Operator {
 

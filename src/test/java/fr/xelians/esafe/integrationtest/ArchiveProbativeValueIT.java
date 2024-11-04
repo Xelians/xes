@@ -7,13 +7,14 @@
 package fr.xelians.esafe.integrationtest;
 
 import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_MANAGER;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_READER;
 import static org.junit.jupiter.api.Assertions.*;
 
 import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
-import fr.xelians.esafe.organization.domain.role.TenantRole;
-import fr.xelians.esafe.organization.domain.role.TenantRoleName;
+import fr.xelians.esafe.organization.domain.TenantRole;
 import fr.xelians.esafe.organization.dto.UserDto;
 import fr.xelians.esafe.testcommon.*;
 import fr.xelians.sipg.model.ArchiveTransfer;
@@ -23,7 +24,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -41,9 +41,6 @@ class ArchiveProbativeValueIT extends BaseIT {
     userDto = setupDto.userDto();
   }
 
-  @BeforeEach
-  void beforeEach() {}
-
   @Test
   void probativeComplexSipTest(@TempDir Path tmpDir) throws IOException, ParsingException {
     Long tenant = nextTenant();
@@ -51,8 +48,8 @@ class ArchiveProbativeValueIT extends BaseIT {
     Scenario.createScenario02(restClient, tenant, userDto);
 
     // Init User
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_WRITER));
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_READER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_MANAGER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_READER));
     ResponseEntity<?> response = restClient.updateUser(userDto);
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
 

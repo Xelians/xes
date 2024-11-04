@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.ingest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Mapping(@JsonProperty("Src") String src, @JsonProperty("Dst") String dst) {}

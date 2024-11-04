@@ -6,17 +6,21 @@
 
 package fr.xelians.esafe.accession.domain.search;
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.search.domain.dsl.parser.eql.SimpleEqlParser;
-import io.jsonwebtoken.lang.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class RegisterSummaryParser extends SimpleEqlParser {
 
   private RegisterSummaryParser(Long tenant) {
     super(RegisterSummaryIndex.INSTANCE, tenant);
   }
 
-  public static RegisterSummaryParser create(Long tenant) {
-    Assert.notNull(tenant, "Tenant must be not null");
-    return new RegisterSummaryParser(tenant);
+  public static SearchRequest createRequest(Long tenant, SearchQuery query) {
+    RegisterSummaryParser parser = new RegisterSummaryParser(tenant);
+    return parser.createSearchRequest(query);
   }
 }

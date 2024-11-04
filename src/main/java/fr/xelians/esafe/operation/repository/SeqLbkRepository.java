@@ -10,6 +10,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Repository
 public class SeqLbkRepository {
 

@@ -8,12 +8,14 @@ package fr.xelians.esafe.archive.domain.ingest.sedav2;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import fr.xelians.esafe.admin.domain.report.ReportType;
-import fr.xelians.esafe.archive.domain.unit.*;
-import fr.xelians.esafe.archive.domain.unit.object.BinaryDataObject;
-import fr.xelians.esafe.archive.domain.unit.object.DataObjectGroup;
-import fr.xelians.esafe.archive.domain.unit.object.PhysicalDataObject;
+import fr.xelians.esafe.archive.domain.unit.ArchiveTransfer;
+import fr.xelians.esafe.archive.domain.unit.ArchiveUnit;
+import fr.xelians.esafe.archive.domain.unit.ManagementMetadata;
+import fr.xelians.esafe.archive.domain.unit.object.*;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
+import fr.xelians.esafe.common.utils.JsonUtils;
+import fr.xelians.esafe.common.utils.SipUtils;
 import fr.xelians.esafe.common.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,9 +24,11 @@ import java.util.List;
 import java.util.Objects;
 import javax.xml.stream.XMLStreamException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class JsonATR {
 
@@ -47,13 +51,16 @@ public class JsonATR {
       generator.writeStartObject();
       generator.writeStringField("Type", ReportType.INGEST.toString());
       generator.writeStringField("Date", LocalDateTime.now().toString());
-      generator.writeStringField(
-          "MessageIdentifier", RandomStringUtils.randomAlphanumeric(32).toLowerCase());
+
+      String msgId =
+          Objects.toString(
+              archiveTransfer.getMessageIdentifier(), SipUtils.randomMessageIdentifier());
+      generator.writeStringField("MessageIdentifier", msgId);
+      generator.writeStringField("MessageRequestIdentifier", msgId);
+
       generator.writeNumberField("Tenant", archiveTransfer.getTenant());
       generator.writeStringField("OperationId", archiveTransfer.getOperationId().toString());
       generator.writeStringField("ArchivalAgreement", archiveTransfer.getArchivalAgreement());
-      generator.writeStringField(
-          "MessageRequestIdentifier", Objects.toString(archiveTransfer.getMessageIdentifier(), ""));
       generator.writeStringField(
           "ArchivalAgencyIdentifier", archiveTransfer.getArchivalAgency().identifier());
       generator.writeStringField(
@@ -131,14 +138,29 @@ public class JsonATR {
         generator.writeStartObject();
         generator.writeStringField("XmlId", Objects.toString(unit.getXmlId(), ""));
         generator.writeStringField("SystemId", unit.getId().toString());
+        JsonUtils.writeStringsField(
+            generator, "OriginatingSystemIds", unit.getOriginatingSystemIds());
+        JsonUtils.writeStringsField(
+            generator, "ArchivalAgencyIdentifiers", unit.getServiceProducers());
 
-        generator.writeFieldName("OriginatingSystemIds");
-        generator.writeStartArray();
-        for (String osid : unit.getOriginatingSystemIds()) {
-          generator.writeString(osid);
+        int numOfUnitPhysicalObjects = 0;
+        int numOfUnitBinaryObjects = 0;
+        long sizeOfUnitBinaryObjects = 0;
+
+        for (Qualifiers qualifier : unit.getQualifiers()) {
+          if (qualifier.isBinaryQualifier()) {
+            numOfUnitBinaryObjects += qualifier.getNbc();
+            for (ObjectVersion ov : qualifier.getVersions()) {
+              sizeOfUnitBinaryObjects += ov.getSize();
+            }
+          } else {
+            numOfUnitPhysicalObjects += qualifier.getNbc();
+          }
         }
-        generator.writeEndArray();
 
+        generator.writeNumberField("NumOfPhysicalObjects", numOfUnitPhysicalObjects);
+        generator.writeNumberField("NumOfBinaryObjects", numOfUnitBinaryObjects);
+        generator.writeNumberField("SizeOfBinaryObjects", sizeOfUnitBinaryObjects);
         generator.writeEndObject();
       }
       generator.writeEndArray();

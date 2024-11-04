@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ListIterator<T> implements Iterator<List<T>> {
 
   private final Iterator<T> iterator;

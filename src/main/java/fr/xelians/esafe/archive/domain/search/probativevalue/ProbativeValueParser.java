@@ -17,10 +17,13 @@ import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import fr.xelians.esafe.search.domain.dsl.parser.eql.RootQuery;
-import io.jsonwebtoken.lang.Assert;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ProbativeValueParser extends ArchiveUnitParser {
 
   public ProbativeValueParser(

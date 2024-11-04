@@ -11,6 +11,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.storage.domain.Aes;
+import fr.xelians.esafe.storage.domain.GcmCipher;
 import fr.xelians.esafe.storage.repository.SecretKeyRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -28,6 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,6 +48,9 @@ public class SecretKeyService {
   @Value("${app.tenant.encryption.expiration:0}")
   private long expTime;
 
+  @Value("${app.tenant.encryption.salt}")
+  private byte[] salt;
+
   private LoadingCache<Long, SecretKey> secretKeyCache;
 
   // TODO do not use SpringBoot Property to load sensitive data
@@ -57,7 +64,7 @@ public class SecretKeyService {
     if (expTime > 0) {
       this.secretKeyCache = initCache();
     }
-    this.masterKey = Aes.createSecretKey(secret);
+    this.masterKey = Aes.createSecretKey(secret, salt);
     this.secret =
         null; // That is not very useful because it is also stored in the SpringBoot context
 
@@ -65,14 +72,14 @@ public class SecretKeyService {
     Optional<byte[]> optSecret = repository.getSecret(TENANT_REF);
     try {
       if (optSecret.isPresent()) {
-        byte[] decMasterRef = Aes.decrypt(optSecret.get(), masterKey);
+        byte[] decMasterRef = GcmCipher.create(masterKey).decrypt(optSecret.get());
         if (!Arrays.equals(MASTER_REF, decMasterRef)) {
           throw new InternalException(
               "Failed to check tenant encryption secret property",
               "Secret property does not match secret reference");
         }
       } else {
-        byte[] encMasterRef = Aes.encrypt(MASTER_REF, masterKey);
+        byte[] encMasterRef = GcmCipher.create(masterKey).encrypt(MASTER_REF);
         repository.saveSecret(TENANT_REF, encMasterRef);
       }
     } catch (IOException e) {
@@ -100,7 +107,7 @@ public class SecretKeyService {
     }
 
     try {
-      byte[] encSecret = Aes.encrypt(secretKey.getEncoded(), masterKey);
+      byte[] encSecret = GcmCipher.create(masterKey).encrypt(secretKey.getEncoded());
       repository.saveSecret(tenant, encSecret);
     } catch (IOException e) {
       throw new InternalException(
@@ -110,7 +117,7 @@ public class SecretKeyService {
 
   private SecretKey getSecretKeyFromDb(Long tenant) {
     try {
-      byte[] decSecret = Aes.decrypt(getSecret(tenant), masterKey);
+      byte[] decSecret = GcmCipher.create(masterKey).decrypt(getSecret(tenant));
       return new SecretKeySpec(decSecret, 0, decSecret.length, Aes.AES_ALGORITHM);
     } catch (IOException e) {
       throw new InternalException(

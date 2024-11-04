@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Utils;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.utils.Hash;
 import fr.xelians.esafe.common.utils.HashUtils;
@@ -96,7 +97,7 @@ class ArchiveStreamIT extends BaseIT {
     assertEquals(OperationStatus.OK, operation3.status(), TestUtils.getBody(response3));
 
     // Wait 1 sec to let lucene commit the indexed unit
-    Utils.sleep(1000);
+    Utils.sleep(2000);
   }
 
   @BeforeEach
@@ -112,7 +113,7 @@ class ArchiveStreamIT extends BaseIT {
     // Retrieve all created archive units from ATR
     Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
     XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-    xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+    xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
 
     //    int[] idx = {0, 100, 477, 1000, 2578, 5000, 6266};
     int[] idx = {0, 100, 477, 1000, 2578};

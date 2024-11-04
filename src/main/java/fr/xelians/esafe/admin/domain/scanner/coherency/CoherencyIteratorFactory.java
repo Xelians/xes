@@ -14,6 +14,9 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record CoherencyIteratorFactory(
     StorageService storageService, OperationService operationService) implements IteratorFactory {
 

@@ -9,6 +9,9 @@ package fr.xelians.esafe.archive.domain.search.updaterule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRules(
     @JsonProperty("Rules") List<UpdateRule> rules,
     @JsonProperty("PreventInheritance") Boolean preventInheritance,

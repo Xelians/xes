@@ -12,6 +12,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class UnitConverter implements Converter {
 
   private static final String[] RULES_NAMES = {
@@ -126,6 +129,9 @@ public final class UnitConverter implements Converter {
         break;
       case "_implementationVersion":
         dstNode.set("#implementationversion", entry.getValue());
+        break;
+      case "_transferred":
+        dstNode.set("#transferred", entry.getValue());
         break;
       case "_ext", "_ups", "_keywords":
         break; // Remove fields

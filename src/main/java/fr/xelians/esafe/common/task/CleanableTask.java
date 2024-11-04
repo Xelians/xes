@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.task;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface CleanableTask extends Runnable {
 
   void clean();

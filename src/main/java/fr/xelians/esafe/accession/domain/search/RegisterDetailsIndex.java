@@ -12,6 +12,9 @@ import fr.xelians.esafe.search.domain.field.Field;
 import fr.xelians.esafe.search.domain.index.Searchable;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class RegisterDetailsIndex implements Searchable {
 
   public static final String MAPPING =

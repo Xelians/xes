@@ -1,0 +1,103 @@
+spring:
+  liquibase:
+    drop-first: true
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8080
+          audiences:
+            - xam
+            - swagger
+      authorization-server:
+        client:
+          xam:
+            token:
+              access-token-time-to-live: PT30M
+              refresh-token-time-to-live: P7D
+            registration:
+              client-id: "xam"
+              client-secret: "{noop}secret"
+              client-authentication-methods:
+                - "client_secret_post"
+              authorization-grant-types:
+                - "authorization_code"
+                - "refresh_token"
+                - "access_key"
+              redirect-uris: "http://localhost:8090/login/oauth2/code/xam-client-oidc"
+              post-logout-redirect-uris: "http://localhost:8090/logged-out"
+              scopes:
+                - "openid"
+          swagger:
+            token:
+              access-token-time-to-live: PT12H
+              refresh-token-time-to-live: P7D
+            registration:
+              client-id: "swagger"
+              client-secret: "{noop}swagger-secret"
+              client-authentication-methods:
+                - "client_secret_post"
+              authorization-grant-types:
+                - "authorization_code"
+              redirect-uris: "http://localhost:8080/swagger-ui/oauth2-redirect.html"
+              post-logout-redirect-uris: "http://localhost:8080/swagger-ui/index.html"
+              scopes:
+                - "openid"
+
+jdbc:
+  datasource-proxy:
+    query:
+      enable-logging: true
+
+authn:
+  access-key:
+    issuer-uri: http://localhost:8080
+    time-to-live: P5D
+    public-key: classpath:dev/access-key-signing-validation.pub
+    private-key: classpath:dev/access-key-signing-private.key
+  oauth2:
+    jwk:
+      public-key: classpath:dev/access-token-signing-validation.pub
+      private-key: classpath:dev/access-token-signing-private.key
+
+logging:
+  level:
+    org:
+      springframework:
+        security: trace
+    fr.xelians.esafe:
+      jpa.query: DEBUG
+
+app:
+  rootAdmin:
+    username: root
+    password: password
+    email: root@email.com
+    initAccessKey: true
+    tenant:
+      storageOffers: FS:FS01
+      isEncrypted: false
+
+  profile:
+    file:
+      maxlength: 900000
+
+elasticsearch:
+  host: localhost
+  username: elastic
+  password: elastic
+  port: 9200
+
+antivirus:
+  name: None
+  hosts: localhost:3310,127.0.0.1:3310
+  timeout: 10000
+  scanLength: 2048
+
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: swagger
+      client-secret: swagger-secret
+      scopes: openid
+      use-pkce-with-authorization-code-grant: true

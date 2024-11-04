@@ -12,6 +12,9 @@ import jakarta.servlet.ServletInputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class LimitedServletInputStream extends ServletInputStream {
 
   public static final String REQUEST_TOO_LARGE = "The request size is too large";

@@ -12,6 +12,9 @@ import fr.xelians.esafe.archive.domain.ingest.OntologyMap;
 import fr.xelians.esafe.search.domain.field.*;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Sedav2Ontology {
 
   public static final List<String> EXT_KEYS =

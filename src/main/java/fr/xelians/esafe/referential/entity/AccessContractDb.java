@@ -14,6 +14,9 @@ import java.util.HashSet;
 import lombok.Getter;
 import lombok.Setter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @Entity

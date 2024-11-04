@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record VitamOperationDto(
     @JsonProperty("itemId") String itemId,
     @JsonProperty("message") String message,

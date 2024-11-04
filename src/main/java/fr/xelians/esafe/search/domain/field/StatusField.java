@@ -10,18 +10,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.referential.domain.Status;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class StatusField extends Field {
 
-  //  public static final String MAPPING_PREFIX = "Enum";
   public static final String TYPE = "status";
 
   public StatusField(String value, boolean isStandard) {
     super(value, isStandard);
   }
-
-  //  public StatusField(int value, boolean isStandard) {
-  //    super(getFieldName(value), isStandard);
-  //  }
 
   @Override
   public String getType() {
@@ -42,10 +40,6 @@ public class StatusField extends Field {
     }
   }
 
-  //  public static String getFieldName(int value) {
-  //    return getFieldName(MAPPING_PREFIX, value);
-  //  }
-
   @Override
   public Status asValue(JsonNode node) {
     if (node.isTextual()) {
@@ -57,6 +51,12 @@ public class StatusField extends Field {
     }
     throw new BadRequestException(
         "As value failed", String.format("Value '%s' is not a valid status", node.asText()));
+  }
+
+  @Override
+  public Status asValue(Object value) {
+    if (value instanceof Status s) return s;
+    return Status.valueOf(value.toString());
   }
 
   @Override

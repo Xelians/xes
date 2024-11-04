@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -34,13 +33,39 @@ public class TestUtils {
     return response.getBody() == null ? "Response body is empty" : response.getBody().toString();
   }
 
-  public static List<Path> listFiles(Path dir, String prefix, String suffix) throws IOException {
+  public static List<Path> filenamesStartWith(Path dir, String prefix, String suffix)
+      throws IOException {
     try (Stream<Path> paths = Files.list(dir)) {
       return paths
           .filter(Files::isRegularFile)
           .filter(p -> p.getFileName().toString().startsWith(prefix))
           .filter(p -> p.getFileName().toString().endsWith(suffix))
-          .collect(Collectors.toList());
+          .sorted()
+          .toList();
+    }
+  }
+
+  public static List<Path> filenamesContain(Path dir, String pattern, String suffix)
+      throws IOException {
+    try (Stream<Path> paths = Files.list(dir)) {
+      return paths
+          .filter(Files::isRegularFile)
+          .filter(p -> p.getFileName().toString().contains(pattern))
+          .filter(p -> p.getFileName().toString().endsWith(suffix))
+          .sorted()
+          .toList();
+    }
+  }
+
+  public static List<Path> filenamesContainDeep(Path dir, String pattern, String suffix)
+      throws IOException {
+    try (Stream<Path> paths = Files.walk(dir)) {
+      return paths
+          .filter(Files::isRegularFile)
+          .filter(p -> p.getFileName().toString().contains(pattern))
+          .filter(p -> p.getFileName().toString().endsWith(suffix))
+          .sorted()
+          .toList();
     }
   }
 

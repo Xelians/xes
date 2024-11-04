@@ -68,13 +68,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchService {
 
   // TODO  Should be an external property (note: 100MB is the maximum bulk size)
-  public static final int ARCHIVE_UNIT_BULK_SIZE = 5000;
+  public static final int BULK_SIZE = 5000;
   public static final JsonNode STORAGE_NODE = getDefaultStorage();
 
   public static final String TENANT_FIELD = "_tenant";
@@ -98,16 +101,16 @@ public class SearchService {
   // Note. Elasticsearch limits the maximum size of a HTTP request to 100mb by default so clients
   // must ensure that no request exceeds this size.
   public void bulkIndex(List<ArchiveUnit> archiveUnits) throws IOException {
-    for (List<ArchiveUnit> list : ListUtils.partition(archiveUnits, ARCHIVE_UNIT_BULK_SIZE)) {
+    for (List<ArchiveUnit> list : ListUtils.partition(archiveUnits, BULK_SIZE)) {
       searchEngineService.bulkIndex(ArchiveUnitIndex.ALIAS, list);
     }
   }
 
   public void bulkIndexRefresh(List<ArchiveUnit> archiveUnits) throws IOException {
-    if (archiveUnits.size() <= ARCHIVE_UNIT_BULK_SIZE) {
+    if (archiveUnits.size() <= BULK_SIZE) {
       searchEngineService.bulkIndexRefresh(ArchiveUnitIndex.ALIAS, archiveUnits);
     } else {
-      for (List<ArchiveUnit> list : ListUtils.partition(archiveUnits, ARCHIVE_UNIT_BULK_SIZE)) {
+      for (List<ArchiveUnit> list : ListUtils.partition(archiveUnits, BULK_SIZE)) {
         searchEngineService.bulkIndex(ArchiveUnitIndex.ALIAS, list);
       }
       searchEngineService.refresh(ArchiveUnitIndex.ALIAS);
@@ -119,16 +122,16 @@ public class SearchService {
   }
 
   public void bulkDelete(List<Long> ids) throws IOException {
-    for (List<Long> list : ListUtils.partition(ids, ARCHIVE_UNIT_BULK_SIZE)) {
+    for (List<Long> list : ListUtils.partition(ids, BULK_SIZE)) {
       searchEngineService.bulkDelete(ArchiveUnitIndex.ALIAS, list);
     }
   }
 
   public void bulkDeleteRefresh(List<Long> ids) throws IOException {
-    if (ids.size() <= ARCHIVE_UNIT_BULK_SIZE) {
+    if (ids.size() <= BULK_SIZE) {
       searchEngineService.bulkDeleteRefresh(ArchiveUnitIndex.ALIAS, ids);
     } else {
-      for (List<Long> list : ListUtils.partition(ids, ARCHIVE_UNIT_BULK_SIZE)) {
+      for (List<Long> list : ListUtils.partition(ids, BULK_SIZE)) {
         searchEngineService.bulkDelete(ArchiveUnitIndex.ALIAS, list);
       }
       searchEngineService.refresh(ArchiveUnitIndex.ALIAS);
@@ -142,8 +145,7 @@ public class SearchService {
     Assert.notNull(id, ID_MUST_BE_NOT_NULL);
     Assert.isTrue(id >= 0, String.format(ARCHIVE_UNIT_ID_MUST_BE_POSITIVE, id));
 
-    SearchQuery query = queryByUnitId(id);
-    return getUnitByIdQuery(tenant, accessContract, query, id);
+    return getUnitById(tenant, accessContract, id);
   }
 
   public JsonNode getUnit(Long tenant, AccessContractDb accessContract, Long id)
@@ -153,8 +155,7 @@ public class SearchService {
     Assert.notNull(id, ID_MUST_BE_NOT_NULL);
     Assert.isTrue(id >= 0, String.format(ARCHIVE_UNIT_ID_MUST_BE_POSITIVE, id));
 
-    SearchQuery query = queryByUnitId(id);
-    JsonNode unit = getUnitByIdQuery(tenant, accessContract, query, id);
+    JsonNode unit = getUnitById(tenant, accessContract, id);
     return UnitConverter.INSTANCE.convert(unit);
   }
 
@@ -437,8 +438,7 @@ public class SearchService {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(accessContract, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
 
-    SearchQuery query = queryByUnitId(id);
-    JsonNode unit = getUnitByIdQuery(tenant, accessContract, query, id);
+    JsonNode unit = getUnitById(tenant, accessContract, id);
     ArchiveUnit archiveUnit = JsonService.toArchiveUnit(unit);
 
     List<Qualifiers> qualifiers = archiveUnit.getQualifiers();
@@ -476,8 +476,7 @@ public class SearchService {
     Assert.notNull(accessContract, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
     Assert.isTrue(id >= 0, String.format("BinaryObjectId '%s' cannot be negative", id));
 
-    SearchQuery query = queryByBinaryId(id);
-    JsonNode unit = getUnitByIdQuery(tenant, accessContract, query, id);
+    JsonNode unit = getUnitByBinaryId(tenant, accessContract, id);
     ArchiveUnit archiveUnit = JsonService.toArchiveUnit(unit);
 
     // Fetch the binary object
@@ -508,7 +507,62 @@ public class SearchService {
             tenant, accessContract.getIdentifier(), id));
   }
 
-  public List<JsonNode> getByIds(Long tenant, AccessContractDb accessContract, List<Long> ids)
+  // "$eq": { "#id": id }
+  private static SearchQuery queryByUnitId(Long id) {
+    ObjectNode idNode = JsonNodeFactory.instance.objectNode();
+    ObjectNode queryNode = JsonNodeFactory.instance.objectNode();
+    queryNode.set("$eq", idNode.put("#id", id.toString()));
+    ObjectNode projectionNode = JsonNodeFactory.instance.objectNode();
+    return SearchQuery.builder().queryNode(queryNode).projectionNode(projectionNode).build();
+  }
+
+  // "$eq": { "#object": id }
+  private static SearchQuery queryByBinaryId(Long id) {
+    ObjectNode idNode = JsonNodeFactory.instance.objectNode();
+    ObjectNode queryNode = JsonNodeFactory.instance.objectNode();
+    queryNode.set("$eq", idNode.put("#object_id", id.toString()));
+    ObjectNode projectionNode = JsonNodeFactory.instance.objectNode();
+    return SearchQuery.builder().queryNode(queryNode).projectionNode(projectionNode).build();
+  }
+
+  private JsonNode getUnitById(Long tenant, AccessContractDb accessContract, Long id)
+      throws IOException {
+
+    OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
+    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
+    SearchQuery query = queryByUnitId(id);
+    SearchRequest request = parser.createRequest(query);
+    SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
+
+    HitsMetadata<JsonNode> hits = response.hits();
+    TotalHits total = hits.total();
+    if (total == null || total.value() == 0) {
+      throw new NotFoundException(
+          "Archive Unit not found", String.format("Failed to find archive unit with id: '%s'", id));
+    }
+    return hits.hits().getFirst().source();
+  }
+
+  private JsonNode getUnitByBinaryId(Long tenant, AccessContractDb accessContract, Long id)
+      throws IOException {
+
+    OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
+    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
+    SearchQuery query = queryByBinaryId(id);
+    SearchRequest request = parser.createRequest(query);
+    SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
+
+    HitsMetadata<JsonNode> hits = response.hits();
+    TotalHits total = hits.total();
+    if (total == null || total.value() == 0) {
+      throw new NotFoundException(
+          "Archive Unit not found",
+          String.format("Failed to find archive unit with object id: '%s'", id));
+    }
+    return hits.hits().getFirst().source();
+  }
+
+  public List<JsonNode> getUnitsByIds(Long tenant, AccessContractDb accessContract, List<Long> ids)
       throws IOException {
 
     ObjectNode idNode = JsonNodeFactory.instance.objectNode();
@@ -530,46 +584,7 @@ public class SearchService {
 
     return response.hits().hits().stream()
         .map(co.elastic.clients.elasticsearch.core.search.Hit::source)
-        .filter(Objects::nonNull)
-        .map(UnitConverter.INSTANCE::convert)
         .toList();
-  }
-
-  // "$eq": { "#id": id }
-  private static SearchQuery queryByUnitId(Long id) {
-    ObjectNode idNode = JsonNodeFactory.instance.objectNode();
-    ObjectNode queryNode = JsonNodeFactory.instance.objectNode();
-    queryNode.set("$eq", idNode.put("#id", id.toString()));
-    ObjectNode projectionNode = JsonNodeFactory.instance.objectNode();
-    return SearchQuery.builder().queryNode(queryNode).projectionNode(projectionNode).build();
-  }
-
-  // "$eq": { "#object": id }
-  private static SearchQuery queryByBinaryId(Long id) {
-    ObjectNode idNode = JsonNodeFactory.instance.objectNode();
-    ObjectNode queryNode = JsonNodeFactory.instance.objectNode();
-    queryNode.set("$eq", idNode.put("#object_id", id.toString()));
-    ObjectNode projectionNode = JsonNodeFactory.instance.objectNode();
-    return SearchQuery.builder().queryNode(queryNode).projectionNode(projectionNode).build();
-  }
-
-  private JsonNode getUnitByIdQuery(
-      Long tenant, AccessContractDb accessContract, SearchQuery query, Long id) throws IOException {
-
-    OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
-    SearchParser parser = SearchParser.create(tenant, accessContract, ontologyMapper);
-
-    SearchRequest request = parser.createRequest(query);
-    SearchResponse<JsonNode> response = searchEngineService.search(request, JsonNode.class);
-
-    HitsMetadata<JsonNode> hits = response.hits();
-    TotalHits total = hits.total();
-    if (total == null || total.value() == 0) {
-      throw new NotFoundException(
-          "Archive Unit not found",
-          String.format("Failed to find archive unit with id: %s - tenant: %s", id, tenant));
-    }
-    return hits.hits().getFirst().source();
   }
 
   // For internal use only. This request is looking for the document internal id
@@ -623,12 +638,16 @@ public class SearchService {
     if (size > 1) {
       throw new BadRequestException(
           "Too many archive units found",
-          String.format("Found more that one archive unit with key: %s", field.getFullName()));
+          String.format(
+              "Found more that one archive unit with key: '%s' - value: '%s'",
+              field.getFullName(), fieldValue.stringValue()));
     }
 
     throw new NotFoundException(
         "Archive Unit not found",
-        String.format("Failed to find archive unit with key: %s", field.getFullName()));
+        String.format(
+            "Failed to find archive unit with key: '%s' - value: '%s'",
+            field.getFullName(), fieldValue.stringValue()));
   }
 
   // For internal use only. This request is looking for the document internal

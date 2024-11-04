@@ -8,8 +8,8 @@ package fr.xelians.esafe.batch;
 
 import static fr.xelians.esafe.operation.domain.OperationStatus.*;
 
-import fr.xelians.esafe.cluster.domain.NodeFeature;
-import fr.xelians.esafe.cluster.service.ServerNodeService;
+import fr.xelians.esafe.cluster.domain.JobType;
+import fr.xelians.esafe.cluster.service.ClusterService;
 import fr.xelians.esafe.common.utils.NioUtils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.domain.Workspace;
@@ -23,12 +23,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CleanOperationBatch {
 
-  private final ServerNodeService serverNodeService;
+  private final ClusterService clusterService;
   private final OperationService operationService;
 
   // Two days
@@ -54,7 +57,7 @@ public class CleanOperationBatch {
   @Scheduled(cron = "${app.batch.clean.cron:0 0 3 * * ?}")
   public void run() {
 
-    if (serverNodeService.hasFeature(NodeFeature.CLEAN)) {
+    if (clusterService.isActive(JobType.CLEAN)) {
 
       // An application crash during INIT or RUN phase can yield dangling operations in database
       LocalDateTime runningDate = LocalDateTime.now().minusHours(runningHours);
@@ -82,21 +85,23 @@ public class CleanOperationBatch {
 
   private void deleteSucceededOperations(LocalDateTime date) {
     try {
-      operationService.deleteOperations(OK, date);
+      operationService.findCompletedOperationIds(OK, date).forEach(this::deleteOperation);
     } catch (Exception ex) {
-      log.error("Delete secured operation error", ex);
+      log.error("Failed to delete succeed operation", ex);
     }
   }
 
   private void deleteFailedOperations(LocalDateTime date) {
     for (var status : FAILED_STATUS)
       try {
-        operationService.findIdByStatusAndDate(status, date).forEach(this::deleteOperation);
+        operationService.findOperationIds(status, date).forEach(this::deleteOperation);
       } catch (Exception ex) {
-        log.error("Delete failed operation error", ex);
+        log.error("Failed to delete failed operation", ex);
       }
   }
 
+  // TODO Delete on each node
+  // TODO Delete DIP on serveur
   private void deleteOperation(Long operationId) {
     operationService.deleteOperations(operationId);
     Path ws = Workspace.getPath(operationId);

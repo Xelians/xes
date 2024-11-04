@@ -1,3 +1,11 @@
+/*
+ *
+ *  * This program is free software: you can redistribute it and/or modify
+ *  * it under the terms of the Ceccil v2.1 License as published by
+ *  * the CEA, CNRS and INRIA.
+ *
+ */
+
 package fr.xelians.esafe.accession.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,6 +17,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @ToString
@@ -55,7 +66,7 @@ public class RegisterDetails implements DocumentSe {
   private RegisterStatus status;
 
   @JsonProperty("TotalObjectGroups")
-  private ValueDetail totalObjectsGroups = new ValueDetail(0);
+  private ValueDetail totalObjectGroups = new ValueDetail(0);
 
   @JsonProperty("TotalUnits")
   private ValueDetail totalUnits = new ValueDetail(0);

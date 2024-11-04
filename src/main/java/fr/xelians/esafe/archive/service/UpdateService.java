@@ -15,6 +15,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
+import fr.xelians.esafe.admin.domain.report.ArchiveReporter;
+import fr.xelians.esafe.admin.domain.report.ReportStatus;
+import fr.xelians.esafe.admin.domain.report.ReportType;
 import fr.xelians.esafe.archive.domain.ingest.OntologyMapper;
 import fr.xelians.esafe.archive.domain.search.ArchiveUnitQueryFactory;
 import fr.xelians.esafe.archive.domain.search.update.UpdateParser;
@@ -41,6 +44,7 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.entity.RuleDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
@@ -68,6 +72,9 @@ import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -78,6 +85,7 @@ public class UpdateService {
   public static final String ACCESS_CONTRACT_MUST_BE_NOT_NULL = "Access contract must be not null";
   public static final String QUERY_MUST_BE_NOT_NULL = "Query must be not null";
   public static final String USER_MUST_BE_NOT_NULL = "User must be not null";
+  public static final String FAILED_TO_UPDATE = "Failed to update archives";
 
   private final ProcessingService processingService;
   private final SearchService searchService;
@@ -184,6 +192,8 @@ public class UpdateService {
   private void doStore(
       OperationDb operation, TenantDb tenantDb, InputStream ausStream, StorageDao storageDao)
       throws IOException {
+
+    Long operationId = operation.getId();
     Long tenant = operation.getTenant();
     List<String> offers = tenantDb.getStorageOffers();
 
@@ -195,61 +205,76 @@ public class UpdateService {
     // Reset Actions
     operation.resetActions();
 
-    // Get updated Archive Units from stream
-    Iterator<ArchiveUnit> iterator = JsonService.toArchiveUnitIterator(ausStream);
-    Iterator<List<ArchiveUnit>> listIterator = ListIterator.iterator(iterator, 10000);
-    while (listIterator.hasNext()) {
-      List<ArchiveUnit> indexedUnits = listIterator.next();
-      Map<Long, List<ArchiveUnit>> gmap = UnitUtils.groupByOpId(indexedUnits);
+    Path reportPath = Workspace.createTempFile(operation);
+    try (ArchiveReporter reporter =
+        new ArchiveReporter(ReportType.UPDATE, ReportStatus.OK, operation, reportPath)) {
 
-      // Write archive units by operation id
-      for (Map.Entry<Long, List<ArchiveUnit>> entry : gmap.entrySet()) {
-        Long opId = entry.getKey();
-        List<ArchiveUnit> groupedUnits = entry.getValue();
+      // Get updated Archive Units from stream
+      Iterator<ArchiveUnit> iterator = JsonService.toArchiveUnitIterator(ausStream);
+      Iterator<List<ArchiveUnit>> listIterator = ListIterator.iterator(iterator, 10000);
+      while (listIterator.hasNext()) {
+        List<ArchiveUnit> indexedUnits = listIterator.next();
+        Map<Long, List<ArchiveUnit>> gmap = UnitUtils.groupByOpId(indexedUnits);
 
-        // Read from storage offers archive units with unit.operationId and group them by archive
-        // unit id
-        Map<Long, ArchiveUnit> storedUnits =
-            UnitUtils.mapById(storageDao.getArchiveUnits(tenant, offers, opId));
+        // Write archive units by operation id
+        for (Map.Entry<Long, List<ArchiveUnit>> entry : gmap.entrySet()) {
+          Long opId = entry.getKey();
+          List<ArchiveUnit> groupedUnits = entry.getValue();
 
-        // Replace the stored archive with the updated unit
-        groupedUnits.forEach(unit -> storedUnits.put(unit.getId(), unit));
+          // Read from storage offers archive units with unit.operationId and group them by archive
+          // unit id
+          Map<Long, ArchiveUnit> storedUnits =
+              UnitUtils.mapById(storageDao.getArchiveUnits(tenant, offers, opId));
 
-        byte[] bytes = JsonService.collToBytes(storedUnits.values(), JsonConfig.DEFAULT);
-        storageObjects.add(new ByteStorageObject(bytes, opId, StorageObjectType.uni));
-        byteCount += bytes.length;
+          // Replace the stored archive with the updated unit
+          for (ArchiveUnit au : groupedUnits) {
+            storedUnits.put(au.getId(), au);
+            reporter.writeUnit(au);
+          }
 
-        if (byteCount > 256_000_000) {
-          // Commit the created/modified units to offers and create actions
+          byte[] bytes = JsonService.collToBytes(storedUnits.values(), JsonConfig.DEFAULT);
+          storageObjects.add(new ByteStorageObject(bytes, opId, StorageObjectType.uni));
+          byteCount += bytes.length;
+
+          if (byteCount > 256_000_000) {
+            // Commit the created/modified units to offers and create actions
+            storageDao
+                .putStorageObjects(tenant, offers, storageObjects)
+                .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
+            storageObjects = new ArrayList<>();
+            byteCount = 0;
+          }
+        }
+
+        // Commit the created/modified units to offers and create actions
+        if (!storageObjects.isEmpty()) {
           storageDao
               .putStorageObjects(tenant, offers, storageObjects)
               .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
-          storageObjects = new ArrayList<>();
-          byteCount = 0;
         }
+
+        // Index Archive units in Search Engine (properties are already built in each archive)
+        // TODO Optilmization refresh only if Management has changed
+        if (isFirst && !listIterator.hasNext()) {
+          searchService.bulkIndexRefresh(indexedUnits);
+        } else {
+          searchService.bulkIndex(indexedUnits);
+          needRefresh = true;
+        }
+        isFirst = false;
       }
 
-      // Commit the created/modified units to offers and create actions
-      if (!storageObjects.isEmpty()) {
-        storageDao
-            .putStorageObjects(tenant, offers, storageObjects)
-            .forEach(e -> operation.addAction(StorageAction.create(ActionType.UPDATE, e)));
+      if (needRefresh) {
+        searchService.refresh();
       }
-
-      // Index Archive units in Search Engine (properties are already built in each archive)
-      // TODO Optilmization refresh only if Management has changed
-      if (isFirst && !listIterator.hasNext()) {
-        searchService.bulkIndexRefresh(indexedUnits);
-      } else {
-        searchService.bulkIndex(indexedUnits);
-        needRefresh = true;
-      }
-      isFirst = false;
     }
 
-    if (needRefresh) {
-      searchService.refresh();
-    }
+    // Write delete report to offer
+    List<StorageObject> psois =
+        List.of(new PathStorageObject(reportPath, operationId, StorageObjectType.rep));
+    storageDao
+        .putStorageObjects(tenant, offers, psois)
+        .forEach(e -> operation.addAction(StorageAction.create(ActionType.CREATE, e)));
   }
 
   public void index(OperationDb operation) {
@@ -267,6 +292,12 @@ public class UpdateService {
   public Path check(OperationDb operation, TenantDb tenantDb) {
 
     Long tenant = tenantDb.getId();
+
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          FAILED_TO_UPDATE, String.format("Tenant '%s' is not active", tenant));
+    }
+
     Map<String, RuleDb> ruleMap = new HashMap<>();
 
     // Get the accessContact and the mapper
@@ -334,7 +365,9 @@ public class UpdateService {
               // not
               // catch all patch errors. So we default to RuntimeException
               throw new BadRequestException(
-                  String.format("Failed to patch '%s' with '%s'", jsonUnit, jsonPatch), jpe);
+                  FAILED_TO_UPDATE,
+                  String.format("Failed to patch '%s' with '%s'", jsonUnit, jsonPatch),
+                  jpe);
             }
           }
         }

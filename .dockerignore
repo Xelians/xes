@@ -2,3 +2,4 @@
 *
 # Allow files and directories
 !target/*.jar
+!tools/docker/*

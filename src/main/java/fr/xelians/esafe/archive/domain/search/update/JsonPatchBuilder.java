@@ -10,12 +10,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class JsonPatchBuilder {
 
-  private final ArrayNode jsonPatchs;
+  private final ArrayNode jsonPatchs = JsonNodeFactory.instance.arrayNode();
 
   public JsonPatchBuilder() {
-    jsonPatchs = JsonNodeFactory.instance.arrayNode();
+    // Nothing to initialize here
   }
 
   public JsonPatchBuilder op(JsonNode node) {

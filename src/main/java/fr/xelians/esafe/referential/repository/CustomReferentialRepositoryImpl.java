@@ -7,18 +7,22 @@
 package fr.xelians.esafe.referential.repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import fr.xelians.esafe.archive.domain.search.search.Hits;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.exception.technical.InternalException;
+import fr.xelians.esafe.referential.domain.search.ReferentialIndex;
 import fr.xelians.esafe.referential.domain.search.Request;
+import fr.xelians.esafe.search.domain.field.*;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class CustomReferentialRepositoryImpl implements CustomReferentialRepository {
@@ -58,23 +62,34 @@ public class CustomReferentialRepositoryImpl implements CustomReferentialReposit
     return new SearchResult<>(HttpStatus.OK.value(), hits, nodes, null, query);
   }
 
-  private JsonNode toJson(List<String> projections, Object[] result) {
+  private static JsonNode toJson(List<String> projections, Object[] result) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
     checkSize(projections.size(), result.length);
     for (var i = 0; i < projections.size(); i++) {
       String fieldName = projections.get(i);
-      // Ideally the json conversion should be done at the service level and
-      // use the projection field type to get the relevant type
-      if ("tenant".equals(fieldName)) {
-        node.put("#tenant", (Long) result[i]);
-      } else {
-        node.put(fieldName, result[i].toString());
-      }
+      Field field = ReferentialIndex.getProjectionField(fieldName);
+      node.set(field.getName(), toJsonValue(field, result[i]));
     }
     return node;
   }
 
-  private void checkSize(int size, int length) {
+  private static JsonNode toJsonValue(Field field, Object result) {
+    return switch (field) {
+      case TextField f -> TextNode.valueOf(f.asValue(result));
+      case KeywordField f -> TextNode.valueOf(f.asValue(result));
+      case IntegerField f -> IntNode.valueOf(f.asValue(result));
+      case LongField f -> LongNode.valueOf(f.asValue(result));
+      case DoubleField f -> DoubleNode.valueOf(f.asValue(result));
+      case BooleanField f -> BooleanNode.valueOf(f.asValue(result));
+      case DateField f -> TextNode.valueOf(f.asValue(result).toLocalDate().toString());
+      case StatusField f -> TextNode.valueOf(f.asValue(result).toString());
+      default -> throw new InternalException(
+          "Failed to create json from referential request",
+          String.format("Unknown field '%s' with value '%s'", field, result));
+    };
+  }
+
+  private static void checkSize(int size, int length) {
     if (size != length) {
       throw new InternalException(
           "Failed to create json from referential request",

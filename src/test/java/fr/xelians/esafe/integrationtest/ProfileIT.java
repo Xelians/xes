@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,26 +38,23 @@ class ProfileIT extends BaseIT {
   private static final Path OK_RNG = Paths.get(ItInit.PROFILE + "OK_profil_mail.rng");
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void createProfileTest() throws IOException {
     Path dir = Paths.get(ItInit.PROFILE);
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".json")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".json")) {
       ResponseEntity<List<ProfileDto>> response = restClient.createProfile(nextTenant(), path);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
   }
 
   @Test
   void createBadProfileTest() throws IOException {
     Path dir = Paths.get(ItInit.PROFILE);
-    for (Path path : TestUtils.listFiles(dir, "KO_", ".json")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_", ".json")) {
       log.info("Test files ={}", path);
       Long tenant = nextTenant();
       HttpClientErrorException thrown =
@@ -80,7 +76,7 @@ class ProfileIT extends BaseIT {
 
     ResponseEntity<List<ProfileDto>> response1 =
         restClient.createProfile(tenant, profileDto, profileDto2);
-    assertEquals(HttpStatus.OK, response1.getStatusCode(), TestUtils.getBody(response1));
+    assertEquals(HttpStatus.CREATED, response1.getStatusCode(), TestUtils.getBody(response1));
     assertNotNull(response1.getBody());
     assertEquals(
         description, response1.getBody().getFirst().getDescription(), TestUtils.getBody(response1));
@@ -107,11 +103,11 @@ class ProfileIT extends BaseIT {
 
     Long tenant = nextTenant();
     ResponseEntity<List<ProfileDto>> response = restClient.createProfile(tenant, OK_PROFILE);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     assertNotNull(response.getBody());
     ProfileDto profile = response.getBody().getFirst();
 
-    for (Path path : TestUtils.listFiles(dir, "OK_", ".rng")) {
+    for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".rng")) {
       ResponseEntity<Void> r =
           restClient.updateBinaryProfile(tenant, path, profile.getIdentifier());
       assertEquals(HttpStatus.OK, r.getStatusCode(), TestUtils.getBody(r));
@@ -122,23 +118,23 @@ class ProfileIT extends BaseIT {
   void downloadProfileRngTest() throws IOException {
     Long tenant = nextTenant();
     ResponseEntity<List<ProfileDto>> response = restClient.createProfile(tenant, OK_PROFILE);
-    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     assertNotNull(response.getBody());
-    ProfileDto profile = response.getBody().getFirst();
+    ProfileDto profileDto = response.getBody().getFirst();
 
     byte[] oriBytes = Files.readAllBytes(OK_RNG);
     ResponseEntity<Void> r1 =
-        restClient.updateBinaryProfile(tenant, OK_RNG, profile.getIdentifier());
+        restClient.updateBinaryProfile(tenant, OK_RNG, profileDto.getIdentifier());
     assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
 
     ResponseEntity<ProfileDto> r3 =
-        restClient.getProfileByIdentifier(tenant, profile.getIdentifier());
+        restClient.getProfileByIdentifier(tenant, profileDto.getIdentifier());
     assertEquals(HttpStatus.OK, r3.getStatusCode(), TestUtils.getBody(r3));
-    ProfileDto profileDto = r3.getBody();
+    profileDto = r3.getBody();
     assertNotNull(profileDto);
     assertEquals("profilrng_mail.rng", profileDto.getPath(), TestUtils.getBody(r3));
 
-    ResponseEntity<byte[]> r2 = restClient.getBinaryProfile(tenant, profile.getIdentifier());
+    ResponseEntity<byte[]> r2 = restClient.getBinaryProfile(tenant, profileDto.getIdentifier());
     assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
     byte[] newBytes = r2.getBody();
 
@@ -153,7 +149,7 @@ class ProfileIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<ProfileDto>> response =
           restClient.createProfile(tenant, DtoFactory.createProfileDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     Map<String, Object> params = Map.of("sortby", "name", "sortdir", "desc");
@@ -196,7 +192,7 @@ class ProfileIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<ProfileDto>> response =
           restClient.createProfile(tenant, DtoFactory.createProfileDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchProfiles(tenant, query);

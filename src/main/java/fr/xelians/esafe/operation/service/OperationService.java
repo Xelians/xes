@@ -39,6 +39,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import software.amazon.awssdk.http.HttpStatusCode;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -273,12 +276,12 @@ public class OperationService {
     operationRepository.updateStatusAndMessage(status, newStatus, newMessage);
   }
 
-  public List<OperationDb> findByStatusAndDate(OperationStatus status, LocalDateTime date) {
-    return operationRepository.findFirst200ByStatusAndModifiedLessThan(status, date);
+  public List<Long> findOperationIds(OperationStatus status, LocalDateTime date) {
+    return operationRepository.findOperationIds(status, date);
   }
 
-  public List<Long> findIdByStatusAndDate(OperationStatus status, LocalDateTime date) {
-    return operationRepository.findOperationIds(status, date);
+  public List<Long> findCompletedOperationIds(OperationStatus status, LocalDateTime date) {
+    return operationRepository.findCompletedOperationIds(status, date);
   }
 
   @Transactional
@@ -287,13 +290,7 @@ public class OperationService {
     operationRepository.updateStatusAndMessage(status, date, newStatus, newDetail);
   }
 
-  @Transactional
-  public void deleteOperations(OperationStatus status, LocalDateTime date) {
-    operationRepository.deleteSecuredOperation(status, date);
-  }
-
   // Delete Operations
-
   public void deleteOperations(Long operationId) {
     operationRepository.deleteById(operationId);
   }

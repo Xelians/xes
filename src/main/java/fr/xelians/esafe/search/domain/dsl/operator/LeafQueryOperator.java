@@ -9,6 +9,9 @@ package fr.xelians.esafe.search.domain.dsl.operator;
 // A leaf operator is a terminal operator that cannot contain other operator
 // For example a match operator :  { "$match": { "Title": "Porte de Bagnolet", "DocType": "Contrat"
 // } }
+/*
+ * @author Emmanuel Deviller
+ */
 public interface LeafQueryOperator<T> extends Operator {
 
   T create();

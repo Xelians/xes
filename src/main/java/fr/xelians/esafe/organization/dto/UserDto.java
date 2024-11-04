@@ -6,13 +6,15 @@
 
 package fr.xelians.esafe.organization.dto;
 
+import static fr.xelians.esafe.organization.domain.Role.GlobalRole.ROLE_ROOT_ADMIN;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.common.constraint.NoHtml;
 import fr.xelians.esafe.common.constraint.RegularChar;
 import fr.xelians.esafe.common.dto.AbstractBaseDto;
-import fr.xelians.esafe.organization.domain.role.GlobalRole;
-import fr.xelians.esafe.organization.domain.role.TenantRole;
+import fr.xelians.esafe.organization.domain.Role;
+import fr.xelians.esafe.organization.domain.TenantRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -20,14 +22,16 @@ import java.util.ArrayList;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Setter
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class UserDto extends AbstractBaseDto {
 
-  // The identifier is automatically created if it does not exist
-  // Beware - it's a bad practice to rely on automatic creation
+  // The identifier is mandatory
   @NoHtml
   @NotBlank
   @RegularChar
@@ -62,6 +66,7 @@ public class UserDto extends AbstractBaseDto {
   private String lastName;
 
   @Email
+  @NotBlank
   @RegularChar
   @Length(min = 1, max = 256)
   @JsonProperty("Email")
@@ -69,7 +74,7 @@ public class UserDto extends AbstractBaseDto {
 
   @Size(max = 1000)
   @JsonProperty("GlobalRoles")
-  private ArrayList<GlobalRole> globalRoles = new ArrayList<>();
+  private ArrayList<Role.GlobalRole> globalRoles = new ArrayList<>();
 
   @Size(max = 1000)
   @JsonProperty("TenantRoles")
@@ -93,5 +98,10 @@ public class UserDto extends AbstractBaseDto {
   @JsonIgnore
   public String getPassword() {
     return password;
+  }
+
+  @JsonIgnore
+  public boolean isRootAdmin() {
+    return globalRoles.contains(ROLE_ROOT_ADMIN);
   }
 }

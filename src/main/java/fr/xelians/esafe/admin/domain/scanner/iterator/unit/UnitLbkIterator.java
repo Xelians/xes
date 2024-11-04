@@ -14,6 +14,9 @@ import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class UnitLbkIterator extends AllLbkIterator {
 
   // Fetch all operations (needed for indexing operations)

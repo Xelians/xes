@@ -18,6 +18,9 @@ import java.util.Map.Entry;
 import lombok.ToString;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public abstract class ValuesOperator<T> extends LeafOperator<T> {
 

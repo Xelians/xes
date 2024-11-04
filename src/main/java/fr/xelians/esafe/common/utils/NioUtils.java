@@ -7,6 +7,7 @@
 package fr.xelians.esafe.common.utils;
 
 import fr.xelians.esafe.common.constant.Env;
+import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import java.io.*;
 import java.net.URI;
@@ -20,10 +21,33 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.util.Assert;
+import org.springframework.web.multipart.MultipartFile;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class NioUtils {
 
   private NioUtils() {}
+
+  public static byte[] toBytes(InputStream is, int max) throws IOException {
+    Assert.notNull(is, "Input Stream must be not null");
+    byte[] bytes = is.readNBytes(max + 1);
+    if (bytes.length > max) {
+      throw new BadRequestException(
+          "Upload failed",
+          String.format("Uploaded content is greater than allowed size: '%d' bytes", max));
+    }
+    return bytes;
+  }
+
+  public static byte[] toBytes(MultipartFile multiPartFile, int max) throws IOException {
+    Assert.notNull(multiPartFile, "Multipart file must be not null");
+    try (InputStream inputStream = multiPartFile.getInputStream()) {
+      return toBytes(inputStream, max);
+    }
+  }
 
   public long concat(File srcFile, File dstFile) throws IOException {
     try (FileInputStream fis = new FileInputStream(srcFile);

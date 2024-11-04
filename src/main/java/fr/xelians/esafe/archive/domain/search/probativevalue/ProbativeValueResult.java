@@ -10,5 +10,8 @@ import fr.xelians.esafe.archive.domain.unit.object.BinaryQualifier;
 import java.util.List;
 import java.util.Set;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ProbativeValueResult<T>(
     List<T> results, Set<BinaryQualifier> usages, String version) {}

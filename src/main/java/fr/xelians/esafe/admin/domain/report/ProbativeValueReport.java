@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

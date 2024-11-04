@@ -8,5 +8,8 @@ package fr.xelians.esafe.archive.domain.unit;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record KeyTag(
     @JsonProperty("KeywordReference") String key, @JsonProperty("KeywordContent") String value) {}

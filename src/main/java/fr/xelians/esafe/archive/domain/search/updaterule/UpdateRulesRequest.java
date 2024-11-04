@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.search.updaterule;
 
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRulesRequest(SearchRequest searchRequest, RuleLists ruleLists) {}

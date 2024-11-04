@@ -19,6 +19,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class UnitUtils {
   private UnitUtils() {}
 

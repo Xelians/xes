@@ -34,6 +34,9 @@ import uk.gov.nationalarchives.droid.core.signature.FileFormat;
 import uk.gov.nationalarchives.droid.core.signature.FileFormatHit;
 import uk.gov.nationalarchives.droid.core.signature.droid6.InternalSignature;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public final class DroidUtils {
 

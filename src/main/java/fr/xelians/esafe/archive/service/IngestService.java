@@ -18,10 +18,10 @@ import fr.xelians.esafe.archive.domain.unit.*;
 import fr.xelians.esafe.archive.domain.unit.object.DataObjectGroup;
 import fr.xelians.esafe.archive.domain.unit.object.ObjectVersion;
 import fr.xelians.esafe.archive.domain.unit.object.Qualifiers;
-import fr.xelians.esafe.archive.task.IngestionTask;
+import fr.xelians.esafe.archive.task.IngestTask;
 import fr.xelians.esafe.common.constant.Env;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
-import fr.xelians.esafe.common.exception.functional.ForbiddenException;
+import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
@@ -33,6 +33,7 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.IngestContractDb;
 import fr.xelians.esafe.referential.service.ReferentialService;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
@@ -58,6 +59,9 @@ import org.springframework.util.Assert;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -68,6 +72,7 @@ public class IngestService {
   public static final String ACCESS_CONTRACT_MUST_BE_NOT_NULL = "Access contract must be not null";
   public static final String USER_MUST_BE_NOT_NULL = "User must be not null";
   public static final String ID_MUST_BE_NOT_NULL = "id must be not null";
+  public static final String FAILED_TO_INGEST = "Failed to ingest archives";
 
   private final ProcessingService processingService;
   private final OperationService operationService;
@@ -114,7 +119,7 @@ public class IngestService {
     }
 
     // Create and submit task
-    processingService.submit(new IngestionTask(operation, this));
+    processingService.submit(new IngestTask(operation, this));
     return operation.getId();
   }
 
@@ -151,27 +156,8 @@ public class IngestService {
           ex);
     }
     // Create and submit task
-    processingService.submit(new IngestionTask(operation, this));
+    processingService.submit(new IngestTask(operation, this));
     return operation.getId();
-  }
-
-  public InputStream getDipStream(Long tenant, Long id, String acIdentifier) throws IOException {
-    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
-    Assert.notNull(id, ID_MUST_BE_NOT_NULL);
-    Assert.notNull(acIdentifier, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
-
-    String contract = operationService.getContractIdentifier(tenant, id);
-    if (acIdentifier.equals(contract)) {
-      TenantDb tenantDb = tenantService.getTenantDb(tenant);
-      List<String> offers = tenantDb.getStorageOffers();
-      try (StorageDao storageDao = storageService.createStorageDao(tenantDb)) {
-        return storageDao.getDipStream(tenant, offers, id);
-      }
-    }
-
-    throw new ForbiddenException(
-        "Failed to download DIP",
-        String.format("Access contracts don't match: '%s - '%s'", acIdentifier, contract));
   }
 
   public InputStream getManifestStream(Long tenant, Long id) throws IOException {
@@ -219,7 +205,14 @@ public class IngestService {
     }
   }
 
-  public void check(AbstractManifestParser parser, OperationDb operation) {
+  public void check(AbstractManifestParser parser, OperationDb operation, TenantDb tenantDb) {
+
+    Long tenant = tenantDb.getId();
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          FAILED_TO_INGEST, String.format("Tenant '%s' is not active", tenant));
+    }
+
     Path sipPath = getSipPath(operation);
     Path unzipDir = getUnzipPath(operation);
 
@@ -229,6 +222,13 @@ public class IngestService {
       }
       Files.createDirectories(unzipDir);
 
+      // Check if, at least, one storage offer exists
+      List<String> storageOffers = tenantDb.getStorageOffers();
+      if (storageOffers.isEmpty()) {
+        throw new BadRequestException(
+            FAILED_TO_INGEST, String.format("No storage offers found for tenant '%s'", tenant));
+      }
+
       // Check zip exists and is readable
       if (Files.notExists(sipPath) || !Files.isReadable(sipPath) || Files.isDirectory(sipPath)) {
         throw new InternalException(String.format("Path %s not found", sipPath));
@@ -237,7 +237,7 @@ public class IngestService {
       // Check if zip file is larger than 10 Go
       if (Files.size(sipPath) > 10_000_000_000L) {
         throw new BadRequestException(
-            String.format("Archive is too big '%d'", Files.size(sipPath)));
+            FAILED_TO_INGEST, String.format("Archive is too big '%d'", Files.size(sipPath)));
       }
 
       // Check AV
@@ -245,6 +245,7 @@ public class IngestService {
         ScanResult scanResult = antiVirusScanner.scan(sipPath);
         if (scanResult.status() != ScanStatus.OK) {
           throw new BadRequestException(
+              FAILED_TO_INGEST,
               String.format("Archive is not virus safe: %s", scanResult.detail()));
         }
       }
@@ -255,7 +256,7 @@ public class IngestService {
 
       Path manifestPath = unzipDir.resolve(Env.MANIFEST_XML);
       if (Files.notExists(manifestPath) || Files.isDirectory(manifestPath)) {
-        throw new FileNotFoundException("Archive does not contain a manifest");
+        throw new NotFoundException("Archive does not contain a manifest");
       }
 
       // Log - change to debug
@@ -265,7 +266,7 @@ public class IngestService {
       }
 
       // Validate manifest against Seda v2 xsd
-      Sedav2Validator sedav2Validator = Sedav2Utils.getSedav2Validator(manifestPath);
+      Sedav2Validator sedav2Validator = Sedav2Utils.getArchiveTransferValidator(manifestPath);
       sedav2Validator.validate(manifestPath);
       String sedaVersion = sedav2Validator.getSedaVersion();
 

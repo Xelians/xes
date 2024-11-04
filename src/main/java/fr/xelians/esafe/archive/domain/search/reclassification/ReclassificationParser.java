@@ -16,10 +16,13 @@ import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.search.domain.dsl.operator.eql.Add;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
-import io.jsonwebtoken.lang.Assert;
 import java.util.Iterator;
 import java.util.Map;
+import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ReclassificationParser extends ArchiveUnitParser {
 
   public ReclassificationParser(

@@ -6,13 +6,19 @@
 
 package fr.xelians.esafe.storage.domain.object;
 
+import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.storage.domain.StorageObjectType;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -37,5 +43,13 @@ public final class PathStorageObject extends StorageObject {
     super(id, type, ignoreChecksum, ignoreEncryption);
     Assert.notNull(path, "Path cannot be null");
     this.path = path;
+  }
+
+  public long getSize() {
+    try {
+      return Files.size(path);
+    } catch (IOException e) {
+      throw new InternalException(e);
+    }
   }
 }

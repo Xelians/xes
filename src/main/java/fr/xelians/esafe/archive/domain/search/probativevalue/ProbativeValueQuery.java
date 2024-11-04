@@ -15,6 +15,9 @@ import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ProbativeValueQuery(
     @NotNull @JsonProperty("dslQuery") SearchQuery searchQuery,
     @NotNull @JsonProperty("usage") @Size(max = 4) Set<BinaryQualifier> usages,

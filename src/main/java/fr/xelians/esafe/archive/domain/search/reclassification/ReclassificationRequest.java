@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.search.reclassification;
 
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ReclassificationRequest(SearchRequest searchRequest, Long unitUp) {}

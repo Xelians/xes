@@ -11,6 +11,9 @@ import fr.xelians.esafe.search.domain.dsl.operator.Operator;
 import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import fr.xelians.esafe.search.domain.dsl.parser.eql.EqlParser;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class Patch implements Operator {
 
   public static final String CREATION_FAILED = "Failed to create update query with %s operator";

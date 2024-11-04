@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.referential.domain;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum CheckParentLinkStatus {
   AUTHORIZED, // L'attachement depuis le manifest est autorisé (sous les CheckParentLink si présent)
   REQUIRED, // L'attachement depuis le manifest est obligatoire (sous les CheckParentLink si

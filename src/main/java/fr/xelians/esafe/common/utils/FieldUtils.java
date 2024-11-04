@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.xelians.esafe.common.exception.technical.InternalException;
+import fr.xelians.esafe.search.domain.field.DoubleField;
 import fr.xelians.esafe.search.domain.field.Field;
 import fr.xelians.esafe.search.domain.field.UndefinedField;
 import java.util.HashMap;
@@ -18,6 +19,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class FieldUtils {
 
   private static final String TYPE = "type";
@@ -30,6 +34,12 @@ public final class FieldUtils {
     Map<String, Field> fields = new HashMap<>();
     try {
       ObjectMapper mapper = new ObjectMapper();
+
+      // Add Elastic Search predefined score field
+      // Note. The score field works in the orderby but has no effect elsewhere
+      Field field = Field.create("_score", DoubleField.TYPE, true);
+      fields.put(field.getName(), field);
+
       JsonNode node = mapper.readTree(mapping);
       visitFields(node, "", fields);
     } catch (JsonProcessingException ex) {

@@ -14,6 +14,9 @@ import jakarta.validation.Payload;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Target(FIELD)
 @Retention(RUNTIME)
 @Constraint(validatedBy = RegularCharValidator.class)

@@ -9,6 +9,9 @@ package fr.xelians.esafe.search.domain.dsl.operator.sql;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface PredicateSupplier {
   <Y extends Comparable<? super Y>> Predicate getPredicate(Expression<? extends Y> x, Y y);
 }

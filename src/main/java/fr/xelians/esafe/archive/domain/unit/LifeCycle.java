@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.operation.domain.OperationType;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record LifeCycle(
     @JsonProperty("_av") int autoVersion,
     @JsonProperty("_opi") long operationId,

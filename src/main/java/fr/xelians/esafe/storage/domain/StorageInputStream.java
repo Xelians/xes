@@ -14,6 +14,9 @@ import java.nio.file.Path;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 public class StorageInputStream extends FilterInputStream {

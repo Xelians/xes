@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.exception.functional;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class BadRequestException extends FunctionalException {
 
   public BadRequestException(String message) {

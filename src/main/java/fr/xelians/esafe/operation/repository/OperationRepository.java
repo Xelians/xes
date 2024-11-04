@@ -27,6 +27,9 @@ import org.springframework.data.repository.query.Param;
  * Stream https://medium.com/predictly-on-tech/spring-data-jpa-batching-using-streams-af456ea611fc
  */
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OperationRepository
     extends JpaRepository<OperationDb, Long>,
         CustomOperationRepository,
@@ -131,7 +134,7 @@ public interface OperationRepository
       Pageable pageable);
 
   @Modifying
-  @Query("update OperationDb o set o.toSecure=:toSecure WHERE o.id=:id")
+  @Query("UPDATE OperationDb o SET o.toSecure=:toSecure WHERE o.id=:id")
   void updateSecured(@Param("id") Long id, @Param("toSecure") boolean toSecure);
 
   // Accession register
@@ -140,7 +143,7 @@ public interface OperationRepository
   List<OperationDb> findToRegister(@Param("status") OperationStatus status);
 
   @Modifying
-  @Query("update OperationDb o set o.toRegister=:toRegister WHERE o.id=:id")
+  @Query("UPDATE OperationDb o SET o.toRegister=:toRegister WHERE o.id=:id")
   void updateRegister(@Param("id") Long id, @Param("toRegister") boolean toRegister);
 
   // General
@@ -168,10 +171,15 @@ public interface OperationRepository
   List<Long> findOperationIds(
       @Param("status") OperationStatus status, @Param("date") LocalDateTime date);
 
+  @Query(
+      "SELECT o.id FROM OperationDb o WHERE o.status=:status AND o.toSecure=false AND o.toRegister=false AND o.modified<:date")
+  List<Long> findCompletedOperationIds(
+      @Param("status") OperationStatus status, @Param("date") LocalDateTime date);
+
   @Modifying
   @Query(
       "DELETE OperationDb o WHERE o.status=:status AND o.toSecure=false AND o.toRegister=false AND o.modified<:date")
-  void deleteSecuredOperation(
+  void deleteCompletedOperation(
       @Param("status") OperationStatus status, @Param("date") LocalDateTime date);
 
   //  @QueryHints(value = {@QueryHint(name = HINT_FETCH_SIZE, value = "1"),

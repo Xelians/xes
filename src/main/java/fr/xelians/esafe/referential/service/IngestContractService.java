@@ -6,7 +6,6 @@
 
 package fr.xelians.esafe.referential.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.archive.service.SearchService;
@@ -15,7 +14,9 @@ import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.DroidUtils;
 import fr.xelians.esafe.common.utils.SipUtils;
+import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
+import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.referential.domain.CheckParentLinkStatus;
 import fr.xelians.esafe.referential.domain.search.ReferentialParser;
 import fr.xelians.esafe.referential.dto.IngestContractDto;
@@ -32,6 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 public class IngestContractService
@@ -46,31 +50,28 @@ public class IngestContractService
       EntityManager entityManager,
       IngestContractRepository repository,
       OperationService operationService,
+      TenantService tenantService,
       ProfileService profileService,
       SearchService searchService) {
-    super(entityManager, repository, operationService);
+    super(entityManager, repository, operationService, tenantService);
     this.profileService = profileService;
     this.searchService = searchService;
   }
 
-  @Override
-  @Transactional
-  public List<IngestContractDto> create(
-      Long tenant, String userIdentifier, String applicationId, List<IngestContractDto> dtos) {
+  @Transactional(rollbackFor = Exception.class)
+  public List<IngestContractDto> createIngestContracts(
+      OperationDb operation, Long tenant, List<IngestContractDto> dtos) {
     dtos.forEach(dto -> checkIngestContract(tenant, dto));
-    return super.create(tenant, userIdentifier, applicationId, dtos);
+    OperationDb op = saveOperation(operation);
+    return super.create(op, tenant, dtos);
   }
 
-  @Override
-  @Transactional
-  public IngestContractDto update(
-      Long tenant,
-      String userIdentifier,
-      String applicationId,
-      String identifier,
-      IngestContractDto dto) {
+  @Transactional(rollbackFor = Exception.class)
+  public IngestContractDto updateIngestContract(
+      OperationDb operation, Long tenant, String identifier, IngestContractDto dto) {
     checkIngestContract(tenant, dto);
-    return super.update(tenant, userIdentifier, applicationId, identifier, dto);
+    OperationDb op = saveOperation(operation);
+    return super.update(op, tenant, identifier, dto);
   }
 
   private void checkIngestContract(Long tenant, IngestContractDto dto) {
@@ -171,9 +172,14 @@ public class IngestContractService
     }
   }
 
-  public SearchResult<JsonNode> search(Long tenant, SearchQuery query) {
+  public SearchResult<IngestContractDto> search(Long tenant, SearchQuery query) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(query, "query must be not null");
     return search(ReferentialParser.createIngestContractParser(tenant, entityManager), query);
+  }
+
+  @Override
+  protected String getIdentifierPrefix() {
+    return "IC";
   }
 }

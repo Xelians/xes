@@ -12,6 +12,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import java.util.List;
 
 // A boolean operator class is not a terminal operator and contains other(s) operator(s)
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class BooleanOperator<T> implements BooleanQueryOperator<T> {
 
   protected final List<Operator> operators;

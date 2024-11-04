@@ -8,6 +8,9 @@ package fr.xelians.esafe.common.utils;
 
 import java.util.Arrays;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ByteContent(String name, byte[] bytes) {
 
   @Override

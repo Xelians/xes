@@ -8,4 +8,7 @@ package fr.xelians.esafe.archive.domain.search.updaterule;
 
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record UpdateRulesResult<T>(List<T> results, RuleLists ruleLists) {}

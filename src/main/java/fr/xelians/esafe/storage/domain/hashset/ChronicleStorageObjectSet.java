@@ -19,6 +19,9 @@ import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class ChronicleStorageObjectSet implements StorageObjectSet {
 

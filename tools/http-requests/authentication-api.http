@@ -1,0 +1,111 @@
+### OpenID Connect Discovery
+# Open this URL in your favorite browser
+http://localhost:8080/.well-known/openid-configuration
+
+### Create an eSafe user
+POST http://localhost:8080/v1/signup
+Content-Type: application/json
+
+{
+  "Organization": {
+    "Name": "XAM",
+    "Description": "Xelians Archive Management",
+    "Status": "ACTIVE",
+    "Identifier": "1"
+  },
+  "User": {
+    "Name": "eSafe Xam Admin",
+    "Status": "ACTIVE",
+    "Identifier": "1",
+    "UserName": "admin",
+    "Password": "password",
+    "FirstName": "xam",
+    "LastName": "admin",
+    "Email": "xam-admin@xelians.fr",
+    "TenantRoles": [
+      {
+        "Tenant": 1,
+        "RoleName": "ROLE_ARCHIVE_READER"
+      },
+      {
+        "Tenant": 1,
+        "RoleName": "ROLE_ARCHIVE_WRITER"
+      }
+    ]
+  },
+  "Tenant": {
+    "Name": "Test Tenant",
+    "Description": "This is a test tenant",
+    "Status": "ACTIVE",
+    "StorageOffers": [
+      "FS:FS01"
+    ],
+    "IsEncrypted": false
+  }
+}
+
+### Obtain user access token using authorization_code grant type
+# Step 1 : Open this URL in your favorite browser and login
+http://localhost:8080/oauth2/authorize?client_id=xam&response_type=code&scope=openid&
+    redirect_uri=http://localhost:8090/login/oauth2/code/xam-client-oidc
+
+### Step 2 : Obtain user access token (replace the code value with the code returned in step 1)
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id = xam &
+client_secret = secret &
+redirect_uri = http://localhost:8090/login/oauth2/code/xam-client-oidc &
+grant_type = authorization_code &
+code = RRwfMZmL8X9cwPhnuicFmOKwyoJtrdDemN5sZYSC4cVcSKh6VcPjT3EODUqSuAdUzMUgit9ivML18rvAsTMrMhmb4NF7elXIkjZ9YY7c-yTIKAwjm70-wEui0HhxcAqQ
+
+### Create connected user access key
+GET http://localhost:8080/v1/users/access-key
+Authorization: Bearer eyJraWQiOiJjMWI4M2Y1Yy0xNjIxLTQ3NDgtYjlmOS0yMmE2Zjc3ODliMmQiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1ZCI6InhhbSIsIm5iZiI6MTcyODM5NjA0NSwidXNlcl9pZCI6IjEiLCJzY29wZSI6WyJvcGVuaWQiXSwib3JnYW5pemF0aW9uX2lkIjoiMSIsInJvbGVzIjp7Imdsb2JhbCI6WyJST0xFX1JPT1RfQURNSU4iLCJST0xFX0FETUlOIl0sInRlbmFudCI6e319LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJleHAiOjE3MjgzOTc4NDUsImlhdCI6MTcyODM5NjA0NSwianRpIjoiNDhiZjJlYWEtOWMwNS00Y2Q2LTkyZmYtY2UwMzljYTNlODAzIn0.EqQR8Ih4smg_1WwOQL1H8fzBHfQlGTpVkGoqLiVCGEDE-HIRjmqMxUjt-D5ijkCJH2h7clQ8Ab32F_fpgOf5unHtDD1E4uBVGy8G-zzsEURixA_pMUki94b70SQ9n6_yJomPoupSsD7T5Djbf-xNJgEHkL0QmsZfyr-VTOgipR5XrFEhP2ckFoCobQ0SoMl8HeJ5yRUMuCUtz_3PX406zjDpKMlSLZ9XFHu-hBaLSEjx9nGUinB9sESYFiQVjdNCG5Mlsp0IPRqzB1uc3mSIX8XSJagWlcUAXXi54H9swYG_dCiecZ9LRsNw_oqpr92qMjvIhThSYTOi36CtRw4K4Q
+Content-Type: application/json
+
+### Obtain user access token using access_key grant type
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id = xam &
+client_secret = secret &
+scope = openid &
+grant_type = access_key &
+access_key = eyJraWQiOiIwMDUxYmE4Zi0wZjU0LTQzNTctODkxOS04OGE1MzkxOGMyMDUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwib3JnYW5pemF0aW9uX2lkIjoiMSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImV4cCI6MTcyODgyODI5MywiaWF0IjoxNzI4Mzk2MjkzLCJqdGkiOiJjYTg5ZDExNi1jYjJlLTQ3YzAtYWYzNC01OTQ3ODFiMjA4MmQifQ.N2F4FDnts-bVdwpVmKmbfzBqsGgqwo3X0PVSFL7IgmS5_t7vJRrzgtqGTipjeMtseEC6ej7TFRrBB8leFipEe0M0bfFMOu5URDw-mZBPyNhDabtr1NsArlqMYGvFTVMcPp5gttW7XYTiUmSSAmHHFi-jhK_MjqqfoZylJZJcrJYF3_8vvFW0F2SAGY1OG7_NQYoMs0AUBNfkhLTS12Ump4OSIPTH6EMPGhcxHOpEc9xRThHA6BU1Uq7ERKYv4Hc1BhvHnXzxA9PjQe8iIRcLDCdCXU0cxXJzV3vfUwcDTfFWnvyL4KM5gb2TXVUQepc061Hphf428Mpio0xwnx6KwQ
+
+### Obtain client access token using client_credentials grant type
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id = xam &
+client_secret = secret &
+grant_type = client_credentials
+
+### Refresh user token
+POST http://localhost:8080/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id = xam &
+client_secret = secret &
+scope = openid &
+grant_type = refresh_token &
+refresh_token = VGVr6rD9sW74jHfza70B6KBto5dqoh1Y4owFLa-gQVQDcghsoOrHNuwkjNPptGvLHktGgW2bMdHOJTexp1aV0hqpGog5UwovNtyAhWwey8J3nOcJAYTLPc921RLS7ZB8
+
+### Revoke a token
+POST http://localhost:8080/oauth2/revoke
+Content-Type: application/x-www-form-urlencoded
+
+client_id = xam &
+client_secret = secret &
+token = eyJraWQiOiIxNmM2NzZkMi1mNjAyLTQyODYtOGUxNC00ODM0YWIzMjJmNmMiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImF1ZCI6InhhbSIsIm5iZiI6MTcyNTAwNDMzMywidXNlcl9pZCI6IjEiLCJzY29wZSI6WyJvcGVuaWQiXSwib3JnYW5pemF0aW9uX2lkIjoxLCJyb2xlcyI6eyJnbG9iYWwiOlsiUk9MRV9BRE1JTiJdLCJ0ZW5hbnQiOnsiMSI6WyJST0xFX0FSQ0hJVkVfUkVBREVSIiwiUk9MRV9BUkNISVZFX1dSSVRFUiJdfX0sImlzcyI6Imh0dHA6Ly8xMjcuMC4wLjE6ODA4MCIsImV4cCI6MTcyNTAwNzMzMywiaWF0IjoxNzI1MDA0MzMzLCJqdGkiOiI5NjEzYzJhMS1kMzIyLTRmZmEtYWZiOS02OTBkMjQ4YjdlYWYifQ.RN_AqSzQ4o50Fa5FjU-DVYe6qprYwgi-aKadv1ccasrgJyE88Y6guNA_5W1BNiZvjbQKjwhqL1Bmxj7_ByaCMKnyJGHOEyiL_HsAaEBPyQjoouQ4SmLUv6e3bsTfL32QIMBOHFK8mcOfgC8rnqy72wP6AqF3UY7me5UNqoIqgmKu6-qiy6SODVg3Ogn3csT-Sqq6OS_akUW2kYijIU8DNnPxjE1noE4L1PxvYuQRmYED4Zz6ByrlTUPLJ5LEsy-q0sTTnkU5x8UbxjamXz5AheMu4lDyDp8bmuIoMYjdseOhVdEeI4r_qW5LVYRwMw4LZO0a7K2pZQiUaZbuJWedgwAizXjoUP0w0rRLWDpu_65dWmLnhbIkdOrgdJlkC-Tu9K5pAjgfxHES1R2m8sqG0iTT12Del4SHBmd5g7le5U4nDEd0cCg3P0PR08nqtMXV7QNij54QgN4I41wUIZnpfLEvUr2KVxtw4v1xvL6ZahKukTvQC0FfVfFImfgjk0e9syzcIeh8DXVYGB_55-KkiFELtCUQhqDEcbHx9bp4oVbuaF98BEMteje-DN8cWr3b4BuWr6CxIZR21YMY1Nq4r30lu2mNiuVqYLyiWNXyDsStqwgd0NVEC7er5cCEmxwkVJbBHyhbQ_CstgZmiC-7pQuiU7e8oNBJQ8s
+
+### Query with bearer access token
+GET http://localhost:8080/v1/users/me
+Authorization: Bearer eyJraWQiOiI2ZDcxYjJlZi1mMjZlLTRjOTYtYTQxNi00ZTcxN2EwODEyNjMiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJyb290IiwiYXVkIjoic3dhZ2dlciIsIm5iZiI6MTcyOTc1NzU3OSwidXNlcl9pZCI6IjEiLCJzY29wZSI6WyJvcGVuaWQiXSwib3JnYW5pemF0aW9uX2lkIjoiMSIsInJvbGVzIjp7InRlbmFudCI6e30sImdsb2JhbCI6WyJST0xFX1JPT1RfQURNSU4iLCJST0xFX0FETUlOIl19LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJleHAiOjE3Mjk4MDA3NzksImlhdCI6MTcyOTc1NzU3OSwianRpIjoiZmU2YjM0M2ItNTI4Ny00NjRjLWIyOWUtNDZmNmEyMzRjOWNlIn0.LUGDnDuTzCs3FI9s35-lMoS79C0m-jtrbG8JXJCXdyqyLtpm3a9_hS6-yViSFWy4_rxINErKzodMPhU2_l9k9uVqWdmCDb03QXnmoXlDGdHCO08GI_17Ff1bSBQZ5XK4IrIEm-0EMgVACS7y9cUGntgs7ZU45NVQsdEE_Rkw0YX9GH3lQGFZir91-uUiKlaskxG-n_H-3j5bbUNmGY4OV3_-XeQjCU9LTc5vKc2RPhJ16ijwQq7nBcm9b5ndZOIjg0KzEqgY6zaQa-H-51__Aqm_Cm169C3yixOOWZrK3Q3fWxwE6h99rhK-X6ex7SchS0vW8CbsYBuNJ7_P0VH23g
+Content-Type: application/json
+
+
+
+
+

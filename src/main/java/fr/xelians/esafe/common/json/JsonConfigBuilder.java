@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.json;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class JsonConfigBuilder {
 
   private Boolean format;

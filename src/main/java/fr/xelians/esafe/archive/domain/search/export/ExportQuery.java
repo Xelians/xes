@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import jakarta.validation.constraints.Size;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ExportQuery(
     @JsonProperty("dipExportType") DipExportType dipExportType,
     @JsonProperty("dataObjectVersionToExport") DataObjectVersionToExport dataObjectVersionToExport,

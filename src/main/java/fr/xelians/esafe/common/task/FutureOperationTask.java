@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.task;
 import java.util.concurrent.FutureTask;
 import lombok.Getter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public class FutureOperationTask<T> extends FutureTask<T> {
 

@@ -25,6 +25,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class LbkIterator implements AutoCloseable, Iterator<LogbookOperation> {
 
   private static final String PARSE_FAILED =

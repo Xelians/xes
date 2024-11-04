@@ -39,6 +39,7 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.entity.RuleDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
@@ -68,6 +69,9 @@ import org.apache.commons.lang.BooleanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -78,6 +82,7 @@ public class ReclassificationService {
   public static final String ACCESS_CONTRACT_MUST_BE_NOT_NULL = "Access contract must be not null";
   public static final String QUERY_MUST_BE_NOT_NULL = "Query must be not null";
   public static final String USER_MUST_BE_NOT_NULL = "User must be not null";
+  public static final String FAILED_TO_RECLASSIFY = "Failed to reclassify archives";
 
   private final ProcessingService processingService;
   private final SearchService searchService;
@@ -264,6 +269,11 @@ public class ReclassificationService {
   public Path check(OperationDb operation, TenantDb tenantDb) {
 
     Long tenant = tenantDb.getId();
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          FAILED_TO_RECLASSIFY, String.format("Tenant '%s' is not active", tenant));
+    }
+
     Map<String, RuleDb> ruleMap = new HashMap<>();
 
     // Get the accessContact and the mapper
@@ -299,6 +309,7 @@ public class ReclassificationService {
               .orElseThrow(
                   () ->
                       new BadRequestException(
+                          FAILED_TO_RECLASSIFY,
                           String.format(
                               "Archive unit id '%s' was not found in %s.uni from storage offer",
                               dstId, dstOpId)));
@@ -306,6 +317,7 @@ public class ReclassificationService {
       UnitUtils.checkVersion(dstIndexedUnit, dstStoredArchiveUnit);
       if (!Objects.equals(dstParentIds, dstStoredArchiveUnit.getParentIds())) {
         throw new InternalException(
+            FAILED_TO_RECLASSIFY,
             String.format(
                 "Destination archive unit '%s' parent ids must be equal '%s' - '%s'",
                 dstIndexedUnit, dstParentIds, dstStoredArchiveUnit.getParentIds()));
@@ -336,6 +348,7 @@ public class ReclassificationService {
           // Avoid cyclic dependency
           if (dstParentIds.contains(archiveUnitId)) {
             throw new BadRequestException(
+                FAILED_TO_RECLASSIFY,
                 String.format(
                     "Parent Archive '%s' cannot be child of archive unit '%s'",
                     dstId, archiveUnitId));
@@ -355,7 +368,7 @@ public class ReclassificationService {
 
           dateRuleService.setRulesEndDates(tenant, ruleMap, indexedUnit, dstIndexedUnit);
           indexedUnit.setParentId(dstId);
-          indexedUnit.setParentIds(CollUtils.concatList(dstId, dstParentIds));
+          indexedUnit.setParentIds(CollUtils.concat(dstId, dstParentIds));
           indexedUnit.setUpdateDate(created);
 
           // TODO reclassification service producteur
@@ -532,8 +545,7 @@ public class ReclassificationService {
     JsonNode jsonUnit = JsonService.toJson(childUnit);
 
     dateRuleService.setRulesEndDates(tenant, ruleMap, childUnit, parentUnit);
-    childUnit.setParentIds(
-        CollUtils.concatList(childUnit.getParentId(), parentUnit.getParentIds()));
+    childUnit.setParentIds(CollUtils.concat(childUnit.getParentId(), parentUnit.getParentIds()));
     // TODO reclassification service producteur
     childUnit.setUpdateDate(created);
 

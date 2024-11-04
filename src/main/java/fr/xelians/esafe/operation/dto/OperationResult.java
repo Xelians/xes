@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.archive.domain.search.search.Hits;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record OperationResult<T>(
     @JsonProperty("httpCode") int httpCode,
     @JsonProperty("$hits") Hits hits,

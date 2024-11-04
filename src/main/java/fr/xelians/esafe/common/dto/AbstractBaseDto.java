@@ -6,13 +6,10 @@
 
 package fr.xelians.esafe.common.dto;
 
-import static fr.xelians.esafe.common.constant.DefaultValue.*;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import fr.xelians.esafe.archive.domain.unit.LifeCycle;
-import fr.xelians.esafe.common.constant.DefaultValue;
 import fr.xelians.esafe.common.constraint.NoHtml;
 import fr.xelians.esafe.common.constraint.RegularChar;
 import fr.xelians.esafe.referential.domain.Status;
@@ -22,6 +19,9 @@ import java.util.List;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode
@@ -39,7 +39,7 @@ public abstract class AbstractBaseDto implements BaseDto {
   @RegularChar
   @Length(max = 512)
   @JsonProperty("Description")
-  protected String description = "";
+  protected String description;
 
   /* Accepted dates format for deserialization:
    *    - yyyy-MM-dd (ex. "1986-12-21")
@@ -54,31 +54,31 @@ public abstract class AbstractBaseDto implements BaseDto {
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("CreationDate")
-  protected LocalDate creationDate = DefaultValue.creationDate();
+  protected LocalDate creationDate;
 
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("LastUpdate")
-  protected LocalDate lastUpdate = DefaultValue.lastUpdate();
+  protected LocalDate lastUpdate;
 
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("ActivationDate")
-  protected LocalDate activationDate = ACTIVATION_DATE;
+  protected LocalDate activationDate;
 
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   @JsonProperty("DeactivationDate")
-  protected LocalDate deactivationDate = DEACTIVATION_DATE;
+  protected LocalDate deactivationDate;
 
   @JsonProperty("Status")
-  protected Status status = BASE_STATUS;
+  protected Status status;
 
   @JsonProperty("LifeCycles")
   protected List<LifeCycle> lifeCycles = null;
 
-  @JsonProperty("_av")
-  protected int autoVersion = AUTO_VERSION;
+  @JsonProperty("Version")
+  protected Integer autoVersion;
 
   @JsonProperty("_opi")
   protected Long operationId;

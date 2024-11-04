@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.cluster.domain;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum MessageContent {
   SECURE_START,
   SECURE_STOP,

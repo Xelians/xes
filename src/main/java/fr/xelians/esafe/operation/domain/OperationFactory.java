@@ -12,6 +12,9 @@ import fr.xelians.esafe.archive.domain.ingest.ContextId;
 import fr.xelians.esafe.common.utils.OperationUtils;
 import fr.xelians.esafe.operation.entity.OperationDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class OperationFactory {
   private OperationFactory() {}
 
@@ -65,6 +68,19 @@ public final class OperationFactory {
     ope.setProperty01(contract);
     ope.setProperty02(query);
     return ope;
+  }
+
+  public static OperationDb transferArchiveOp(
+      Long tenant, String user, String app, String contract, String query) {
+    OperationDb ope = new OperationDb(TRANSFER_ARCHIVE, tenant, user, app, contract, true);
+    ope.setProperty01(contract);
+    ope.setProperty02(query);
+    return ope;
+  }
+
+  public static OperationDb transferReplyArchiveOp(
+      Long tenant, String contract, String user, String app) {
+    return new OperationDb(TRANSFER_ARCHIVE, tenant, user, app, contract, true, true);
   }
 
   public static OperationDb probativeValueOp(
@@ -125,12 +141,26 @@ public final class OperationFactory {
 
   public static OperationDb createReferentialOp(
       OperationType opType, Long tenant, String user, String app) {
-    return new OperationDb(opType, tenant, user, app, null, true);
+    OperationDb ope = new OperationDb(opType, tenant, user, app, null, true);
+    ope.setStatus(OperationStatus.BACKUP);
+    ope.setMessage("Create referential");
+    return ope;
   }
 
   public static OperationDb updateReferentialOp(
       OperationType opType, Long tenant, String user, String app) {
-    return new OperationDb(opType, tenant, user, app, null, true);
+    OperationDb ope = new OperationDb(opType, tenant, user, app, null, true);
+    ope.setStatus(OperationStatus.BACKUP);
+    ope.setMessage("Update referential");
+    return ope;
+  }
+
+  public static OperationDb deleteReferentialOp(
+      OperationType opType, Long tenant, String user, String app) {
+    OperationDb ope = new OperationDb(opType, tenant, user, app, null, true);
+    ope.setStatus(OperationStatus.BACKUP);
+    ope.setMessage("Delete referential");
+    return ope;
   }
 
   public static OperationDb securingOp(Long tenant) {

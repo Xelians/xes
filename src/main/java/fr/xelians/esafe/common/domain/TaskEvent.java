@@ -8,4 +8,7 @@ package fr.xelians.esafe.common.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record TaskEvent(@JsonProperty("name") String name, @JsonProperty("watch") Long watch) {}

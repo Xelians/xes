@@ -11,6 +11,9 @@ import fr.xelians.esafe.archive.domain.search.search.Hits;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record PageResult<T>(
     @JsonProperty("$hits") Hits hits, @JsonProperty("$results") List<T> results) {
 

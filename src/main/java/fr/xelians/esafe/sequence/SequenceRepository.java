@@ -10,11 +10,14 @@ import fr.xelians.esafe.operation.entity.OperationDb;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface SequenceRepository extends JpaRepository<OperationDb, Long> {
 
-  @Query(value = "select currval('global_seq')", nativeQuery = true)
+  @Query(value = "SELECT currval('global_seq')", nativeQuery = true)
   long getCurrentValue();
 
-  @Query(value = "select nextval('global_seq')", nativeQuery = true)
+  @Query(value = "SELECT nextval('global_seq')", nativeQuery = true)
   long getNextValue();
 }

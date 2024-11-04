@@ -16,6 +16,9 @@ import org.apache.commons.lang3.Validate;
 // This class is optimized to improve performance on the default file system.
 // The destination path determines the type of file system to use.
 // If the default file system is used, then all source paths must rely on this one.
+/*
+ * @author Emmanuel Deviller
+ */
 public class FilePacker implements Packer {
 
   private final Path dstPath;

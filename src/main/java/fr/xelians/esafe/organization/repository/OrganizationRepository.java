@@ -10,6 +10,9 @@ import fr.xelians.esafe.organization.entity.OrganizationDb;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OrganizationRepository extends JpaRepository<OrganizationDb, Long> {
 
   Optional<OrganizationDb> findByIdentifier(String identifier);

@@ -18,6 +18,9 @@ import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

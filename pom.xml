@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fr.xelians</groupId>
     <artifactId>esafe</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.3.0-SNAPSHOT</version>
     <name>esafe</name>
     <description>Esafe Project</description>
 
@@ -18,12 +18,18 @@
         <developer>
             <name>Emmanuel Deviller</name>
         </developer>
+        <developer>
+            <name>Youcef Bouhaddouza</name>
+        </developer>
+        <developer>
+            <name>Julien Cornille</name>
+        </developer>
     </developers>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.5</version>
     </parent>
 
     <!-- Properties -->
@@ -70,7 +76,7 @@
         <dependency>
             <artifactId>netty-nio-client</artifactId>
             <groupId>software.amazon.awssdk</groupId>
-            <version>2.26.16</version>
+            <version>2.28.13</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -92,7 +98,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-client</artifactId>
-            <version>8.14.2</version>
+            <version>8.14.3</version>
         </dependency>
         <dependency>
             <groupId>co.elastic.clients</groupId>
@@ -152,6 +158,11 @@
             <scope>runtime</scope>
             <version>2.12.2-xml-schema-1.1</version>
         </dependency>
+        <dependency>
+            <groupId>xom</groupId>
+            <artifactId>xom</artifactId>
+            <version>1.3.9</version>
+        </dependency>
 
         <!-- rng -->
         <dependency>
@@ -187,7 +198,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
+            <version>42.7.4</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -195,7 +206,7 @@
         <dependency>
             <groupId>uk.gov.nationalarchives</groupId>
             <artifactId>droid-core</artifactId>
-            <version>6.7.0</version>
+            <version>6.8.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.xml.bind</groupId>
@@ -241,7 +252,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
+            <version>3.15.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -250,13 +261,13 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-            <version>1.10.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
             <version>1.26.1</version>
+        </dependency>
+        <dependency>
+            <groupId>de.siegmar</groupId>
+            <artifactId>fastcsv</artifactId>
+            <version>3.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -266,12 +277,12 @@
         <dependency>
             <groupId>fr.xelians</groupId>
             <artifactId>sipg</artifactId>
-            <version>1.35</version>
+            <version>1.36</version>
         </dependency>
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>7.4</version>
+            <version>8.0</version>
         </dependency>
         <dependency>
             <groupId>org.mapstruct</groupId>
@@ -295,6 +306,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
@@ -314,19 +329,24 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <version>${micrometer.version}</version>
-        </dependency>
-
-        <!-- JWT  authentication -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.12.3</version>
         </dependency>
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.5</version>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.ttddyy.observation</groupId>
+            <artifactId>datasource-micrometer-spring-boot</artifactId>
+            <version>1.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.gavlyukovskiy</groupId>
+            <artifactId>flexy-pool-spring-boot-starter</artifactId>
+            <version>1.9.2</version>
         </dependency>
 
         <!-- documentation -->
@@ -366,39 +386,28 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>xom</groupId>
-            <artifactId>xom</artifactId>
-            <version>1.3.9</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.8</version>
+            <version>1.20.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.19.8</version>
+            <version>1.20.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.19.8</version>
+            <version>1.20.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>1.19.7</version>
+            <version>1.20.2</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-brave</artifactId>
         </dependency>
     </dependencies>
 
@@ -408,6 +417,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -547,163 +560,6 @@
     </reporting>
 
     <profiles>
-        <!-- Execute Vitam tests -->
-        <profile>
-            <id>vitam</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <release>${java.version}</release>
-                            <compilerArgument>-Xlint:unchecked</compilerArgument>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.projectlombok</groupId>
-                                    <artifactId>lombok</artifactId>
-                                    <version>${lombok.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>org.mapstruct</groupId>
-                                    <artifactId>mapstruct-processor</artifactId>
-                                    <version>1.6.0.Beta1</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <argLine>${failsafe.argLine}</argLine>
-                            <excludes>
-                                <exclude>**/integrationtest/*</exclude>
-                                <exclude>**/performancetest/*</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>ingest-external-client</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>de.flapdoodle.embed</groupId>
-                            <artifactId>de.flapdoodle.embed.mongo</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.mongodb</groupId>
-                            <artifactId>mongo-java-driver</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.apache.logging.log4j</groupId>
-                            <artifactId>log4j-to-slf4j</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>access-external-client</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>de.flapdoodle.embed</groupId>
-                            <artifactId>de.flapdoodle.embed.mongo</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.mongodb</groupId>
-                            <artifactId>mongo-java-driver</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.apache.logging.log4j</groupId>
-                            <artifactId>log4j-to-slf4j</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>javax.mail</groupId>
-                            <artifactId>mailapi</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>io.netty</groupId>
-                            <artifactId>netty-all</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>common-public</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <!-- Legacy JAXB runtime for vitam/common-public/resteasy Jackson2 provider -->
-                <dependency>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                    <version>2.4.0-b180830.0359</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>common-database-public</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>common-private</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>io.prometheus</groupId>
-                            <artifactId>simpleclient_common</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>io.prometheus</groupId>
-                            <artifactId>simpleclient_dropwizard</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>io.prometheus</groupId>
-                            <artifactId>simpleclient_hotspot</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>io.prometheus</groupId>
-                            <artifactId>simpleclient</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>logbook-common</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>fr.gouv.vitam</groupId>
-                    <artifactId>common-dsl-schema</artifactId>
-                    <version>${vitam.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-client</artifactId>
-                    <version>5.0.9.Final</version>
-                    <scope>test</scope>
-                </dependency>
-                <!-- This package fixes RestEasy ClassNotFoundException: javax.annotation.Priority -->
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                    <version>1.3.2</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
 
         <!-- Execute performance tests -->
         <profile>
@@ -737,7 +593,7 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <profiles>openapi-gen</profiles>
+                            <profiles>openapi-gen,dev</profiles>
                         </configuration>
                         <executions>
                             <execution>
@@ -782,7 +638,7 @@
                     <plugin>
                         <groupId>org.openapitools</groupId>
                         <artifactId>openapi-generator-maven-plugin</artifactId>
-                        <version>7.7.0</version>
+                        <version>7.9.0</version>
                         <executions>
                             <execution>
                                 <goals>

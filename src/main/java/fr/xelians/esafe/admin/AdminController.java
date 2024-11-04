@@ -8,7 +8,9 @@ package fr.xelians.esafe.admin;
 
 import static fr.xelians.esafe.common.constant.Api.*;
 import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ADMIN;
+import static fr.xelians.esafe.organization.domain.Role.GlobalRole.Names.ROLE_DEPRECATED;
+import static fr.xelians.esafe.organization.domain.Role.GlobalRole.Names.ROLE_ROOT_ADMIN;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_MANAGER;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 
 import fr.xelians.esafe.admin.service.AdminService;
@@ -16,12 +18,12 @@ import fr.xelians.esafe.admin.service.CoherencyService;
 import fr.xelians.esafe.admin.service.IndexAdminService;
 import fr.xelians.esafe.admin.service.OfferAdminService;
 import fr.xelians.esafe.admin.task.AddOfferTask;
-import fr.xelians.esafe.authentication.domain.AuthContext;
 import fr.xelians.esafe.common.constant.Header;
 import fr.xelians.esafe.logbook.service.LogbookService;
 import fr.xelians.esafe.operation.dto.vitam.VitamExternalEventDto;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.security.resourceserver.AuthContext;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -35,13 +37,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * The {@code AdminController} class provides REST API endpoints for administrative operations
+ * related to managing search engine indices, checking system coherence, handling offers, and
+ * managing external logbook operations.
+ *
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RestController
 @RequestMapping(ADMIN_EXTERNAL)
-@Secured(ROLE_ADMIN)
 @RequiredArgsConstructor
 public class AdminController {
 
@@ -55,17 +63,18 @@ public class AdminController {
   private final AdminService adminService;
 
   @Operation(summary = "Get json batch report")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(value = V1 + BATCH_REPORT, produces = APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<InputStreamResource> getReport(
       @RequestHeader(Header.X_TENANT_ID) @Min(0) Long tenant, @PathVariable Long operationId)
       throws IOException {
-
     InputStream objectStream = adminService.getReportStream(tenant, operationId);
     InputStreamResource bodyStream = new InputStreamResource(objectStream);
     return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(bodyStream);
   }
 
   @Operation(summary = "Reset search engine index")
+  @PreAuthorize("hasRole('" + ROLE_ROOT_ADMIN + "')")
   @PostMapping(V1 + RESET_SEARCH_ENGINE_INDEX)
   public ResponseEntity<Void> resetSearchEngineIndex() throws IOException {
     indexAdminService.resetAllIndex();
@@ -73,6 +82,7 @@ public class AdminController {
   }
 
   @Operation(summary = "Reset and update search engine index")
+  @PreAuthorize("hasRole('" + ROLE_ROOT_ADMIN + "')")
   @PostMapping(V1 + REBUILD_SEARCH_ENGINE_INDEX)
   public ResponseEntity<Void> rebuildSearchEngineIndex() throws IOException {
     Long tenant = AuthContext.getTenant();
@@ -86,6 +96,7 @@ public class AdminController {
   }
 
   @Operation(summary = "Update (reindex) search engine index")
+  @PreAuthorize("hasRole('" + ROLE_ROOT_ADMIN + "')")
   @PutMapping(V1 + UPDATE_SEARCH_ENGINE_INDEX)
   public ResponseEntity<Void> updateSearchEngineIndex() {
     Long tenant = AuthContext.getTenant();
@@ -99,6 +110,7 @@ public class AdminController {
   }
 
   @Operation(summary = "Check Coherence")
+  @PreAuthorize("hasRole('" + ROLE_ROOT_ADMIN + "')")
   @PostMapping(V1 + CHECK_COHERENCE)
   public ResponseEntity<Void> checkCoherence(
       @PathVariable Optional<Integer> delay, @PathVariable Optional<Integer> duration) {
@@ -116,6 +128,7 @@ public class AdminController {
   }
 
   @Operation(summary = "Add offer to tenant")
+  @PreAuthorize("hasRole('" + ROLE_ROOT_ADMIN + "')")
   @PutMapping(V1 + ADD_STORAGE_OFFER)
   public ResponseEntity<Void> addStorageOffer(@PathVariable String offer) {
 
@@ -134,6 +147,7 @@ public class AdminController {
   }
 
   @Operation(summary = "Create an external logbook operation")
+  @PreAuthorize("hasRole('" + ROLE_DEPRECATED + "')")
   @PostMapping(V1 + LOGBOOK_OPERATIONS)
   public ResponseEntity<String> createExternalLogbookOperation(
       @RequestHeader(Header.X_TENANT_ID) @Min(0) Long tenant,

@@ -32,6 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -83,7 +86,7 @@ public class IndexService {
       for (List<Long> partOpIds : ListUtils.partition(opIds, 8)) {
         List<ArchiveUnit> archiveUnits = storageDao.getArchiveUnits(tenant, offers, partOpIds);
         for (List<ArchiveUnit> partUnits :
-            ListUtils.partition(archiveUnits, SearchService.ARCHIVE_UNIT_BULK_SIZE)) {
+            ListUtils.partition(archiveUnits, SearchService.BULK_SIZE)) {
           futures.add(INDEX_POOL.submit(() -> this.bulkIndex(partUnits)));
         }
       }

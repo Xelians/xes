@@ -8,6 +8,9 @@ package fr.xelians.esafe.referential.entity;
 
 import fr.xelians.esafe.common.entity.database.BaseDb;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface ReferentialDb extends BaseDb {
 
   Long getId();

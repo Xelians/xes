@@ -7,15 +7,13 @@
 package fr.xelians.esafe.archive.domain.search.elimination;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import fr.xelians.esafe.common.constraint.JsonSize;
+import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import java.util.List;
+import java.time.LocalDate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record EliminationQuery(
-    @JsonProperty("$roots") @Size(max = 1024) List<Long> roots,
-    @JsonProperty("$type") @Size(max = 1024) String type,
-    @NotNull @JsonProperty("$query") @JsonSize JsonNode queryNode,
-    @JsonProperty("$threshold") Long threshold,
-    @JsonProperty("$filter") @JsonSize JsonNode filterNode) {}
+    @NotNull @JsonProperty("dslRequest") SearchQuery searchQuery,
+    @NotNull @JsonProperty("date") LocalDate eliminationDate) {}

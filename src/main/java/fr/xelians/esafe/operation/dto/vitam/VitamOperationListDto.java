@@ -13,6 +13,9 @@ import fr.xelians.esafe.operation.domain.vitam.StatusCode;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record VitamOperationListDto(
     @JsonProperty("operationId") String operationId,
     @JsonProperty("processType") OperationType operationType,

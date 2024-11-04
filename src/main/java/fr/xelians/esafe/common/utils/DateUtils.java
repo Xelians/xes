@@ -18,6 +18,9 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class DateUtils {
 
   private DateUtils() {}

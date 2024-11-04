@@ -6,18 +6,21 @@
 
 package fr.xelians.esafe.archive.task;
 
+import fr.xelians.esafe.archive.domain.elimination.Eliminator;
 import fr.xelians.esafe.archive.service.EliminationService;
 import fr.xelians.esafe.common.task.StoreIndexTask;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.organization.entity.TenantDb;
-import java.nio.file.Path;
 
 // Exclusive task
+/*
+ * @author Emmanuel Deviller
+ */
 public class EliminationTask extends StoreIndexTask {
 
   private final EliminationService eliminationService;
   private final TenantDb tenantDb;
-  private Path tmpAusPath;
+  private Eliminator eliminator;
 
   public EliminationTask(OperationDb operation, EliminationService eliminationService) {
 
@@ -29,17 +32,17 @@ public class EliminationTask extends StoreIndexTask {
 
   @Override
   public void check() {
-    tmpAusPath = eliminationService.check(operation, tenantDb);
+    eliminator = eliminationService.check(operation, tenantDb);
   }
 
   @Override
   public void commit() {
-    eliminationService.commit(operation, tenantDb, tmpAusPath);
+    eliminationService.commit(operation, tenantDb, eliminator);
   }
 
   @Override
   public void store() {
-    eliminationService.store(operation, tenantDb, tmpAusPath);
+    eliminationService.store(operation, tenantDb, eliminator);
   }
 
   @Override

@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class AbstractStorageOffer implements StorageOffer {
 
   protected final String name;

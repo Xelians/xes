@@ -8,6 +8,9 @@ package fr.xelians.esafe.referential.dto;
 
 import fr.xelians.esafe.common.dto.BaseDto;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface ReferentialDto extends BaseDto {
 
   String getIdentifier();

@@ -12,6 +12,9 @@ import fr.xelians.esafe.operation.domain.OperationType;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record OperationDto(
     @JsonProperty("Id") @NotNull String id,
     @JsonProperty("Tenant") @NotNull Long tenant,

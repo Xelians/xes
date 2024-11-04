@@ -8,6 +8,9 @@ package fr.xelians.esafe.storage.domain.offer.fs;
 
 import fr.xelians.esafe.storage.domain.StorageObjectType;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class MediumPathMaker implements PathMaker {
 
   public static final MediumPathMaker INSTANCE = new MediumPathMaker();

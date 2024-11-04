@@ -17,11 +17,12 @@ import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
 
 /*
-   This abstract class represents the base DTO for referential.
-   The annotations @NotBlank and @NotNull specify mandatory properties.
-   Default values must be set for non-mandatory properties except empty ones.
-*/
-
+ * This abstract class represents the base DTO for referential.
+ * The annotations @NotBlank and @NotNull specify mandatory properties.
+ * Default values must be set for non-mandatory properties except empty ones.
+ *
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)

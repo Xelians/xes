@@ -1,3 +1,9 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
+ */
+
 package fr.xelians.esafe.logbook.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -6,6 +12,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)

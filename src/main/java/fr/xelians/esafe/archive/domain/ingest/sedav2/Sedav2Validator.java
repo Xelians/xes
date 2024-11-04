@@ -19,6 +19,9 @@ import javax.xml.validation.Validator;
 import org.apache.commons.lang3.Validate;
 import org.xml.sax.SAXException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class Sedav2Validator {
 
   private static final String HTTP_WWW_W3_ORG_XML_XML_SCHEMA_V1_1 =

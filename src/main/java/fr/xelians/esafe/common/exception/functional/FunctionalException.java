@@ -10,6 +10,9 @@ import fr.xelians.esafe.common.exception.Category;
 import fr.xelians.esafe.common.exception.EsafeException;
 import java.net.URI;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class FunctionalException extends EsafeException {
 
   protected FunctionalException(String message, URI type) {

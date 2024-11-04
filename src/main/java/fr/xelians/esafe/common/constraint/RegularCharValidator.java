@@ -10,6 +10,9 @@ import fr.xelians.esafe.common.utils.Utils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class RegularCharValidator implements ConstraintValidator<RegularChar, String> {
 
   @Override

@@ -8,8 +8,8 @@ package fr.xelians.esafe.batch;
 
 import static java.util.stream.Collectors.groupingBy;
 
-import fr.xelians.esafe.cluster.domain.NodeFeature;
-import fr.xelians.esafe.cluster.service.ServerNodeService;
+import fr.xelians.esafe.cluster.domain.JobType;
+import fr.xelians.esafe.cluster.service.ClusterService;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
@@ -42,12 +42,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 // All methods in this class must be idempotent
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class BackupOperationBatch {
 
-  private final ServerNodeService serverNodeService;
+  private final ClusterService clusterService;
   private final OperationService operationService;
   private final ProfileService profileService;
   private final AgencyService agencyService;
@@ -66,7 +69,7 @@ public class BackupOperationBatch {
       initialDelayString = "${app.batch.backup.operation.initialDelay:2000}")
   public void run() {
     try {
-      if (serverNodeService.hasFeature(NodeFeature.BACKUP)) {
+      if (clusterService.isActive(JobType.BACKUP)) {
         operationService.findByStatus(OperationStatus.BACKUP).stream()
             .collect(groupingBy(OperationDb::getTenant))
             .values()
@@ -78,8 +81,14 @@ public class BackupOperationBatch {
   }
 
   private void selectOperation(List<OperationDb> operations) {
-    Long tenant = operations.get(0).getTenant();
+    Long tenant = operations.getFirst().getTenant();
     TenantDb tenantDb = tenantService.getTenantDb(tenant);
+
+    // Check if, at least, one storage offer exists
+    List<String> storageOffers = tenantDb.getStorageOffers();
+    if (storageOffers.isEmpty()) {
+      return;
+    }
 
     List<OperationDb> agencyOperations = new ArrayList<>();
     List<OperationDb> profileOperations = new ArrayList<>();
@@ -144,7 +153,7 @@ public class BackupOperationBatch {
 
     if (!ruleOperations.isEmpty()) {
       List<RuleDto> rules = ruleService.getDtos(tenant);
-      backupOperations(profileOperations, tenantDb, rules, StorageObjectType.rul);
+      backupOperations(ruleOperations, tenantDb, rules, StorageObjectType.rul);
     }
 
     if (!tenantOperations.isEmpty()) {
@@ -193,7 +202,7 @@ public class BackupOperationBatch {
     try (StorageDao storageDao = storageService.createStorageDao(tenantDb)) {
       Long tenant = tenantDb.getId();
       List<String> offers = tenantDb.getStorageOffers();
-      ChecksumStorageObject csoi = storageDao.putStorageObjects(tenant, offers, bsois).get(0);
+      ChecksumStorageObject csoi = storageDao.putStorageObjects(tenant, offers, bsois).getFirst();
       for (OperationDb operation : operations) {
         ActionType actionType = getActionType(operation);
         operation.addAction(StorageAction.create(actionType, csoi));

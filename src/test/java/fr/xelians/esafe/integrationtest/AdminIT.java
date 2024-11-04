@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import nu.xom.ParsingException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Execution;
@@ -40,16 +39,14 @@ class AdminIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
 
-  @BeforeEach
-  void beforeEach() {}
-
   @Test
   void rebuildIndex(@TempDir Path tmpDir) throws IOException, ParsingException {
+    userDto = signInAsRootAdmin();
     Long tenant = nextTenant();
     long systemId = Scenario.createScenario03(restClient, tenant, userDto, tmpDir);
     String acIdentifier = "AC-" + TestUtils.pad(1);

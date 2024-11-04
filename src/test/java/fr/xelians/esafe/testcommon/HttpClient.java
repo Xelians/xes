@@ -55,6 +55,12 @@ public class HttpClient {
     return this;
   }
 
+  public HttpClient delete(String url) {
+    this.method = HttpMethod.DELETE;
+    this.url = url;
+    return this;
+  }
+
   public HttpClient tenant(long tenant) {
     this.tenant = tenant;
     return this;
@@ -164,8 +170,8 @@ public class HttpClient {
 
   private HttpEntity<?> createEntity(String accessToken) {
     HttpHeaders headers = RestClient.createHeaders(accessToken, tenant);
-    if (restClient.useApiKey()) {
-      headers.set(X_API_KEY_ID, restClient.getApiKey());
+    if (restClient.useAccessKey()) {
+      headers.set(X_ACCESS_KEY_ID, restClient.getAccessKey());
     }
     if (contentType != null) {
       headers.setContentType(contentType);

@@ -12,6 +12,9 @@ import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface CustomOperationRepository {
 
   Slice<OperationStatusDto> findOperationStatus(

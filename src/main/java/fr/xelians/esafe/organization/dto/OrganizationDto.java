@@ -17,14 +17,16 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Setter
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class OrganizationDto extends AbstractBaseDto {
 
-  // The identifier is automatically created if it does not exist
-  // Beware - it's a bad practice to rely on automatic creation
+  // The identifier is mandatory
   @NoHtml
   @NotBlank
   @RegularChar

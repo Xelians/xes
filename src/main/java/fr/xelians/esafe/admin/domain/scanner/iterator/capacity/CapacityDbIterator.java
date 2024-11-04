@@ -11,6 +11,9 @@ import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class CapacityDbIterator extends DbIterator {
 
   public CapacityDbIterator(Long tenant, Long idMax, OperationService operationService) {

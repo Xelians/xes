@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -61,6 +62,10 @@ public final class SipUtils {
   public static final String TEXT_CONTENT = "TextContent";
 
   private SipUtils() {}
+
+  public static String randomMessageIdentifier() {
+    return UUID.randomUUID().toString();
+  }
 
   public static boolean startsWithBinaryQualifier(String qualifier) {
     Validate.notNull(qualifier, NOT_NULL, "qualifier");

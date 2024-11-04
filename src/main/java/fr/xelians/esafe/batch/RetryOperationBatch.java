@@ -6,8 +6,8 @@
 
 package fr.xelians.esafe.batch;
 
-import fr.xelians.esafe.cluster.domain.NodeFeature;
-import fr.xelians.esafe.cluster.service.ServerNodeService;
+import fr.xelians.esafe.cluster.domain.JobType;
+import fr.xelians.esafe.cluster.service.ClusterService;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.service.OperationService;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +15,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RetryOperationBatch {
 
-  private final ServerNodeService serverNodeService;
+  private final ClusterService clusterService;
   private final OperationService operationService;
 
   @Scheduled(
@@ -28,7 +31,7 @@ public class RetryOperationBatch {
       initialDelayString = "${app.batch.retry.initialDelay:180000}")
   public void run() {
     try {
-      if (serverNodeService.hasFeature(NodeFeature.RETRY)) {
+      if (clusterService.isActive(JobType.RETRY)) {
         operationService.updateStatusAndMessage(
             OperationStatus.RETRY_STORE, OperationStatus.STORE, "Retry storing");
         operationService.updateStatusAndMessage(

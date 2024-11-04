@@ -1,5 +1,14 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
+ */
+
 package fr.xelians.esafe.accession.domain.model;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum RegisterStatus {
   /** indicates that the Accession register stored and completed */
   STORED_AND_COMPLETED("stored and completed"),

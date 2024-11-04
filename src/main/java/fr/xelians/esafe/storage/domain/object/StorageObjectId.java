@@ -12,6 +12,9 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.lang.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @EqualsAndHashCode
 @ToString

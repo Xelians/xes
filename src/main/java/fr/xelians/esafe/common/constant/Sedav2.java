@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.constant;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Sedav2 {
 
   public static final String ACCESS_RULE = "AccessRule";
@@ -89,8 +92,8 @@ public final class Sedav2 {
   public static final String UPDATE_OPERATION = "UpdateOperation";
   public static final String URI = "Uri";
   public static final String VERSION = "Version";
-  public static final String ORIGINATING_AGENCY_IDENTIFIER = "originatingAgencyIdentifier";
-  public static final String SUBMISSION_AGENCY_IDENTIFIER = "submissionAgencyIdentifier";
+  public static final String ORIGINATING_AGENCY_IDENTIFIER = "OriginatingAgencyIdentifier";
+  public static final String SUBMISSION_AGENCY_IDENTIFIER = "SubmissionAgencyIdentifier";
   public static final String SUBMISSION_AGENCY = "SubmissionAgency";
   public static final String ORIGINATING_AGENCY = "OriginatingAgency";
   public static final String TYPE = "Type";
@@ -168,6 +171,9 @@ public final class Sedav2 {
   public static final String HOLD_RULE = "HoldRule";
   public static final String FILE_INFO = "FileInfo";
   public static final String DATA_OBJECT_REF = "DataObjectRef";
+  public static final String ACQUISITION_INFORMATION = "AcquisitionInformation";
+  public static final String SERVICE_LEVEL = "ServiceLevel";
+  public static final String LEGAL_STATUS = "LegalStatus";
 
   private Sedav2() {}
 }

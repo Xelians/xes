@@ -7,6 +7,7 @@
 package fr.xelians.esafe.archive.domain.unit;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -33,6 +34,9 @@ import lombok.ToString;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode
@@ -49,8 +53,7 @@ public class ArchiveUnit implements DocumentSe {
 
   @ToString.Exclude @JsonIgnore protected ArchiveUnit parentUnit;
 
-  @ToString.Exclude @JsonIgnore
-  protected HashMap<String, ArchiveUnit> childUnitMap = new HashMap<>();
+  @ToString.Exclude @JsonIgnore protected Map<String, ArchiveUnit> childUnitMap = new HashMap<>();
 
   @JsonIgnore protected String archiveUnitRefId;
 
@@ -83,7 +86,7 @@ public class ArchiveUnit implements DocumentSe {
 
   // All service producers
   @JsonProperty("_sps")
-  protected HashSet<String> serviceProducers = new HashSet<>();
+  protected Set<String> serviceProducers = new HashSet<>();
 
   // The operation id that created the unit
   @JsonProperty("_opi")
@@ -109,6 +112,10 @@ public class ArchiveUnit implements DocumentSe {
   //
   //    @JsonProperty("_rc")
   //    protected long reclassificationCounter = 0;
+
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonProperty("_transferred")
+  protected Boolean transferred;
 
   @JsonProperty("_av")
   protected int autoversion = 1;

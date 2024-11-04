@@ -8,8 +8,8 @@ package fr.xelians.esafe.archive;
 
 import static fr.xelians.esafe.common.constant.Api.*;
 import static fr.xelians.esafe.common.constant.Header.*;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ADMIN;
-import static fr.xelians.esafe.organization.domain.role.RoleName.ROLE_ARCHIVE_READER;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_MANAGER;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.Names.ROLE_ARCHIVE_READER;
 import static org.springframework.http.MediaType.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,16 +20,18 @@ import fr.xelians.esafe.archive.domain.search.export.ExportQuery;
 import fr.xelians.esafe.archive.domain.search.probativevalue.ProbativeValueQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
+import fr.xelians.esafe.archive.domain.search.transfer.TransferQuery;
 import fr.xelians.esafe.archive.domain.search.update.UpdateQuery;
 import fr.xelians.esafe.archive.domain.search.updaterule.UpdateRuleQuery;
 import fr.xelians.esafe.archive.domain.unit.object.BinaryQualifier;
 import fr.xelians.esafe.archive.domain.unit.object.BinaryVersion;
 import fr.xelians.esafe.archive.service.*;
-import fr.xelians.esafe.authentication.domain.AuthContext;
 import fr.xelians.esafe.common.utils.StreamContent;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
+import fr.xelians.esafe.security.resourceserver.AuthContext;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.io.IOException;
@@ -41,19 +43,30 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * The {@code AccessController} class handles HTTP requests related to archive unit access and
+ * management. This class provides endpoints for retrieving, searching, updating, and managing
+ * archive units, as well as operations related to binary objects, export, transfer, elimination,
+ * and probative value checks.
+ *
+ * <p>It supports several versions (V1, V2) of some API endpoints for backward compatibility.
+ *
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RestController
 @RequestMapping(ACCESS_EXTERNAL)
-@Secured(ROLE_ADMIN)
 @RequiredArgsConstructor
 @Validated
 public class AccessController {
 
-  private static final String ACCEPTED = "{\"httpCode\":202}";
+  // Warning. The number of hits may not be what the VITAM client expects
+  private static final String VITAM_RESPONSE_BODY =
+      "{\"httpCode\":202,\"$hits\":{\"total\":1,\"offset\":0,\"limit\":0,\"size\":1}}";
   public static final String CONTENT_DISPOSITION = "Content-Disposition";
 
   private final AccessContractService accessContractService;
@@ -63,11 +76,14 @@ public class AccessController {
   private final EliminationService eliminationService;
   private final ReclassificationService reclassificationService;
   private final ExportService exportService;
+  private final TransferService transferService;
+  private final TransferReplyService transferReplyService;
   private final UpdateRulesService updateRulesService;
   private final ProbativeValueService probativeValueService;
 
   // Get One Archive Unit
   @Operation(summary = "Get one archive unit")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + UNITS + "/{unitId}")
   public SearchResult<JsonNode> searchArchiveUnit(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -80,6 +96,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Get one archive unit")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V2 + UNITS + "/{unitId}")
   public JsonNode getArchiveUnit(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -93,6 +110,7 @@ public class AccessController {
 
   // Search Archive Unit
   @Operation(summary = "Search for archive units (GET)", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + UNITS)
   public SearchResult<JsonNode> searchArchiveUnitsWithGet(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -104,6 +122,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for archive units (" + X_HTTP_METHOD_OVERRIDE + ")", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(value = V1 + UNITS, headers = X_HTTP_METHOD_OVERRIDE)
   public SearchResult<JsonNode> searchArchiveUnitsWithOverride(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -115,6 +134,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(value = V1 + UNITS + "/search")
   public SearchResult<JsonNode> searchArchiveUnits(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -126,6 +146,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for archive units with inherited rules (GET)", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + UNITS_WITH_INHERITED_RULES)
   public SearchResult<JsonNode> searchArchiveUnitsInheritedRulesWithGet(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -138,6 +159,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for archive units with inherited rules")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(value = V1 + UNITS_WITH_INHERITED_RULES, headers = X_HTTP_METHOD_OVERRIDE)
   public SearchResult<JsonNode> searchArchiveUnitsWithInheritedRules(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -157,6 +179,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for archive units as stream")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + UNITS_STREAM)
   public Stream<JsonNode> streamArchiveUnits(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -172,6 +195,7 @@ public class AccessController {
 
   // Get Object Metadata
   @Operation(summary = "Get object metadata from archive unit id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(
       value = V1 + UNITS + "/{unitId}/objects",
       consumes = APPLICATION_JSON_VALUE,
@@ -188,6 +212,7 @@ public class AccessController {
 
   // Search Object Metadata
   @Operation(summary = "Search for object metadata")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(
       value = V1 + OBJECTS,
       consumes = APPLICATION_JSON_VALUE,
@@ -203,6 +228,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Search for object metadata v2")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @PostMapping(
       value = V2 + OBJECTS,
       consumes = APPLICATION_JSON_VALUE,
@@ -219,6 +245,7 @@ public class AccessController {
 
   // Get Binary Objects
   @Operation(summary = "Get binary object from archive unit id", hidden = true)
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + UNITS + "/{unitId}/objects")
   public ResponseEntity<InputStreamResource> getBinaryObject(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -241,6 +268,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Get binary object V2 from archive unit id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V2 + UNITS + "/{unitId}/objects")
   public ResponseEntity<InputStreamResource> getBinaryObjectV2(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -263,6 +291,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Get binary object from binary id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_READER + "')")
   @GetMapping(value = V1 + OBJECTS + "/{binaryId}")
   public ResponseEntity<InputStreamResource> getBinaryObject(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -287,6 +316,7 @@ public class AccessController {
 
   // Modify Archive Unit
   @Operation(summary = "Update selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + UNITS, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> update(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -300,6 +330,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Update rules for selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + UNITS_RULES, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> updateRule(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -313,6 +344,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Reclassify selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + RECLASSIFICATION, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> reclassify(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -326,6 +358,7 @@ public class AccessController {
   }
 
   @Operation(summary = "Eliminate selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + ELIMINATION_ACTION, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> eliminate(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -339,21 +372,22 @@ public class AccessController {
   }
 
   // Get & Export DIP
-  @Operation(summary = "Get DIP from Operation Id")
+  @Operation(summary = "Get exported DIP from Operation Id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @GetMapping(value = V1 + EXPORT + "/{operationId}/dip", produces = APPLICATION_OCTET_STREAM_VALUE)
-  public ResponseEntity<InputStreamResource> getDip(
+  public ResponseEntity<InputStreamResource> getExportedDip(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
       @RequestHeader(X_ACCESS_CONTRACT_ID) @Size(min = 1, max = 1024) String accessContract,
       @PathVariable Long operationId)
       throws IOException {
 
-    InputStream objectStream = ingestService.getDipStream(tenant, operationId, accessContract);
+    InputStream objectStream = exportService.getDipStream(tenant, operationId, accessContract);
     InputStreamResource bodyStream = new InputStreamResource(objectStream);
     return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(bodyStream);
   }
 
-  @Secured(value = ROLE_ARCHIVE_READER)
   @Operation(summary = "Export selected archive units as DIP")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + EXPORT, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> exportDip(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -366,8 +400,57 @@ public class AccessController {
     return accepted(id);
   }
 
+  // Transfer SIP
+  @Operation(summary = "Get transferred SIP from Operation Id")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
+  @GetMapping(
+      value = V1 + TRANSFER + "/{operationId}/sip",
+      produces = APPLICATION_OCTET_STREAM_VALUE)
+  public ResponseEntity<InputStreamResource> getTransferredSip(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
+      @RequestHeader(X_ACCESS_CONTRACT_ID) @Size(min = 1, max = 1024) String accessContract,
+      @PathVariable Long operationId)
+      throws IOException {
+
+    InputStream objectStream = transferService.getDipStream(tenant, operationId, accessContract);
+    InputStreamResource bodyStream = new InputStreamResource(objectStream);
+    return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(bodyStream);
+  }
+
+  @Operation(summary = "Transfer selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
+  @PostMapping(value = V1 + TRANSFER, consumes = APPLICATION_JSON_VALUE)
+  public ResponseEntity<String> transferSip(
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
+      @RequestHeader(X_ACCESS_CONTRACT_ID) @Size(min = 1, max = 1024) String accessContract,
+      @RequestBody TransferQuery transferQuery) {
+
+    String user = AuthContext.getUserIdentifier();
+    String app = AuthContext.getApplicationId();
+    Long id = transferService.transfer(tenant, accessContract, transferQuery, user, app);
+    return accepted(id);
+  }
+
+  @Operation(summary = "Eliminate transferred archives from ATR")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
+  @PostMapping(value = V1 + TRANSFER_REPLY, consumes = APPLICATION_XML_VALUE)
+  public ResponseEntity<String> transferReply(
+      final HttpServletRequest request,
+      @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
+      @RequestHeader(X_ACCESS_CONTRACT_ID) @Size(min = 1, max = 1024) String accessContract)
+      throws IOException {
+
+    String user = AuthContext.getUserIdentifier();
+    String app = AuthContext.getApplicationId();
+    Long id =
+        transferReplyService.transferReply(
+            tenant, accessContract, request.getInputStream(), user, app);
+    return accepted(id);
+  }
+
   // Check Archive Unit probative value
   @Operation(summary = "Export probative value report for selected archive units")
+  @PreAuthorize("hasRole('" + ROLE_ARCHIVE_MANAGER + "')")
   @PostMapping(value = V1 + PROBATIVE_VALUE_EXPORT, consumes = APPLICATION_JSON_VALUE)
   public ResponseEntity<String> probativeValue(
       @RequestHeader(X_TENANT_ID) @Min(0) Long tenant,
@@ -385,6 +468,6 @@ public class AccessController {
   private ResponseEntity<String> accepted(Long id) {
     HttpHeaders headers = new HttpHeaders();
     headers.add(X_REQUEST_ID, id.toString());
-    return ResponseEntity.accepted().headers(headers).body(ACCEPTED);
+    return ResponseEntity.accepted().headers(headers).body(VITAM_RESPONSE_BODY);
   }
 }

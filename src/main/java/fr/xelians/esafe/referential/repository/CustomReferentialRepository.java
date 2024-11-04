@@ -12,6 +12,9 @@ import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.referential.domain.search.Request;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface CustomReferentialRepository {
 
   <T> SearchResult<T> search(Request<T> request, SearchQuery query);

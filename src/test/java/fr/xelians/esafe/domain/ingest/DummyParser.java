@@ -26,8 +26,8 @@ public class DummyParser extends AbstractManifestParser {
     throw new IOException("!!");
   }
 
-  public void callCheckBinarySize(Path binaryPath, long size) throws IOException {
-    super.checkBinarySize(binaryPath, size);
+  public void callCheckBinarySize(long actualSize, long binarySize) throws IOException {
+    super.checkBinarySize(actualSize, binarySize);
   }
 
   @Override

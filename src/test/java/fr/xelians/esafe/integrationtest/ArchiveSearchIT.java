@@ -10,6 +10,7 @@ import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import fr.xelians.esafe.archive.domain.ingest.sedav2.Sedav2Utils;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.common.utils.DateUtils;
 import fr.xelians.esafe.common.utils.Utils;
@@ -35,7 +36,6 @@ import nu.xom.Nodes;
 import nu.xom.ParsingException;
 import nu.xom.XPathContext;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -91,7 +91,7 @@ class ArchiveSearchIT extends BaseIT {
       restClient.downloadXmlAtr(tenant, requestId, atrPath);
       Element rootElem = new Builder().build(Files.newInputStream(atrPath)).getRootElement();
       XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
-      xc.addNamespace("ns", "fr:gouv:culture:archivesdefrance:seda:v2.1");
+      xc.addNamespace("ns", Sedav2Utils.SEDA_V21);
       addAllUnitIds(complexSip.getArchiveUnits(), rootElem, xc);
     }
 
@@ -106,29 +106,25 @@ class ArchiveSearchIT extends BaseIT {
     }
   }
 
-  @BeforeEach
-  void beforeEach() {}
-
   @Test
   void queryObjectMatchOperatorTest() {
     String query =
         """
-                     {
-                       "$roots": [],
-                       "$query": [
-                         {
-                           "$match": { "Title": "MyTitle1" },
-                           "$depth": 1
-                         }
-                       ],
-                       "$filter": {
-                         "$limit": 100,
-                         "$orderby": { "#score": -1, "#id": 1 }
-                       },
-                       "$filter": {},
-                       "$projection": {}
-                    }
-                    """;
+           {
+             "$roots": [],
+             "$query": [
+               {
+               "$match_all": { "full_search": "Lavolle" },
+                 "$depth": 3
+               }
+             ],
+             "$filter": {
+               "$limit": 100,
+               "$orderby": { "#score": -1 , "#id": 1 }
+             },
+             "$projection": {"$fields": {  "#id": 1, "Title": 1 }}
+          }
+          """;
 
     ResponseEntity<SearchResult<JsonNode>> response =
         restClient.searchArchive(tenant, acIdentifier, query);
@@ -136,10 +132,17 @@ class ArchiveSearchIT extends BaseIT {
 
     SearchResult<JsonNode> searchResult = response.getBody();
     assertNotNull(searchResult);
-    assertEquals(10, searchResult.results().size(), TestUtils.getBody(response));
-    assertEquals("MyTitle1", searchResult.results().getFirst().get("Title").asText());
-    assertEquals(1, searchResult.results().getFirst().get("#version").asInt());
-    assertEquals(0, searchResult.results().getFirst().get("#lifecycles").size());
+    assertEquals(20, searchResult.results().size(), TestUtils.getBody(response));
+
+    List<JsonNode> results = searchResult.results();
+    for (int i = 0; i < 10; i++) {
+      JsonNode result = results.get(i);
+      assertEquals("MyTitle1", result.get("Title").asText());
+    }
+    for (int i = 10; i < 20; i++) {
+      JsonNode result = results.get(i);
+      assertEquals("MyTitle2", result.get("Title").asText());
+    }
   }
 
   @Test
@@ -635,7 +638,7 @@ class ArchiveSearchIT extends BaseIT {
                    "$filter": {},
                    "$projection": {"$fields": { "Title": 1, "Description": 1 }}
                 }
-                      """;
+                """;
 
     ResponseEntity<SearchResult<JsonNode>> response =
         restClient.searchArchive(tenant, acIdentifier, query);
@@ -821,22 +824,22 @@ class ArchiveSearchIT extends BaseIT {
 
     String query =
         """
-                 {
-                   "$roots": [],
-                   "$query": [
-                     {
-                        "$and": [
-                          {"$in": { "Version": [ "Version1", "Version2"] }} ,
-                          {"$in": { "Directeur.Nom": [ "Deviller"], "$type": "DOCTYPE-000001" }},
-                          {"$in": { "Directeur.Age": [ 78 ], "$type": "DOCTYPE-000001" }},
-                          {"$in": { "Code": [ 94000 ], "$type": "DOCTYPE-000001" }}
-                          ]
-                     }
-                   ],
-                   "$filter": {},
-                   "$projection": {"$fields": { "Title": 1}}
-                }
-                """;
+           {
+             "$roots": [],
+             "$query": [
+               {
+                  "$and": [
+                    {"$in": { "Version": [ "Version1", "Version2"] }} ,
+                    {"$in": { "Directeur.Nom": [ "Deviller"], "$type": "DOCTYPE-000001" }},
+                    {"$in": { "Directeur.Age": [ 78 ], "$type": "DOCTYPE-000001" }},
+                    {"$in": { "Code": [ 94000 ], "$type": "DOCTYPE-000001" }}
+                    ]
+               }
+             ],
+             "$filter": {},
+             "$projection": {"$fields": { "Title": 1}}
+          }
+          """;
 
     ResponseEntity<SearchResult<JsonNode>> response =
         restClient.searchArchive(tenant, acIdentifier, query);
@@ -1059,6 +1062,7 @@ class ArchiveSearchIT extends BaseIT {
     assertNotNull(searchResult);
     List<JsonNode> nodes = searchResult.results();
 
+    // TODO Add asserts
     System.err.println(TestUtils.getBody(response));
     //    assertEquals(2, searchResult.results().size(), TestUtils.getBody(response));
     //    assertEquals(2, nodes.getFirst().size(), TestUtils.getBody(response));
@@ -1188,6 +1192,51 @@ class ArchiveSearchIT extends BaseIT {
           assertTrue(age > 11 && age < 34, TestUtils.getBody(response));
         }
       }
+    }
+  }
+
+  @Test
+  void queryTermsFacetsTest2() {
+    String query =
+        """
+                     {
+                       "$roots": [],
+                       "$query": [
+                        {
+                          "$match_phrase_prefix": { "Title": "My" }
+                        }
+                       ],
+                       "$filter": {
+                            "$limit": 1,
+                            "$orderby": { "#id": 1 }
+                       },
+                       "$projection": {"$fields": { "#id": 1 }},
+                       "$facets": [
+                          {
+                            "$name": "search_autocompletion",
+                            "$terms": {
+                               "$field": "Title",
+                               "$size": 5,
+                               "$order": "DESC"
+                             }
+                          }
+                       ]
+                    }
+                    """;
+
+    ResponseEntity<SearchResult<JsonNode>> response =
+        restClient.searchArchive(tenant, acIdentifier, query);
+    assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+
+    SearchResult<JsonNode> searchResult = response.getBody();
+    assertNotNull(searchResult);
+    List<Facet> facets = response.getBody().facets();
+
+    List<Bucket> buckets01 = facets.getFirst().buckets();
+    assertEquals(3, buckets01.size());
+    for (Bucket bucket : buckets01) {
+      assertEquals(10, bucket.count(), TestUtils.getBody(response));
+      assertTrue(bucket.value().contains("my"), TestUtils.getBody(response));
     }
   }
 

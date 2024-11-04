@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
+import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationDto;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
@@ -22,6 +23,7 @@ import fr.xelians.esafe.testcommon.TestUtils;
 import fr.xelians.sipg.model.ArchiveTransfer;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import nu.xom.ParsingException;
@@ -35,7 +37,6 @@ import org.springframework.http.ResponseEntity;
 
 class AccessionRegisterIT extends BaseIT {
 
-  private final int identifier = 1;
   private UserDto userDto;
 
   @BeforeAll
@@ -45,7 +46,9 @@ class AccessionRegisterIT extends BaseIT {
   }
 
   @BeforeEach
-  void beforeEach() {}
+  void beforeEach() {
+    // Nothing to init
+  }
 
   @Test
   void searchForAccessionDetails(@TempDir Path tmpDir) throws IOException {
@@ -64,18 +67,18 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-            {
-              "$query" : {},
-              "$filter" : {
-                "$offset" : 0,
-                "$limit" : 20,
-                "$orderby" : {
-                  "#id" : 1
-                }
-              },
-              "$projection" : {}
-            }
-            """;
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
+                        }
+                        """;
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
         Awaitility.await()
@@ -134,23 +137,23 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-                {
-                  "$query" : {
-                    "$and": [
-                      {"$gte": { "StartDate": "%s" }},
-                      {"$eq": { "Status": "STORED_AND_COMPLETED" }}
-                    ]
-                  },
-                  "$filter" : {
-                    "$offset" : 0,
-                    "$limit" : 20,
-                    "$orderby" : {
-                      "#id" : 1
-                    }
-                  },
-                  "$projection": {"$fields": { "#tenant": 1 , "#version": 1 , "LegalStatus": 1, "TotalUnits.deleted": 1, "Events": 1, "StartDate":1 }}
-                }
-                """
+                        {
+                          "$query" : {
+                            "$and": [
+                              {"$gte": { "StartDate": "%s" }},
+                              {"$eq": { "Status": "STORED_AND_COMPLETED" }}
+                            ]
+                          },
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection": {"$fields": { "#tenant": 1 , "#version": 1 , "LegalStatus": 1, "TotalUnits.deleted": 1, "Events": 1, "StartDate":1 }}
+                        }
+                        """
             .formatted(LocalDateTime.now().minusYears(10));
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
@@ -195,16 +198,20 @@ class AccessionRegisterIT extends BaseIT {
     String acIdentifier = "AC-" + TestUtils.pad(1);
     String eliminationQuery =
         """
+            {
+              "dslRequest": {
+                  "$roots": [],
+                  "$query": [
                     {
-                        "$roots": [],
-                        "$query": [
-                          {
-                            "$exists": "#id"
-                          }
-                        ],
-                        "$filter": {}
+                      "$exists": "#id"
                     }
-                    """;
+                  ],
+                  "$filter": {}
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(LocalDate.now());
 
     ResponseEntity<String> r0 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r0.getStatusCode(), TestUtils.getBody(r0));
@@ -216,18 +223,18 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-                {
-                  "$query" : {},
-                  "$filter" : {
-                    "$offset" : 0,
-                    "$limit" : 20,
-                    "$orderby" : {
-                      "#id" : 1
-                    }
-                  },
-                  "$projection" : {}
-                }
-                """;
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
+                        }
+                        """;
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
         Awaitility.await()
@@ -291,18 +298,18 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-                {
-                  "$query" : {},
-                  "$filter" : {
-                    "$offset" : 0,
-                    "$limit" : 20,
-                    "$orderby" : {
-                      "#id" : 1
-                    }
-                  },
-                  "$projection" : {}
-                }
-                """;
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
+                        }
+                        """;
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
         Awaitility.await()
@@ -339,6 +346,45 @@ class AccessionRegisterIT extends BaseIT {
   }
 
   @Test
+  void searchForAccessionSymbolic(@TempDir Path tmpDir) throws IOException, ParsingException {
+    Long tenant = nextTenant();
+    Scenario.createScenario02(restClient, tenant, userDto);
+
+    ArchiveTransfer sip = SipFactory.createComplexSip(tmpDir, 1);
+    ArchiveTransfer[] sips = new ArchiveTransfer[3];
+    Arrays.fill(sips, 0, sips.length, sip);
+    Scenario.uploadSips(restClient, tenant, tmpDir, sips);
+
+    String query =
+        """
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
+                        }
+                        """;
+
+    Utils.sleep(1000);
+
+    ResponseEntity<SearchResult<JsonNode>> r2 =
+        Awaitility.await()
+            .until(
+                () -> restClient.searchAccessionRegisterSymbolic(tenant, query),
+                r -> r.getBody() != null);
+
+    assertEquals(HttpStatus.OK, r2.getStatusCode(), TestUtils.getBody(r2));
+    SearchResult<JsonNode> result1 = r2.getBody();
+    assertNotNull(result1, TestUtils.getBody(r2));
+    assertEquals(0, result1.hits().size(), TestUtils.getBody(r2));
+  }
+
+  @Test
   void searchForAccessionSummary2(@TempDir Path tmpDir) throws IOException, ParsingException {
     Long tenant = nextTenant();
     Scenario.createScenario02(restClient, tenant, userDto);
@@ -348,18 +394,18 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-                    {
-                      "$query" : {},
-                      "$filter" : {
-                        "$offset" : 0,
-                        "$limit" : 20,
-                        "$orderby" : {
-                          "#id" : 1
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
                         }
-                      },
-                      "$projection" : {}
-                    }
-                    """;
+                        """;
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
         Awaitility.await()
@@ -406,16 +452,20 @@ class AccessionRegisterIT extends BaseIT {
     String acIdentifier = "AC-" + TestUtils.pad(1);
     String eliminationQuery =
         """
-                        {
-                            "$roots": [],
-                            "$query": [
-                              {
-                                "$exists": "#version"
-                              }
-                            ],
-                            "$filter": {}
-                        }
-                        """;
+            {
+              "dslRequest": {
+                  "$roots": [],
+                  "$query": [
+                    {
+                      "$exists": "#version"
+                    }
+                  ],
+                  "$filter": {}
+              },
+              "date": "%s"
+            }
+            """
+            .formatted(LocalDate.now());
 
     ResponseEntity<String> r0 = restClient.eliminateArchive(tenant, acIdentifier, eliminationQuery);
     assertEquals(HttpStatus.ACCEPTED, r0.getStatusCode(), TestUtils.getBody(r0));
@@ -427,18 +477,18 @@ class AccessionRegisterIT extends BaseIT {
 
     String query =
         """
-                    {
-                      "$query" : {},
-                      "$filter" : {
-                        "$offset" : 0,
-                        "$limit" : 20,
-                        "$orderby" : {
-                          "#id" : 1
+                        {
+                          "$query" : {},
+                          "$filter" : {
+                            "$offset" : 0,
+                            "$limit" : 20,
+                            "$orderby" : {
+                              "#id" : 1
+                            }
+                          },
+                          "$projection" : {}
                         }
-                      },
-                      "$projection" : {}
-                    }
-                    """;
+                        """;
 
     ResponseEntity<SearchResult<JsonNode>> r2 =
         Awaitility.await()

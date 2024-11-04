@@ -51,6 +51,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.xml.sax.SAXException;
 import uk.gov.nationalarchives.droid.core.interfaces.IdentificationResult;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public abstract class AbstractManifestParser {
 
@@ -320,6 +323,10 @@ public abstract class AbstractManifestParser {
 
   // Check Profile belongs to Ingest Contract and exists and actif then validate SEDA
   protected void checkArchivalProfile(String identifier, Path manifestPath) {
+    if (StringUtils.isBlank(identifier)) {
+      return;
+    }
+
     assertNotNull(
         ingestContractDb,
         ARCHIVAL_PROFILE_FAILED,
@@ -331,14 +338,6 @@ public abstract class AbstractManifestParser {
 
     if (allowedProfiles.isEmpty() && StringUtils.isBlank(identifier)) {
       return;
-    }
-
-    if (StringUtils.isBlank(identifier)) {
-      throw new ManifestException(
-          ARCHIVAL_PROFILE_FAILED,
-          String.format(
-              "Archive Profile is required by Ingest Contract '%s'",
-              ingestContractDb.getIdentifier()));
     }
 
     if (!allowedProfiles.contains(identifier)) {
@@ -410,12 +409,22 @@ public abstract class AbstractManifestParser {
   }
 
   // Check Binary Size
-  protected void checkBinarySize(Path binaryPath, long binarySize) throws IOException {
-    if (binarySize != 0 && Files.size(binaryPath) != binarySize) {
+  protected long checkBinarySize(long actualSize, long binarySize) {
+    assertNotNull(
+        ingestContractDb,
+        BINARY_FORMAT_FAILED,
+        "Ingest Contract must be declared before binary size check");
+    // TODO Add a "strict" property  in the Ingest Contract to force the check
+    boolean isStrict = false;
+
+    if (isStrict && binarySize != 0 && actualSize != binarySize) {
       throw new ManifestException(
           "Check binary size failed",
-          String.format("Binary object size of '%s' is not valid", binaryPath));
+          String.format(
+              "Binary object size is not valid : expected '%s' - actual '%s'",
+              binarySize, actualSize));
     }
+    return actualSize;
   }
 
   // Check Binary Digest
@@ -468,9 +477,9 @@ public abstract class AbstractManifestParser {
       IdentificationResult idr = results.getFirst();
       if (!idr.getPuid().equals(formatId)) {
         log.warn("Binary object format id '{}' does not match '{}'", idr.getPuid(), formatId);
-        formatIdentification.setFormatId(idr.getPuid());
       }
 
+      formatIdentification.setFormatId(idr.getPuid());
       formatIdentification.setFormatName(idr.getName() != null ? idr.getName() : "");
       formatIdentification.setFormatLitteral(idr.getVersion() != null ? idr.getVersion() : "");
       formatIdentification.setMimeType(idr.getMimeType() != null ? idr.getMimeType() : "");

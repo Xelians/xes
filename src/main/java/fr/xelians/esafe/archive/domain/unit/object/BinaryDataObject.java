@@ -11,6 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

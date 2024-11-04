@@ -16,6 +16,9 @@ import java.util.Map.Entry;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public abstract class TextualOperator<T> extends LeafOperator<T> {
 

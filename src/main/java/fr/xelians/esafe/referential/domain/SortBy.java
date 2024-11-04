@@ -6,7 +6,11 @@
 
 package fr.xelians.esafe.referential.domain;
 
-// Keep the lowercase
+/*
+ * Keep the lowercase
+ *
+ * @author Emmanuel Deviller
+ */
 public enum SortBy {
   identifier,
   name,

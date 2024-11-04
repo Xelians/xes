@@ -22,6 +22,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public abstract class AbstractStorageDao implements StorageDao {
 
   public static final Hash HASH = Hash.MD5;

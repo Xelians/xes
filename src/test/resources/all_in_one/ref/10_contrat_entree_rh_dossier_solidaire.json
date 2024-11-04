@@ -1,0 +1,14 @@
+[
+	{
+		"Identifier":"IC-000002",
+		"Name":"Contrat d'entree RH Dossier solidaire",
+		"Description":"Contrat d'entree RH Dossier solidaire",
+		"Status":"ACTIVE",
+		"ArchiveProfiles":["PR-000002","PR-000004","PR-000006"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

@@ -12,6 +12,9 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class SecuringLbkIterator extends OneLbkIterator {
 
   public SecuringLbkIterator(TenantDb tenantDb, StorageService storageService, long logId) {

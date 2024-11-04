@@ -8,4 +8,7 @@ package fr.xelians.esafe.search.domain.dsl.parser;
 
 import fr.xelians.esafe.search.domain.field.Field;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record NamedField(String fieldName, Field field) {}

@@ -15,9 +15,6 @@ import fr.xelians.esafe.archive.domain.ingest.ContextId;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.archive.domain.unit.object.BinaryQualifier;
 import fr.xelians.esafe.archive.domain.unit.object.BinaryVersion;
-import fr.xelians.esafe.authentication.dto.AccessDto;
-import fr.xelians.esafe.authentication.dto.LoginDto;
-import fr.xelians.esafe.authentication.dto.RefreshDto;
 import fr.xelians.esafe.common.constant.Header;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.exception.technical.TimeOutException;
@@ -33,7 +30,10 @@ import fr.xelians.esafe.operation.dto.OperationResult;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
 import fr.xelians.esafe.operation.dto.vitam.VitamExternalEventDto;
 import fr.xelians.esafe.organization.dto.*;
+import fr.xelians.esafe.organization.dto.AccessDto;
+import fr.xelians.esafe.organization.dto.RefreshDto;
 import fr.xelians.esafe.referential.dto.*;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,7 +42,6 @@ import java.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -74,10 +73,10 @@ public final class RestClient {
   private final boolean autoRefresh;
   private String accessToken;
 
-  private String apiKey;
+  private String accessKey;
   private String refreshToken;
 
-  private boolean useApiKey;
+  private boolean useAccessKey;
 
   private final RestTemplate restTemplate = createRestTemplate();
 
@@ -107,14 +106,9 @@ public final class RestClient {
   }
 
   private RestTemplate createRestTemplate() {
-    final var restTemplate = new RestTemplate();
-    restTemplate.setRequestFactory(createJdkHttpFactory());
-    // Configure UTF-8 in content type instead of the following
-    //    List<HttpMessageConverter<?>> converters = restTemplate.getMessageConverters();
-    //    converters.removeIf(
-    //        httpMessageConverter -> httpMessageConverter instanceof StringHttpMessageConverter);
-    //    converters.addFirst(new StringHttpMessageConverter(StandardCharsets.UTF_8));
-    return restTemplate;
+    final var rt = new RestTemplate();
+    rt.setRequestFactory(createJdkHttpFactory());
+    return rt;
   }
 
   private JdkClientHttpRequestFactory createJdkHttpFactory() {
@@ -183,7 +177,7 @@ public final class RestClient {
     return upload(tenant, path, ContextId.FILING_SCHEME);
   }
 
-  public ResponseEntity<Void> uploadSip(long tenant, Path path) throws IOException {
+  public ResponseEntity<Void> uploadSip(long tenant, Path path) {
     return upload(tenant, path, ContextId.DEFAULT_WORKFLOW);
   }
 
@@ -318,8 +312,8 @@ public final class RestClient {
     String url = server + ACCESS_EXTERNAL + V1 + EXPORT + "/" + operationId + "/dip";
 
     for (int i = 0; ; i++) {
-      String accessToken = getAccessToken();
-      HttpHeaders headers = createHeaders(accessToken, tenant);
+      String token = getAccessToken();
+      HttpHeaders headers = createHeaders(token, tenant);
       headers.setAccept(List.of(MediaType.APPLICATION_OCTET_STREAM));
       if (accessContract != null) {
         headers.set(X_ACCESS_CONTRACT_ID, accessContract);
@@ -334,7 +328,58 @@ public final class RestClient {
                 response -> Files.copy(response.getBody(), dipPath, REPLACE_EXISTING));
         return dipPath;
       } catch (HttpClientErrorException e) {
-        autoRefresh(e, accessToken, i);
+        autoRefresh(e, token, i);
+      }
+    }
+  }
+
+  // Transfer
+  public ResponseEntity<String> transferArchive(long tenant, String accessContract, String query) {
+    String url = server + ACCESS_EXTERNAL + V1 + TRANSFER;
+    return httpClient()
+        .post(url)
+        .tenant(tenant)
+        .accessContract(accessContract)
+        .body(query)
+        .execute(String.class);
+  }
+
+  public ResponseEntity<String> transferReplyArchive(
+      long tenant, String accessContract, Path atrPath) throws IOException {
+    String url = server + ACCESS_EXTERNAL + V1 + TRANSFER_REPLY;
+    String atr = Files.readString(atrPath, StandardCharsets.UTF_8);
+
+    return httpClient()
+        .contentType(MediaType.APPLICATION_XML)
+        .post(url)
+        .tenant(tenant)
+        .accessContract(accessContract)
+        .body(atr)
+        .execute(String.class);
+  }
+
+  public Path downloadSip(long tenant, String operationId, String accessContract, Path tmpDir) {
+    Path sipPath = tmpDir.resolve(operationId + ".sip");
+    String url = server + ACCESS_EXTERNAL + V1 + TRANSFER + "/" + operationId + "/sip";
+
+    for (int i = 0; ; i++) {
+      String token = getAccessToken();
+      HttpHeaders headers = createHeaders(token, tenant);
+      headers.setAccept(List.of(MediaType.APPLICATION_OCTET_STREAM));
+      if (accessContract != null) {
+        headers.set(X_ACCESS_CONTRACT_ID, accessContract);
+      }
+
+      try {
+        getRestTemplate()
+            .execute(
+                url,
+                HttpMethod.GET,
+                request -> request.getHeaders().addAll(headers),
+                response -> Files.copy(response.getBody(), sipPath, REPLACE_EXISTING));
+        return sipPath;
+      } catch (HttpClientErrorException e) {
+        autoRefresh(e, token, i);
       }
     }
   }
@@ -404,16 +449,6 @@ public final class RestClient {
         .execute(responseType);
   }
 
-  public ResponseEntity<String> searchArchive2(long tenant, String accessContract, String query) {
-    String url = server + ACCESS_EXTERNAL + V1 + UNITS;
-    return httpClient()
-        .post(url)
-        .tenant(tenant)
-        .accessContract(accessContract)
-        .body(query)
-        .execute(String.class);
-  }
-
   // Metadata Objects
   public ResponseEntity<SearchResult<JsonNode>> getObjectMetadataByUnit(
       long tenant, String accessContract, long unitId) {
@@ -458,9 +493,8 @@ public final class RestClient {
     String url = server + ACCESS_EXTERNAL + V1 + UNITS + "/{unitId}/objects";
 
     for (int i = 0; ; i++) {
-      String accessToken = getAccessToken();
-      HttpHeaders headers = createHeaders(accessToken, tenant);
-      //      headers.setAccept(List.of(MediaType.APPLICATION_OCTET_STREAM));
+      String token = getAccessToken();
+      HttpHeaders headers = createHeaders(token, tenant);
       headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
       headers.set(Header.X_ACCESS_CONTRACT_ID, accessContract);
       headers.set(Header.X_QUALIFIER, qualifier.toString());
@@ -476,7 +510,7 @@ public final class RestClient {
                 unitId);
         return binPath;
       } catch (HttpClientErrorException e) {
-        autoRefresh(e, accessToken, i);
+        autoRefresh(e, token, i);
       }
     }
   }
@@ -492,8 +526,8 @@ public final class RestClient {
     String url = server + ACCESS_EXTERNAL + V1 + OBJECTS + "/{binaryId}";
 
     for (int i = 0; ; i++) {
-      String accessToken = getAccessToken();
-      HttpHeaders headers = createHeaders(accessToken, tenant);
+      String token = getAccessToken();
+      HttpHeaders headers = createHeaders(token, tenant);
       headers.setAccept(List.of(MediaType.APPLICATION_OCTET_STREAM));
       headers.set(Header.X_ACCESS_CONTRACT_ID, accessContract);
       try {
@@ -506,7 +540,7 @@ public final class RestClient {
                 binaryId);
         return binPath;
       } catch (HttpClientErrorException e) {
-        autoRefresh(e, accessToken, i);
+        autoRefresh(e, token, i);
       }
     }
   }
@@ -525,6 +559,16 @@ public final class RestClient {
   public ResponseEntity<SearchResult<JsonNode>> searchAccessionRegisterSummary(
       long tenant, String query) {
     String url = server + ADMIN_EXTERNAL + V1 + ACCESSION_REGISTER_SUMMARY;
+    return httpClient()
+        .post(url)
+        .tenant(tenant)
+        .body(query)
+        .execute(new ParameterizedTypeReference<>() {});
+  }
+
+  public ResponseEntity<SearchResult<JsonNode>> searchAccessionRegisterSymbolic(
+      long tenant, String query) {
+    String url = server + ADMIN_EXTERNAL + V1 + ACCESSION_REGISTER_SYMBOLIC;
     return httpClient()
         .post(url)
         .tenant(tenant)
@@ -738,7 +782,7 @@ public final class RestClient {
 
   // External operation
   public ResponseEntity<JsonNode> createExternalOperation(
-      long tenant, VitamExternalEventDto vitamExternalEventDto) throws IOException {
+      long tenant, VitamExternalEventDto vitamExternalEventDto) {
 
     String url = server + ADMIN_EXTERNAL + V1 + LOGBOOK_OPERATIONS;
     return httpClient()
@@ -802,6 +846,20 @@ public final class RestClient {
         .execute(new ParameterizedTypeReference<>() {});
   }
 
+  public void downloadRulesReport(long tenant, String operationId, Path path) {
+    String url = server + ADMIN_EXTERNAL + V1 + RULES_REPORT;
+    httpClient().get(url).tenant(tenant).operationId(operationId).download(path);
+  }
+
+  public ResponseEntity<Void> deleteRule(long tenant, String identifier) {
+    String url = server + ADMIN_EXTERNAL + V2 + RULES + "/{identifier}";
+    return httpClient()
+        .delete(url)
+        .tenant(tenant)
+        .param("identifier", identifier)
+        .execute(new ParameterizedTypeReference<>() {});
+  }
+
   // Profile
   public ResponseEntity<List<ProfileDto>> createProfile(long tenant, Path profilePath)
       throws IOException {
@@ -837,6 +895,19 @@ public final class RestClient {
   public ResponseEntity<Void> updateBinaryProfile(long tenant, Path profilePath, String identifier)
       throws IOException {
     String url = server + ADMIN_EXTERNAL + V1 + PROFILES + "/" + identifier + "/data";
+
+    byte[] bytes = Files.readAllBytes(profilePath);
+    return httpClient()
+        .put(url)
+        .tenant(tenant)
+        .body(bytes)
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .execute(Void.class);
+  }
+
+  public ResponseEntity<Void> updateBinaryProfileV2(
+      long tenant, Path profilePath, String identifier) {
+    String url = server + ADMIN_EXTERNAL + V2 + PROFILES + "/" + identifier + "/data";
 
     MultipartBodyBuilder multipartBodyBuilder = new MultipartBodyBuilder();
     multipartBodyBuilder.part(
@@ -1083,12 +1154,12 @@ public final class RestClient {
   }
 
   // Agency V1
-  public ResponseEntity<List<AgencyDto>> createAgencies(long tenant, Path csvPath)
+  public ResponseEntity<List<AgencyDto>> createCsvAgency(long tenant, Path csvPath)
       throws IOException {
     String csv = Files.readString(csvPath, StandardCharsets.UTF_8);
     String url = server + ADMIN_EXTERNAL + V1 + AGENCIES;
     return httpClient()
-        .contentType(TEXT_PLAIN_UTF8)
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .post(url)
         .tenant(tenant)
         .body(csv)
@@ -1137,7 +1208,7 @@ public final class RestClient {
 
   // User Info
   public ResponseEntity<UserInfoDto> getMe() {
-    String url = server + V1 + ME;
+    String url = server + V1 + USERS + ME;
     return httpClient().get(url).execute(UserInfoDto.class);
   }
 
@@ -1168,7 +1239,7 @@ public final class RestClient {
 
   // Tenant
   public ResponseEntity<TenantDto> getTenant(long tenant) {
-    String url = server + V1 + TENANT + "/{tenant}";
+    String url = server + V1 + TENANTS + "/{tenant}";
     return httpClient().get(url).param("tenant", tenant).execute(TenantDto.class);
   }
 
@@ -1189,60 +1260,69 @@ public final class RestClient {
 
   // Signup
   public ResponseEntity<SignupDto> signup(SignupDto signupDto) {
-    signupRegister(signupDto);
-    return signupCreate(signupDto.getOrganizationDto().getIdentifier());
-  }
-
-  public ResponseEntity<Void> signupRegister(SignupDto signupDto) {
     String url = server + V1 + SIGNUP;
     HttpEntity<SignupDto> entity = new HttpEntity<>(signupDto, createHeaders());
-    return getRestTemplate().exchange(url, HttpMethod.POST, entity, Void.class);
+    return getRestTemplate().exchange(url, HttpMethod.POST, entity, SignupDto.class);
   }
 
-  public ResponseEntity<SignupDto> signupCreate(String key) {
-    String url = server + V1 + SIGNUP + "/{key}";
-    return getRestTemplate()
-        .exchange(url, HttpMethod.GET, new HttpEntity<>(createHeaders()), SignupDto.class, key);
-  }
+  // Create accessToken and refreshToken
+  public synchronized ResponseEntity<AccessDto> signIn(String accessKey) {
+    String url = server + AuthFactory.ACCESS_TOKEN_URI;
+    HttpHeaders headers = AuthFactory.createHeaders();
+    MultiValueMap<String, String> params = AuthFactory.createAccessTokenQueryParams(accessKey);
 
-  public ResponseEntity<AccessDto> signin(LoginDto loginDto) {
-    String url = server + V1 + SIGNIN;
-    HttpEntity<LoginDto> entity = new HttpEntity<>(loginDto, createHeaders());
+    HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, headers);
     ResponseEntity<AccessDto> response =
         getRestTemplate().exchange(url, HttpMethod.POST, entity, AccessDto.class);
     AccessDto accessDto = response.getBody();
     if (accessDto != null) {
       setAccessToken(accessDto.getAccessToken());
       setRefreshToken(accessDto.getRefreshToken());
+      setAccessKey(accessKey);
       return response;
     }
-    throw new InternalException("Failed to signin", "AccessDto is null");
+    throw new InternalException("Failed to signIn", "AccessDto is null");
   }
 
-  public ResponseEntity<Object> logout() {
-    String url = server + V1 + LOGOUT;
-    HttpEntity<Object> entity = new HttpEntity<>(createHeaders(getAccessToken()));
+  public ResponseEntity<AccessDto> signIn(MultiValueMap<String, String> params) {
+    String url = server + AuthFactory.ACCESS_TOKEN_URI;
+    HttpHeaders headers = AuthFactory.createHeaders();
+    HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, headers);
+    return getRestTemplate().exchange(url, HttpMethod.POST, entity, AccessDto.class);
+  }
+
+  public synchronized ResponseEntity<Object> logout() {
+    String url = server + AuthFactory.TOKEN_REVOCATION_URI;
+    HttpHeaders headers = AuthFactory.createHeaders();
+    MultiValueMap<String, String> params =
+        AuthFactory.createAccessTokenRevokeQueryParams(getAccessToken());
+    HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, headers);
     try {
       return getRestTemplate().exchange(url, HttpMethod.POST, entity, Object.class);
     } finally {
-      setApiKey(null);
+      setAccessKey(null);
       setAccessToken(null);
       setRefreshToken(null);
     }
   }
 
   public void autoRefresh(HttpClientErrorException e, String accessToken, int i) {
-    if (!autoRefresh || e.getStatusCode() != HttpStatus.UNAUTHORIZED || i >= RETRY) {
-      // if (!autoRefresh || i >= RETRY) {
+    if (autoRefresh && e.getStatusCode() == HttpStatus.UNAUTHORIZED && i < RETRY) {
+      doRefresh(new RefreshDto(accessToken, getRefreshToken()));
+    } else {
       throw e;
     }
-    doRefresh(new RefreshDto(accessToken, getRefreshToken()));
   }
 
+  // Refresh the accessToken with refreshToken
   private synchronized void doRefresh(RefreshDto refreshDto) {
     if (refreshDto.getAccessToken().equals(getAccessToken())) {
-      String url = server + V1 + REFRESH;
-      HttpEntity<RefreshDto> entity = new HttpEntity<>(refreshDto, createHeaders());
+      String url = server + AuthFactory.REFRESH_TOKEN_URI;
+      HttpHeaders headers = AuthFactory.createHeaders();
+      MultiValueMap<String, String> params =
+          AuthFactory.createRefreshTokenQueryParams(refreshDto.getRefreshToken());
+
+      HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, headers);
       ResponseEntity<AccessDto> response =
           getRestTemplate().exchange(url, HttpMethod.POST, entity, AccessDto.class);
       AccessDto accessDto = response.getBody();
@@ -1253,48 +1333,35 @@ public final class RestClient {
     }
   }
 
-  public ResponseEntity<AccessDto> refresh(RefreshDto refreshDto) {
-    String url = server + V1 + REFRESH;
-    HttpEntity<RefreshDto> entity = new HttpEntity<>(refreshDto, createHeaders());
-    ResponseEntity<AccessDto> response =
-        getRestTemplate().exchange(url, HttpMethod.POST, entity, AccessDto.class);
-    AccessDto accessDto = response.getBody();
-    if (accessDto == null) {
-      throw new InternalException("Failed to refresh access token", "AccessDto is null");
-    }
-    setAccessToken(accessDto.getAccessToken());
-    return response;
-  }
-
   public synchronized String getAccessToken() {
     return accessToken;
-  }
-
-  public synchronized void setAccessToken(String token) {
-    accessToken = token;
-  }
-
-  public synchronized void setApiKey(String apiKey) {
-    this.apiKey = apiKey;
-  }
-
-  public synchronized String getApiKey() {
-    return apiKey;
-  }
-
-  public synchronized boolean useApiKey() {
-    return this.useApiKey;
-  }
-
-  public synchronized boolean setUseApiKey(boolean useApiKey) {
-    return this.useApiKey = useApiKey;
   }
 
   public synchronized String getRefreshToken() {
     return refreshToken;
   }
 
-  public synchronized void setRefreshToken(String token) {
+  public synchronized String getAccessKey() {
+    return accessKey;
+  }
+
+  private synchronized void setAccessToken(String token) {
+    accessToken = token;
+  }
+
+  private synchronized void setRefreshToken(String token) {
     refreshToken = token;
+  }
+
+  private synchronized void setAccessKey(String accessKey) {
+    this.accessKey = accessKey;
+  }
+
+  public boolean useAccessKey() {
+    return this.useAccessKey;
+  }
+
+  public boolean setUseAccessKey(boolean useAccessKey) {
+    return this.useAccessKey = useAccessKey;
   }
 }

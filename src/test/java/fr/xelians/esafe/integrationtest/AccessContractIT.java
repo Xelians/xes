@@ -24,7 +24,6 @@ import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,25 +34,22 @@ class AccessContractIT extends BaseIT {
   private static final Path OK_AGENCY = Paths.get(ItInit.AGENCY + "OK_agencies_init.csv");
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     setup();
   }
 
-  @BeforeEach
-  void beforeEach() {}
-
   @Test
   void createAccessContractTest() throws IOException {
-    Path dir = Paths.get(ItInit.ACCESSCONTRACT);
+    Path dir = Paths.get(ItInit.ACCESS_CONTRACT);
     for (int i = 0; i < 4; i++) {
-      for (Path path : TestUtils.listFiles(dir, "OK_", ".json")) {
+      for (Path path : TestUtils.filenamesStartWith(dir, "OK_", ".json")) {
         Long tenant = nextTenant();
 
-        ResponseEntity<List<AgencyDto>> r1 = restClient.createAgencies(tenant, OK_AGENCY);
-        assertEquals(HttpStatus.OK, r1.getStatusCode(), TestUtils.getBody(r1));
+        ResponseEntity<List<AgencyDto>> r1 = restClient.createCsvAgency(tenant, OK_AGENCY);
+        assertEquals(HttpStatus.CREATED, r1.getStatusCode(), TestUtils.getBody(r1));
 
         ResponseEntity<List<AccessContractDto>> r2 = restClient.createAccessContract(tenant, path);
-        assertEquals(HttpStatus.OK, r2.getStatusCode(), "path: " + path);
+        assertEquals(HttpStatus.CREATED, r2.getStatusCode(), "path: " + path);
 
         List<AccessContractDto> acList = r2.getBody();
         assertNotNull(acList, "path: " + path);
@@ -68,12 +64,12 @@ class AccessContractIT extends BaseIT {
 
   @Test
   void createBadAccessContractTest() throws IOException {
-    Path dir = Paths.get(ItInit.ACCESSCONTRACT);
-    for (Path path : TestUtils.listFiles(dir, "KO_", ".json")) {
+    Path dir = Paths.get(ItInit.ACCESS_CONTRACT);
+    for (Path path : TestUtils.filenamesStartWith(dir, "KO_", ".json")) {
       Long tenant = nextTenant();
 
-      ResponseEntity<List<AgencyDto>> response = restClient.createAgencies(tenant, OK_AGENCY);
-      assertEquals(HttpStatus.OK, response.getStatusCode(), "path: " + path);
+      ResponseEntity<List<AgencyDto>> response = restClient.createCsvAgency(tenant, OK_AGENCY);
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), "path: " + path);
 
       assertThrows(
           HttpClientErrorException.class, () -> restClient.createAccessContract(tenant, path));
@@ -87,7 +83,7 @@ class AccessContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AccessContractDto>> response =
           restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     Map<String, Object> params = Map.of("sortby", "name", "sortdir", "desc");
@@ -172,7 +168,7 @@ class AccessContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AccessContractDto>> response =
           restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAccessContracts(tenant, query);
@@ -210,7 +206,7 @@ class AccessContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AccessContractDto>> response =
           restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAccessContracts(tenant, query);
@@ -237,7 +233,7 @@ class AccessContractIT extends BaseIT {
     for (int i = 1; i <= 3; i++) {
       ResponseEntity<List<AccessContractDto>> response =
           restClient.createAccessContract(tenant, DtoFactory.createAccessContractDto(i));
-      assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+      assertEquals(HttpStatus.CREATED, response.getStatusCode(), TestUtils.getBody(response));
     }
 
     ResponseEntity<SearchResult<JsonNode>> r3 = restClient.searchAccessContracts(tenant, query);

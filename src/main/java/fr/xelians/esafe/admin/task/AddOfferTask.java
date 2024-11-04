@@ -11,6 +11,9 @@ import fr.xelians.esafe.common.task.CheckTask;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class AddOfferTask extends CheckTask {
 

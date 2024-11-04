@@ -11,6 +11,9 @@ import fr.xelians.esafe.common.utils.JsonUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class JsonSizeValidator implements ConstraintValidator<JsonSize, JsonNode> {
 
   private long min;

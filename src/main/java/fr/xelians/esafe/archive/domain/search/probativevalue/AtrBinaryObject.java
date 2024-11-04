@@ -9,4 +9,7 @@ package fr.xelians.esafe.archive.domain.search.probativevalue;
 import fr.xelians.esafe.archive.domain.atr.BinaryDataObjectReply;
 import java.time.LocalDateTime;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record AtrBinaryObject(LocalDateTime grantDate, BinaryDataObjectReply bdoReply) {}

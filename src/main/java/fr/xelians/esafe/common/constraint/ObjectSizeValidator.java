@@ -9,6 +9,9 @@ package fr.xelians.esafe.common.constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ObjectSizeValidator implements ConstraintValidator<ObjectSize, Sizable> {
 
   private long min;

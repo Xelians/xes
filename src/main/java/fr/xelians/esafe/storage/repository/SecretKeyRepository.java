@@ -15,6 +15,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 // Native query is used to avoid caching the secret in the JPA persistence context
+/*
+ * @author Emmanuel Deviller
+ */
 public interface SecretKeyRepository extends JpaRepository<SecretKeyDb, Long> {
 
   @Query(value = "SELECT s.secret FROM secret_key s WHERE s.tenant = :tenant", nativeQuery = true)

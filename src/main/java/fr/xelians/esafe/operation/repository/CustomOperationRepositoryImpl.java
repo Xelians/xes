@@ -27,6 +27,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.query.QueryUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class CustomOperationRepositoryImpl implements CustomOperationRepository {

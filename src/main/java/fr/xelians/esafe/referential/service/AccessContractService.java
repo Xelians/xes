@@ -6,21 +6,22 @@
 
 package fr.xelians.esafe.referential.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchResult;
 import fr.xelians.esafe.archive.service.SearchService;
-import fr.xelians.esafe.authentication.domain.AuthContext;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import fr.xelians.esafe.common.exception.functional.NotFoundException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.SipUtils;
 import fr.xelians.esafe.common.utils.Utils;
+import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.service.OperationService;
+import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.referential.domain.search.ReferentialParser;
 import fr.xelians.esafe.referential.dto.AccessContractDto;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.repository.AccessContractRepository;
+import fr.xelians.esafe.security.resourceserver.AuthContext;
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +32,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 public class AccessContractService
@@ -44,32 +48,31 @@ public class AccessContractService
       EntityManager entityManager,
       AccessContractRepository repository,
       OperationService operationService,
+      TenantService tenantService,
       AgencyService agencyService,
       SearchService searchService) {
 
-    super(entityManager, repository, operationService);
+    super(entityManager, repository, operationService, tenantService);
     this.agencyService = agencyService;
     this.searchService = searchService;
   }
 
-  @Override
-  @Transactional
-  public List<AccessContractDto> create(
-      Long tenant, String userIdentifier, String applicationId, List<AccessContractDto> dtos) {
+  @Transactional(rollbackFor = Exception.class)
+  public List<AccessContractDto> createAccessContracts(
+      OperationDb operation, Long tenant, List<AccessContractDto> dtos) {
     dtos.forEach(this::checkAccessContract);
-    return super.create(tenant, userIdentifier, applicationId, dtos);
+
+    OperationDb op = saveOperation(operation);
+    return super.create(op, tenant, dtos);
   }
 
-  @Override
-  @Transactional
-  public AccessContractDto update(
-      Long tenant,
-      String userIdentifier,
-      String applicationId,
-      String identifier,
-      AccessContractDto dto) {
+  @Transactional(rollbackFor = Exception.class)
+  public AccessContractDto updateAccessContract(
+      OperationDb operation, Long tenant, String identifier, AccessContractDto dto) {
     checkAccessContract(dto);
-    return super.update(tenant, userIdentifier, applicationId, identifier, dto);
+
+    OperationDb op = saveOperation(operation);
+    return super.update(op, tenant, identifier, dto);
   }
 
   private void checkAccessContract(AccessContractDto dto) {
@@ -179,9 +182,14 @@ public class AccessContractService
     }
   }
 
-  public SearchResult<JsonNode> search(Long tenant, SearchQuery query) {
+  public SearchResult<AccessContractDto> search(Long tenant, SearchQuery query) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(query, "query must be not null");
     return search(ReferentialParser.createAccessContractParser(tenant, entityManager), query);
+  }
+
+  @Override
+  protected String getIdentifierPrefix() {
+    return "AC";
   }
 }

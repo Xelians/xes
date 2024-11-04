@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.constraint;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface Sizable {
 
   long size();

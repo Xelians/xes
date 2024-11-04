@@ -13,6 +13,9 @@ import fr.xelians.esafe.organization.entity.TenantDb;
 import java.nio.file.Path;
 
 // Exclusive task
+/*
+ * @author Emmanuel Deviller
+ */
 public class UpdateRulesTask extends StoreIndexTask {
 
   private final UpdateRulesService updateRulesService;

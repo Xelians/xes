@@ -6,10 +6,17 @@
 
 package fr.xelians.esafe.archive.domain.atr;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode
@@ -24,4 +31,21 @@ public class ArchiveUnitReply {
 
   @JsonProperty("OriginatingSystemIds")
   private List<String> originatingSystemIds;
+
+  @JsonProperty("ArchivalAgencyIdentifiers")
+  private List<String> archivalAgencyIdentifiers;
+
+  @JsonProperty("NumOfPhysicalObjects")
+  Integer numOfPhysicalObjects;
+
+  @JsonProperty("NumOfBinaryObjects")
+  Integer numOfBinaryObjects;
+
+  @JsonProperty("SizeOfBinaryObjects")
+  private Long sizeOfBinaryObjects;
+
+  @JsonIgnore
+  public long getTotalObjects() {
+    return (long) numOfPhysicalObjects + (long) numOfBinaryObjects;
+  }
 }

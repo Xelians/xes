@@ -9,6 +9,9 @@ package fr.xelians.esafe.search.domain.field;
 import com.fasterxml.jackson.databind.JsonNode;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class KeywordField extends Field {
 
   public static final String MAPPING_PREFIX = "Keyword";
@@ -50,6 +53,11 @@ public class KeywordField extends Field {
           "As value failed", String.format("Value '%s' is not a valid keyword", node.asText()));
     }
     return node.asText();
+  }
+
+  @Override
+  public String asValue(Object value) {
+    return value.toString();
   }
 
   @Override

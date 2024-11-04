@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.search.domain.dsl.parser;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum FieldContext {
   QUERY,
   PROJECTION,

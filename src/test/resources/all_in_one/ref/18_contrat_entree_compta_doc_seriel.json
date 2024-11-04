@@ -1,0 +1,21 @@
+[
+	{
+		"Identifier": "IC-000007",
+		"Name": "Contrat d'entree Compta Doc sériel",
+		"Description": "Contrat d'entree Compta Doc sériel",
+		"Status": "ACTIVE",
+		"ArchiveProfiles": [
+			"PR-000001",
+			"PR-000002",
+			"PR-000004",
+			"PR-000023",
+			"PR-000024",
+			"PR-000025"
+		],
+		"LastUpdate": "10/12/2016",
+		"CreationDate": "10/12/2016",
+		"ActivationDate": "10/12/2016",
+		"DeactivationDate": "10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

@@ -9,6 +9,9 @@ package fr.xelians.esafe.admin.domain.scanner;
 import fr.xelians.esafe.logbook.domain.model.LogbookOperation;
 import java.io.IOException;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface OperationProcessor {
 
   void process(LogbookOperation operation) throws IOException;

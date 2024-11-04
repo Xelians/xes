@@ -18,14 +18,20 @@ import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.entity.OperationDb;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import lombok.extern.slf4j.Slf4j;
+import nu.xom.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 public class XmlATR {
 
@@ -33,6 +39,31 @@ public class XmlATR {
   private static final String UTF_8 = "UTF-8";
 
   private XmlATR() {}
+
+  public static Reply createReply(Path atrPath)
+      throws ParsingException, IOException, XMLStreamException {
+
+    // We accept all namespaces
+    String ns = Sedav2Utils.getArchiveTransferReplyNameSpace(atrPath);
+
+    try (InputStream is = Files.newInputStream(atrPath)) {
+      Element rootElem = new Builder().build(is).getRootElement();
+      XPathContext xc = XPathContext.makeNamespaceContext(rootElem);
+
+      if (!Sedav2Utils.NOT_FOUND.equals(ns)) xc.addNamespace("ns", ns);
+
+      Nodes nodes1 = rootElem.query("//ns:MessageIdentifier", xc);
+      if (nodes1.size() == 0)
+        throw new BadRequestException(
+            "Failed to process reply", "Message Identifier is not defined");
+
+      Nodes nodes2 = rootElem.query("//ns:ReplyCode", xc);
+      if (nodes2.size() == 0)
+        throw new BadRequestException("Failed to process reply", "reply Code  is not defined");
+
+      return new Reply(nodes1.get(0).getValue(), nodes2.get(0).getValue());
+    }
+  }
 
   public static InputStream createOkInputStream(ArchiveTransferReply atr)
       throws XMLStreamException {
@@ -46,7 +77,7 @@ public class XmlATR {
 
       xmlWriter.writeStartDocument("utf-8", "1.0");
       xmlWriter.writeStartElement("ArchiveTransferReply");
-      xmlWriter.writeDefaultNamespace("fr:gouv:culture:archivesdefrance:seda:v2.1");
+      xmlWriter.writeDefaultNamespace(Sedav2Utils.SEDA_V21);
       xmlWriter.writeNamespace("ns2", "http://www.w3.org/1999/xlink");
       xmlWriter.writeNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
       xmlWriter.writeAttribute(
@@ -82,7 +113,7 @@ public class XmlATR {
           xmlWriter.writeAttribute("id", dog.getXmlId());
         }
 
-        for (BinaryDataObjectReply bdo : dog.getBinaryDataObjectReplys()) {
+        for (BinaryDataObjectReply bdo : dog.getBinaryDataObjects()) {
           xmlWriter.writeStartElement("BinaryDataObject");
           if (StringUtils.isNotBlank(bdo.getXmlId())) {
             xmlWriter.writeAttribute("id", bdo.getXmlId());
@@ -103,7 +134,7 @@ public class XmlATR {
           xmlWriter.writeEndElement();
         }
 
-        for (PhysicalDataObjectReply pdo : dog.getPhysicalDataObjectReplys()) {
+        for (PhysicalDataObjectReply pdo : dog.getPhysicalDataObjects()) {
           xmlWriter.writeStartElement("PhysicalDataObject");
           if (StringUtils.isNotBlank(pdo.getXmlId())) {
             xmlWriter.writeAttribute("id", pdo.getXmlId());
@@ -230,7 +261,7 @@ public class XmlATR {
 
       xmlWriter.writeStartDocument("utf-8", "1.0");
       xmlWriter.writeStartElement("ArchiveTransferReply");
-      xmlWriter.writeDefaultNamespace("fr:gouv:culture:archivesdefrance:seda:v2.1");
+      xmlWriter.writeDefaultNamespace(Sedav2Utils.SEDA_V2);
       xmlWriter.writeNamespace("ns2", "http://www.w3.org/1999/xlink");
       xmlWriter.writeNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
       xmlWriter.writeAttribute(

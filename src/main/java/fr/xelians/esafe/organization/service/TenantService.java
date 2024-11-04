@@ -19,12 +19,10 @@ import fr.xelians.esafe.operation.entity.OperationDb;
 import fr.xelians.esafe.operation.entity.TaskLockDb;
 import fr.xelians.esafe.operation.repository.TaskLockRepository;
 import fr.xelians.esafe.operation.service.OperationService;
-import fr.xelians.esafe.organization.domain.role.GlobalRole;
 import fr.xelians.esafe.organization.dto.TenantDto;
 import fr.xelians.esafe.organization.entity.OrganizationDb;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.repository.TenantRepository;
-import fr.xelians.esafe.organization.repository.UserRepository;
 import fr.xelians.esafe.storage.domain.Aes;
 import fr.xelians.esafe.storage.entity.StorageDb;
 import fr.xelians.esafe.storage.repository.StorageRepository;
@@ -42,6 +40,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -55,13 +56,11 @@ public class TenantService {
   private final TenantRepository tenantRepository;
   private final StorageRepository storageRepository;
   private final TaskLockRepository taskLockRepository;
-  private final UserRepository userRepository;
 
   private final StorageService storageService;
   private final OrganizationService organizationService;
   private final SecretKeyService secretKeyService;
   private final OperationService operationService;
-  private final ApiKeyService apiKeyService;
 
   public TenantDto toDto(TenantDb entity) {
     TenantDto tenantDto = Utils.copyProperties(entity, new TenantDto());
@@ -96,21 +95,9 @@ public class TenantService {
     return savedTenantDb;
   }
 
-  private void initAdminAccess(TenantDb tenantDb) {
-    Long organizationId = tenantDb.getOrganization().getId();
-    final var adminUser =
-        userRepository.findByOrganizationId(organizationId).stream()
-            .filter(user -> user.getGlobalRoles().contains(GlobalRole.ROLE_ADMIN))
-            .findFirst()
-            .orElseThrow();
-
-    adminUser.getApiKey().add(apiKeyService.buildApiKey(tenantDb.getId().toString()));
-    userRepository.save(adminUser);
-  }
-
   @Transactional(rollbackFor = Exception.class)
   public List<TenantDto> create(
-      Long organizationId,
+      String organizationId,
       String userIdentifier,
       String applicationId,
       List<TenantDto> tenantDtos) {
@@ -119,7 +106,8 @@ public class TenantService {
     tenantDtos.forEach(this::checkCreateTenant);
 
     // Create tenant operation
-    OrganizationDb organizationDb = organizationService.getOrganizationDbById(organizationId);
+    OrganizationDb organizationDb =
+        organizationService.getOrganizationDbByIdentifier(organizationId);
     Long tenant = organizationDb.getTenant();
     OperationDb operation = createOperation(tenant, userIdentifier, applicationId);
     List<Long> tenantDbIds = new ArrayList<>(tenantDtos.size());
@@ -133,7 +121,6 @@ public class TenantService {
       tenantDb.setLastUpdate(tenantDb.getCreationDate());
       tenantDb.setOrganization(organizationDb);
       TenantDb savedTenantDb = tenantRepository.save(tenantDb);
-      initAdminAccess(tenantDb);
 
       storageRepository.save(new StorageDb(savedTenantDb.getId()));
       taskLockRepository.save(new TaskLockDb(savedTenantDb.getId()));
@@ -225,6 +212,7 @@ public class TenantService {
       throw new BadRequestException(
           FAILED_TO_CREATE_TENANT, String.format("Non null identifier '%s'", dto.getId()));
     }
+
     checkUpdateTenant(dto);
   }
 
@@ -243,12 +231,12 @@ public class TenantService {
   }
 
   @Transactional
-  public TenantDto getTenant(Long organizationId, Long tenant) {
-    Assert.notNull(organizationId, "organizationId must be not null");
+  public TenantDto getTenant(String organizationIdentifier, Long tenant) {
+    Assert.notNull(organizationIdentifier, "organizationIdentifier must be not null");
     Assert.notNull(tenant, "tenant must be not null");
 
     return tenantRepository
-        .findByIdAndOrganizationId(tenant, organizationId)
+        .findByIdAndOrganizationIdentifier(tenant, organizationIdentifier)
         .map(this::toDto)
         .orElseThrow(
             () ->
@@ -257,13 +245,15 @@ public class TenantService {
   }
 
   @Transactional
-  public List<TenantDb> getTenantDbs(Long organizationId) {
-    return tenantRepository.getByOrganizationId(organizationId).stream().toList();
+  public List<TenantDb> getTenantDbs(String organizationId) {
+    return tenantRepository.getByOrganizationIdentifier(organizationId).stream().toList();
   }
 
   @Transactional
-  public List<TenantDto> getTenantDtos(Long organizationId) {
-    return tenantRepository.getByOrganizationId(organizationId).stream().map(this::toDto).toList();
+  public List<TenantDto> getTenantDtos(String organizationIdentifier) {
+    return tenantRepository.getByOrganizationIdentifier(organizationIdentifier).stream()
+        .map(this::toDto)
+        .toList();
   }
 
   // Internal use

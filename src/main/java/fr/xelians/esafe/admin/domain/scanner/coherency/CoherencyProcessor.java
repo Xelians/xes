@@ -13,6 +13,9 @@ import fr.xelians.esafe.operation.domain.OperationType;
 import fr.xelians.esafe.operation.domain.StorageAction;
 import fr.xelians.esafe.storage.domain.hashset.StorageObjectSet;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class CoherencyProcessor implements OperationProcessor {
 
   private final StorageObjectSet storageObjectSet;

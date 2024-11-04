@@ -9,6 +9,9 @@ package fr.xelians.esafe.operation.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.operation.domain.OperationStatus;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record OperationStatusDto(
     @JsonProperty("Id") String id,
     @JsonProperty("Status") OperationStatus status,

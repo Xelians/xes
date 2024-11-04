@@ -8,6 +8,7 @@ package fr.xelians.esafe.referential.dto;
 
 import static fr.xelians.esafe.common.constant.DefaultValue.*;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.xelians.esafe.common.constant.DefaultValue;
 import fr.xelians.esafe.common.constraint.NoHtml;
@@ -18,10 +19,14 @@ import jakarta.validation.constraints.Size;
 import java.util.HashSet;
 import lombok.*;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class IngestContractDto extends AbstractReferentialDto {
 
   @Min(value = 0)
@@ -29,7 +34,7 @@ public class IngestContractDto extends AbstractReferentialDto {
   private Long linkParentId;
 
   @Size(max = 1000)
-  @JsonProperty("CheckParentIds")
+  @JsonProperty("CheckParentId")
   private HashSet<Long> checkParentIds = new HashSet<>();
 
   @JsonProperty("CheckParentLink")

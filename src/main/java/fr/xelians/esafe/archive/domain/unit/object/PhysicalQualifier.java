@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.unit.object;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public enum PhysicalQualifier {
   PhysicalMaster;
 

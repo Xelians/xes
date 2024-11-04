@@ -9,17 +9,18 @@ package fr.xelians.esafe.performancetest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import fr.xelians.esafe.authentication.dto.AccessDto;
-import fr.xelians.esafe.authentication.dto.LoginDto;
+import fr.xelians.esafe.organization.dto.AccessDto;
 import fr.xelians.esafe.organization.dto.SignupDto;
 import fr.xelians.esafe.organization.dto.TenantDto;
 import fr.xelians.esafe.organization.dto.UserDto;
+import fr.xelians.esafe.organization.service.AccessKeyService;
 import fr.xelians.esafe.testcommon.DtoFactory;
 import fr.xelians.esafe.testcommon.RestClient;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
@@ -43,7 +44,9 @@ class BasePEIT {
   protected SignupDto signupDto;
   protected UserDto userDto;
 
-  protected void signupSignin() {
+  @Autowired protected AccessKeyService accessKeyService;
+
+  protected void signUpSignIn() {
     restClient = new RestClient(port);
 
     SignupDto inputDto = DtoFactory.createSignupDto();
@@ -53,12 +56,14 @@ class BasePEIT {
     signupDto = r1.getBody();
     assertNotNull(signupDto);
 
-    userDto = signupDto.getUserDto();
-    LoginDto loginDto = new LoginDto(userDto.getUsername(), userDto.getPassword());
-    ResponseEntity<AccessDto> r2 = restClient.signin(loginDto);
+    String accessKey =
+        accessKeyService
+            .createToken(
+                signupDto.getOrganizationDto().getIdentifier(),
+                signupDto.getUserDto().getIdentifier())
+            .accessKey();
+    ResponseEntity<AccessDto> r2 = restClient.signIn(accessKey);
     assertEquals(HttpStatus.OK, r2.getStatusCode());
-
-    tenant = nextTenant();
   }
 
   @SuppressWarnings("unchecked")

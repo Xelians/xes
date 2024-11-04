@@ -13,6 +13,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.NamedField;
 import fr.xelians.esafe.search.domain.field.Field;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface Searchable {
 
   String getName();

@@ -1,0 +1,51 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:16.1-alpine
+    command: [ "postgres", "-c", "log_statement=all" ]
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.2
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - ELASTIC_PASSWORD=elastic
+      - xpack.security.enabled=true
+    ports:
+      - '9200'
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test: curl --write-out 'HTTP %{http_code}' -u elastic:elastic --fail --silent --output /dev/null http://localhost:9200/_cat/health
+  esafe:
+    image:
+      esafe:latest
+    depends_on:
+      elastic:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - '8080'
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - TZ=Europe/Paris
+      - SPRING_PROFILES_ACTIVE=dev
+      - ELASTICSEARCH_HOST=elastic
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+

@@ -15,6 +15,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.SearchContext;
 import java.util.List;
 import lombok.ToString;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @ToString
 public class And extends AndOperator<Query> {
 

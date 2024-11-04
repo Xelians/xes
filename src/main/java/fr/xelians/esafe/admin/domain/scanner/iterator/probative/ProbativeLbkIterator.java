@@ -15,6 +15,9 @@ import fr.xelians.esafe.storage.domain.StorageObjectType;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ProbativeLbkIterator extends OneLbkIterator {
 
   public ProbativeLbkIterator(TenantDb tenantDb, StorageService storageService, long logId) {

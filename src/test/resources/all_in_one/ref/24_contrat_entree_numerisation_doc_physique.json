@@ -1,0 +1,15 @@
+[
+	{
+		"Identifier":"IC-000010",
+		"Name":"Contrat d'entree Numerisation Doc Physique",
+		"Description":"Contrat d'entree Numerisation Doc Physique",
+		"Status":"ACTIVE",
+		"EveryDataObjectVersion":true,
+		"ArchiveProfiles":["PR-000009"],
+		"LastUpdate":"10/12/2016",
+		"CreationDate":"10/12/2016",
+		"ActivationDate":"10/12/2016",
+		"DeactivationDate":"10/12/2016",
+		"ComputeInheritedRulesAtIngest": true
+	}
+]

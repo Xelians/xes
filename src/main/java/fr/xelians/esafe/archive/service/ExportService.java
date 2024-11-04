@@ -25,6 +25,7 @@ import fr.xelians.esafe.archive.domain.unit.object.ObjectVersion;
 import fr.xelians.esafe.archive.domain.unit.object.Qualifiers;
 import fr.xelians.esafe.archive.task.ExportTask;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
+import fr.xelians.esafe.common.exception.functional.ForbiddenException;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.json.JsonConfig;
 import fr.xelians.esafe.common.json.JsonService;
@@ -38,6 +39,7 @@ import fr.xelians.esafe.operation.service.OperationService;
 import fr.xelians.esafe.organization.entity.TenantDb;
 import fr.xelians.esafe.organization.service.TenantService;
 import fr.xelians.esafe.processing.ProcessingService;
+import fr.xelians.esafe.referential.domain.Status;
 import fr.xelians.esafe.referential.entity.AccessContractDb;
 import fr.xelians.esafe.referential.service.AccessContractService;
 import fr.xelians.esafe.referential.service.OntologyService;
@@ -49,6 +51,7 @@ import fr.xelians.esafe.storage.domain.object.PathStorageObject;
 import fr.xelians.esafe.storage.domain.object.StorageObject;
 import fr.xelians.esafe.storage.service.StorageService;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,10 +59,14 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Getter
 @Service
@@ -70,6 +77,8 @@ public class ExportService {
   public static final String ACCESS_CONTRACT_MUST_BE_NOT_NULL = "Access contract must be not null";
   public static final String QUERY_MUST_BE_NOT_NULL = "Query must be not null";
   public static final String USER_MUST_BE_NOT_NULL = "User must be not null";
+  public static final String ID_MUST_BE_NOT_NULL = "Id must be not null";
+  public static final String FAILED_TO_EXPORT = "Failed to export archives";
 
   private final ProcessingService processingService;
   private final OperationService operationService;
@@ -82,12 +91,38 @@ public class ExportService {
   @Value("${app.dipexport.maxSize:O}")
   private long maxSize;
 
+  public InputStream getDipStream(Long tenant, Long id, String acIdentifier) throws IOException {
+    Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
+    Assert.notNull(id, ID_MUST_BE_NOT_NULL);
+    Assert.notNull(acIdentifier, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
+
+    String contract = operationService.getContractIdentifier(tenant, id);
+    if (acIdentifier.equals(contract)) {
+      TenantDb tenantDb = tenantService.getTenantDb(tenant);
+      List<String> offers = tenantDb.getStorageOffers();
+      try (StorageDao storageDao = storageService.createStorageDao(tenantDb)) {
+        return storageDao.getDipStream(tenant, offers, id);
+      }
+    }
+
+    throw new ForbiddenException(
+        "Failed to download DIP",
+        String.format("Access contracts don't match: '%s - '%s'", acIdentifier, contract));
+  }
+
   public Long export(
       Long tenant, String accessContract, ExportQuery exportQuery, String user, String app) {
     Assert.notNull(tenant, TENANT_MUST_BE_NOT_NULL);
     Assert.notNull(accessContract, ACCESS_CONTRACT_MUST_BE_NOT_NULL);
     Assert.notNull(exportQuery, QUERY_MUST_BE_NOT_NULL);
     Assert.notNull(user, USER_MUST_BE_NOT_NULL);
+
+    // Fail fast : check if Access Contract exists and is active
+    AccessContractDb accessContractDb = accessContractService.getEntity(tenant, accessContract);
+    if (accessContractDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          FAILED_TO_EXPORT, String.format("Access Contract '%s' is inactive", accessContractDb));
+    }
 
     String query = JsonService.toString(exportQuery);
     OperationDb operation =
@@ -101,19 +136,21 @@ public class ExportService {
   public Path check(OperationDb operation, TenantDb tenantDb) {
 
     Long tenant = tenantDb.getId();
+    if (tenantDb.getStatus() == Status.INACTIVE) {
+      throw new BadRequestException(
+          FAILED_TO_EXPORT, String.format("Tenant '%s' is not active", tenant));
+    }
 
     // Get the accessContact and the mapper
     AccessContractDb accessContract =
         accessContractService.getEntity(tenant, operation.getProperty01());
     OntologyMapper ontologyMapper = ontologyService.createMapper(tenant);
 
-    // Search Archive Units to update
+    // Search Archive Units to export
     try (StorageDao storageDao = storageService.createStorageDao(tenantDb)) {
       // Query
       String query = operation.getProperty02();
       ExportResult<ArchiveUnit> result = search(tenant, accessContract, ontologyMapper, query);
-
-      Path tmpDipPath = Workspace.createTempFile(operation);
 
       List<String> offers = tenantDb.getStorageOffers();
       List<ArchiveUnit> archiveUnits = new ArrayList<>();
@@ -145,15 +182,18 @@ public class ExportService {
       // Check Dip Size
       checkMaxSize(archiveUnits, result.dataObjectVersionToExport());
 
+      // TODO. Add requesterIdentifier to operation (after sanitizing)
+
       // Export the binary to the tmp path
       ExportConfig exportConfig =
           new ExportConfig(
               result.dipExportType(),
               result.dataObjectVersionToExport(),
               result.transferWithLogBookLFC(),
-              result.dipRequestParameters(),
+              result.dipRequestParameters().toRequestParameters(),
               result.sedaVersion());
 
+      Path tmpDipPath = Workspace.createTempFile(operation);
       Context context =
           new Context(operation, tenantDb, accessContract, ontologyMapper, null, tmpDipPath);
       doExport(context, exportConfig, archiveUnits, storageDao);
@@ -192,7 +232,7 @@ public class ExportService {
 
     } catch (JsonProcessingException ex) {
       throw new BadRequestException(
-          "Search request failed", String.format("Failed to parse query '%s'", exportQuery), ex);
+          FAILED_TO_EXPORT, String.format("Failed to parse query '%s'", exportQuery), ex);
     }
   }
 
@@ -219,25 +259,6 @@ public class ExportService {
         }
       }
     }
-
-    //      for (ArchiveUnit unit : units) {
-    //        DataObject dataObject = unit.getDataObject();
-    //        if (dataObject != null) {
-    //          for (BinaryQualifier qualifier : qualifiers) {
-    //            BinaryDataObject bdo = dataObject.getGreatestBinaryDataObject(qualifier);
-    //            if (bdo != null) {
-    //              size += bdo.getSize();
-    //              if (size > maxSize) {
-    //                throw new BadRequestException(
-    //                    String.format(
-    //                        "The export dip '%s' is greater than the allowed max size of '%s'",
-    //                        size, maxSize));
-    //              }
-    //            }
-    //          }
-    //        }
-    //      }
-    //    }
   }
 
   private void doExport(
@@ -258,18 +279,22 @@ public class ExportService {
       }
     }
 
-    TenantDb tenantDb = context.tenantDb();
+    Long tenantId = context.tenantDb().getId();
+    ArrayList<String> offers = context.tenantDb().getStorageOffers();
+    Long operationId = context.operationDb().getId();
+    Exporter exporter = new Sedav2Exporter(tenantId, operationId, offers, storageDao, exportConfig);
+    String version =
+        StringUtils.isBlank(exportConfig.sedaVersion())
+            ? "2.2"
+            : exportConfig.sedaVersion().toUpperCase();
 
-    String version = exportConfig.sedaVersion();
-    if (version != null && !version.toLowerCase().startsWith("json")) {
-      // Seda exporter
-      Exporter exporter =
-          new Sedav2Exporter(
-              tenantDb.getId(), tenantDb.getStorageOffers(), storageDao, exportConfig);
-      exporter.export(srcUnits, context.path());
-    } else {
-      // TODO Json exporter
-      throw new BadRequestException(String.format("Export '%s' is not implemented", version));
+    switch (version) {
+      case "2.2", "DIP_2.2", "V2.2", "DIP_V2.2" -> exporter.exportDip(srcUnits, context.path());
+      case "2.1", "DIP_2.1", "V2.1", "DIP_V2.1" -> exporter.exportDip(srcUnits, context.path());
+      case "SIP_2.2", "SIP_V2.2" -> exporter.exportSip(srcUnits, context.path());
+      case "SIP_2.1", "SIP_V2.1" -> exporter.exportSip(srcUnits, context.path());
+      default -> throw new BadRequestException(
+          String.format("Export '%s' is not implemented", version));
     }
   }
 

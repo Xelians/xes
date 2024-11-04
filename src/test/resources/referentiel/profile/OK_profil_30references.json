@@ -328,5 +328,15 @@
     "CreationDate": "2016-12-10",
     "ActivationDate": "2016-12-10",
     "DeactivationDate": "2016-12-10"
+  },
+  {
+    "Name": "Format_RNG profil #20",
+    "Description": "Ce fichier est un rng",
+    "Status": "ACTIVE",
+    "Format": "RNG",
+    "LastUpdate": "2016-12-10",
+    "CreationDate": "2016-12-10",
+    "ActivationDate": "2016-12-10",
+    "DeactivationDate": "2016-12-10"
   }
 ]

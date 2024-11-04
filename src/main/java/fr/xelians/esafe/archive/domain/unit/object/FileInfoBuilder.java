@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
  *
  * @author Emmanuel Deviller
  * @see FileInfo
+ * @author Emmanuel Deviller
  */
 public class FileInfoBuilder {
 

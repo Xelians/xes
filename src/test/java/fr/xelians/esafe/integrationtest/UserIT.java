@@ -12,7 +12,6 @@ import fr.xelians.esafe.organization.dto.SignupDto;
 import fr.xelians.esafe.organization.dto.UserDto;
 import fr.xelians.esafe.testcommon.DtoFactory;
 import fr.xelians.esafe.testcommon.TestUtils;
-import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,7 @@ class UserIT extends BaseIT {
   private SignupDto signupDto;
 
   @BeforeAll
-  void beforeAll() throws IOException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     signupDto = setupDto.signupDto();
   }
@@ -44,7 +43,7 @@ class UserIT extends BaseIT {
     assertEquals(users1[0].getUsername(), users2.getFirst().getUsername());
     assertEquals(users1[0].getFirstName(), users2.getFirst().getFirstName());
     assertEquals(users1[0].getLastName(), users2.getFirst().getLastName());
-    assertEquals(users1[0].getDescription(), users2.getFirst().getDescription());
+    assertEquals("", users2.getFirst().getDescription());
   }
 
   @Test

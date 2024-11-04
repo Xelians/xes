@@ -25,6 +25,9 @@ import org.elasticsearch.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Configuration
 @AllArgsConstructor
 @Slf4j

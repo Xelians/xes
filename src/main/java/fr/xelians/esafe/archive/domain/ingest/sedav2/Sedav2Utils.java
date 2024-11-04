@@ -17,9 +17,12 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Sedav2Utils {
 
-  public static final String UNKNOWN = "unknown";
+  public static final String NOT_FOUND = "";
   public static final String SEDA_V21 = "fr:gouv:culture:archivesdefrance:seda:v2.1";
   public static final String SEDA_21 = "fr:gouv:culture:archivesdefrance:seda:2.1";
   public static final String SEDA_V22 = "fr:gouv:culture:archivesdefrance:seda:v2.2";
@@ -41,26 +44,35 @@ public final class Sedav2Utils {
     return INPUT_FACTORY;
   }
 
-  public static String getArchiveTransferNameSpace(Path manifestPath)
+  public static String getArchiveTransferNameSpace(Path path)
       throws XMLStreamException, IOException {
-    try (InputStream is = Files.newInputStream(manifestPath)) {
+    return getNameSpace(path, "ArchiveTransfer");
+  }
+
+  public static String getArchiveTransferReplyNameSpace(Path path)
+      throws XMLStreamException, IOException {
+    return getNameSpace(path, "ArchiveTransferReply");
+  }
+
+  private static String getNameSpace(Path path, String tag) throws XMLStreamException, IOException {
+    try (InputStream is = Files.newInputStream(path)) {
       XMLEventReader reader = INPUT_FACTORY.createXMLEventReader(is);
       while (reader.hasNext()) {
         XMLEvent nextEvent = reader.nextEvent();
         if (nextEvent.isStartElement()) {
           QName qname = nextEvent.asStartElement().getName();
-          if ("ArchiveTransfer".equals(qname.getLocalPart())) {
+          if (tag.equals(qname.getLocalPart())) {
             return qname.getNamespaceURI().toLowerCase();
           }
         }
       }
     }
-    return UNKNOWN;
+    return NOT_FOUND;
   }
 
-  public static Sedav2Validator getSedav2Validator(Path manifestPath)
+  public static Sedav2Validator getArchiveTransferValidator(Path path)
       throws XMLStreamException, IOException {
-    return switch (getArchiveTransferNameSpace(manifestPath)) {
+    return switch (getArchiveTransferNameSpace(path)) {
       case SEDA_V21, SEDA_21 -> Sedav2Validator.getV21Instance();
       case SEDA_V22, SEDA_22, SEDA_V2, SEDA_2 -> Sedav2Validator.getV22Instance();
       default -> throw new ManifestException(

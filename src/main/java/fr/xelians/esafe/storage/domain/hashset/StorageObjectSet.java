@@ -12,6 +12,9 @@ import fr.xelians.esafe.storage.domain.object.HashStorageObject;
 import java.util.Iterator;
 import java.util.List;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface StorageObjectSet extends Iterable<HashStorageObject>, AutoCloseable {
 
   void add(long id, StorageObjectType type, Hash hash, byte[] checksum);

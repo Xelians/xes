@@ -11,6 +11,9 @@ import fr.xelians.esafe.search.domain.dsl.parser.FieldContext;
 import java.util.Collections;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class ReferentialSpecialFields {
 
   private static final Map<String, String> BASE_FIELDS = createBaseFields();

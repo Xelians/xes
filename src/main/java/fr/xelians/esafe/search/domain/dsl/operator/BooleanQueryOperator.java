@@ -12,6 +12,7 @@ import java.util.List;
  * Interface représentant un opérateur de combinaison d'opérateur.
  *
  * @extends Operator
+ * @author Emmanuel Deviller
  */
 public interface BooleanQueryOperator<T> extends Operator {
 

@@ -12,6 +12,9 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 @Setter
 @Entity

@@ -8,11 +8,13 @@ package fr.xelians.esafe.archive.domain.export;
 
 import fr.xelians.esafe.archive.domain.search.export.DataObjectVersionToExport;
 import fr.xelians.esafe.archive.domain.search.export.DipExportType;
-import fr.xelians.esafe.archive.domain.search.export.DipRequestParameters;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record ExportConfig(
     DipExportType dipExportType,
     DataObjectVersionToExport dataObjectVersionToExport,
     boolean transferWithLogBookLFC,
-    DipRequestParameters dipRequestParameters,
+    RequestParameters requestParameters,
     String sedaVersion) {}

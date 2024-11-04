@@ -1,9 +1,4 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-/*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the Ceccil v2.1 License as published by
  * the CEA, CNRS and INRIA.
@@ -13,16 +8,20 @@ package fr.xelians.esafe.common.utils;
 
 import com.google.json.JsonSanitizer;
 import fr.xelians.esafe.archive.domain.ingest.Mapping;
-import io.jsonwebtoken.lang.Assert;
+import java.beans.FeatureDescriptor;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.util.Assert;
 
-/**
+/*
  * @author Emmanuel Deviller
  */
 public final class Utils {
@@ -186,6 +185,28 @@ public final class Utils {
       BeanUtils.copyProperties(source, target);
     }
     return target;
+  }
+
+  public static <T, E> E copyNonNullProperties(final T source, final E target) {
+    if (source != null && target != null) {
+      BeanUtils.copyProperties(source, target, getNullPropertyNames(source));
+    }
+    return target;
+  }
+
+  private static String[] getNullPropertyNames(Object source) {
+    final BeanWrapper wrappedSource = new BeanWrapperImpl(source);
+    return Stream.of(wrappedSource.getPropertyDescriptors())
+        .map(FeatureDescriptor::getName)
+        .filter(
+            propertyName -> {
+              try {
+                return wrappedSource.getPropertyValue(propertyName) == null;
+              } catch (Exception e) {
+                return false;
+              }
+            })
+        .toArray(String[]::new);
   }
 
   public static boolean startsWith(String str, char... cs) {

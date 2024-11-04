@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.entity.searchengine;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface DocumentSe {
 
   Long getId();

@@ -7,13 +7,14 @@
 package fr.xelians.esafe.integrationtest;
 
 import static fr.xelians.esafe.common.constant.Header.X_REQUEST_ID;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_MANAGER;
+import static fr.xelians.esafe.organization.domain.Role.TenantRole.ROLE_ARCHIVE_READER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import fr.xelians.esafe.operation.domain.OperationStatus;
 import fr.xelians.esafe.operation.dto.OperationStatusDto;
-import fr.xelians.esafe.organization.domain.role.TenantRole;
-import fr.xelians.esafe.organization.domain.role.TenantRoleName;
+import fr.xelians.esafe.organization.domain.TenantRole;
 import fr.xelians.esafe.organization.dto.UserDto;
 import fr.xelians.esafe.testcommon.*;
 import fr.xelians.sipg.model.ArchiveTransfer;
@@ -23,7 +24,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -36,13 +36,10 @@ class ArchiveExportIT extends BaseIT {
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void exportComplexSipTest(@TempDir Path tmpDir) throws IOException, ParsingException {
@@ -51,10 +48,11 @@ class ArchiveExportIT extends BaseIT {
     Scenario.createScenario02(restClient, tenant, userDto);
 
     // Init User
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_WRITER));
-    userDto.getTenantRoles().add(new TenantRole(tenant, TenantRoleName.ROLE_ARCHIVE_READER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_MANAGER));
+    userDto.getTenantRoles().add(new TenantRole(tenant, ROLE_ARCHIVE_READER));
     ResponseEntity<?> response = restClient.updateUser(userDto);
     assertEquals(HttpStatus.OK, response.getStatusCode(), TestUtils.getBody(response));
+    restClient.signIn(restClient.getAccessKey());
 
     ArchiveTransfer sip = SipFactory.createComplexSip(tmpDir, 1);
     ArchiveTransfer[] sips = new ArchiveTransfer[10];
@@ -101,6 +99,7 @@ class ArchiveExportIT extends BaseIT {
                   "transferWithLogBookLFC": true,
                   "dipRequestParameters": {
                     "messageRequestIdentifier": "MessageRequestIdentifier",
+                    "requesterIdentifier": "RequesterIdentifier",
                     "archivalAgencyIdentifier": "ArchivalAgencyIdentifier",
                     "comment": "Test d'export",
                     "archivalAgreement": "ExportArchivalAgreement"
@@ -142,6 +141,7 @@ class ArchiveExportIT extends BaseIT {
 
     Path dipPath = restClient.downloadDip(tenant, requestId, acIdentifier, tmpDir);
     // Files.copy(dipPath, Path.of("/tmp/export.zip"));
+
     assertNotNull(dipPath);
     assertTrue(Files.exists(dipPath));
     assertTrue(Files.size(dipPath) > 1000);

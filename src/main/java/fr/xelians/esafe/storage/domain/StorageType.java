@@ -8,6 +8,9 @@ package fr.xelians.esafe.storage.domain;
 
 import lombok.Getter;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Getter
 public enum StorageType {
   FS("File System"),

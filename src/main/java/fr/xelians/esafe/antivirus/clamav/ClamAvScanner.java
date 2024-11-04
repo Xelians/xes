@@ -1,3 +1,9 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Ceccil v2.1 License as published by
+ * the CEA, CNRS and INRIA.
+ */
+
 package fr.xelians.esafe.antivirus.clamav;
 
 import fr.xelians.esafe.antivirus.AntiVirus;
@@ -23,6 +29,8 @@ import org.apache.commons.lang3.StringUtils;
  * strongly recommend following best networking practices when setting up your clamd instance.
  *
  * I.e. don't expose your TCP socket to the Internet.
+ *
+ * @author Emmanuel Deviller
  */
 @Slf4j
 public class ClamAvScanner implements AntiVirusScanner {

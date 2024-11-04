@@ -17,6 +17,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface TaskLockRepository extends JpaRepository<TaskLockDb, Long> {
 
   // PESSIMISTIC_WRITE allows us to obtain an exclusive lock and prevent the data from being read,

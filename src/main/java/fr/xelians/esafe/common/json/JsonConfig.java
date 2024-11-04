@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.json;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record JsonConfig(boolean format) {
 
   public static final JsonConfig DEFAULT = JsonConfigBuilder.builder().build();

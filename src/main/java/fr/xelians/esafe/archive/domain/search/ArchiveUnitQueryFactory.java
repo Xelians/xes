@@ -13,15 +13,21 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fr.xelians.esafe.archive.domain.search.elimination.EliminationQuery;
 import fr.xelians.esafe.archive.domain.search.export.DipExportType;
+import fr.xelians.esafe.archive.domain.search.export.DipRequestParameters;
 import fr.xelians.esafe.archive.domain.search.export.ExportQuery;
 import fr.xelians.esafe.archive.domain.search.probativevalue.ProbativeValueQuery;
 import fr.xelians.esafe.archive.domain.search.search.SearchQuery;
+import fr.xelians.esafe.archive.domain.search.transfer.TransferQuery;
+import fr.xelians.esafe.archive.domain.search.transfer.TransferRequestParameters;
 import fr.xelians.esafe.archive.domain.search.update.UpdateQuery;
 import fr.xelians.esafe.archive.domain.search.updaterule.UpdateRuleQuery;
 import fr.xelians.esafe.common.exception.functional.BadRequestException;
 import java.io.IOException;
 import org.apache.commons.lang.StringUtils;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public class ArchiveUnitQueryFactory {
 
   protected static final String CREATION_FAILED = "Failed to create query";
@@ -58,7 +64,13 @@ public class ArchiveUnitQueryFactory {
 
   public static EliminationQuery createEliminationQuery(String dsl) {
     try {
-      return objectReader.readValue(dsl, EliminationQuery.class);
+      EliminationQuery eliminationQuery = objectReader.readValue(dsl, EliminationQuery.class);
+      if (eliminationQuery == null) {
+        throw new BadRequestException(
+            String.format("The elimination query %s is empty or ill-formed", dsl));
+      }
+      return eliminationQuery;
+
     } catch (IOException ex) {
       throw new BadRequestException(
           CREATION_FAILED,
@@ -69,13 +81,12 @@ public class ArchiveUnitQueryFactory {
   public static UpdateRuleQuery createUpdateRuleQuery(String dsl) {
     try {
       UpdateRuleQuery updateRuleQuery = objectReader.readValue(dsl, UpdateRuleQuery.class);
-
       if (updateRuleQuery == null) {
         throw new BadRequestException(
-            String.format("The update rules type query %s is empty or ill-formed", dsl));
+            String.format("The update rules query %s is empty or ill-formed", dsl));
       }
-
       return updateRuleQuery;
+
     } catch (IOException ex) {
       throw new BadRequestException(
           CREATION_FAILED,
@@ -89,7 +100,7 @@ public class ArchiveUnitQueryFactory {
 
       if (exportQuery == null) {
         throw new BadRequestException(
-            String.format("The dip export type query %s is empty or ill-formed", dsl));
+            String.format("The dip export query %s is empty or ill-formed", dsl));
       }
 
       if (exportQuery.dipExportType() == DipExportType.MINIMAL) {
@@ -98,22 +109,30 @@ public class ArchiveUnitQueryFactory {
             "The minimal dip export type is not currently supported. You have to use the full export type instead.");
       }
 
-      if (exportQuery.dipRequestParameters() == null) {
+      DipRequestParameters drp = exportQuery.dipRequestParameters();
+
+      if (drp == null) {
         throw new BadRequestException(
             CREATION_FAILED,
             "The mandatory dip export request parameters are not defined in the request.");
       }
 
-      if (StringUtils.isBlank(exportQuery.dipRequestParameters().archivalAgencyIdentifier())) {
+      if (StringUtils.isBlank(drp.archivalAgencyIdentifier())) {
         throw new BadRequestException(
             CREATION_FAILED,
             "The mandatory originating agency identifier parameter is not defined in the dip export request.");
       }
 
-      if (StringUtils.isBlank(exportQuery.dipRequestParameters().messageRequestIdentifier())) {
+      if (StringUtils.isBlank(drp.messageRequestIdentifier())) {
         throw new BadRequestException(
             CREATION_FAILED,
             "The mandatory message request identifier parameter is not defined in the dip export request.");
+      }
+
+      if (StringUtils.isBlank(drp.requesterIdentifier())) {
+        throw new BadRequestException(
+            CREATION_FAILED,
+            "The mandatory requester identifier parameter is not defined in the dip export request.");
       }
 
       if (exportQuery.searchQuery() == null) {
@@ -125,6 +144,48 @@ public class ArchiveUnitQueryFactory {
     } catch (IOException ex) {
       throw new BadRequestException(
           CREATION_FAILED, String.format("Failed to parse json export query: %s", ex.getMessage()));
+    }
+  }
+
+  public static TransferQuery createTransferQuery(String dsl) {
+    try {
+      TransferQuery transferQuery = objectReader.readValue(dsl, TransferQuery.class);
+
+      if (transferQuery == null) {
+        throw new BadRequestException(
+            String.format("The transfer query %s is empty or ill-formed", dsl));
+      }
+
+      TransferRequestParameters trp = transferQuery.transferRequestParameters();
+
+      if (trp == null) {
+        throw new BadRequestException(
+            CREATION_FAILED,
+            "The mandatory transfer request parameters are not defined in the request.");
+      }
+
+      if (StringUtils.isBlank(trp.archivalAgencyIdentifier())) {
+        throw new BadRequestException(
+            CREATION_FAILED,
+            "The mandatory originating agency identifier parameter is not defined in the transfer request.");
+      }
+
+      if (StringUtils.isBlank(trp.originatingAgencyIdentifier())) {
+        throw new BadRequestException(
+            CREATION_FAILED,
+            "The mandatory originating agency identifier parameter is not defined in the transfer request.");
+      }
+
+      if (transferQuery.searchQuery() == null) {
+        throw new BadRequestException(
+            CREATION_FAILED, "The mandatory dsl request is not defined in the transfert request.");
+      }
+
+      return transferQuery;
+    } catch (IOException ex) {
+      throw new BadRequestException(
+          CREATION_FAILED,
+          String.format("Failed to parse json transfer query: %s", ex.getMessage()));
     }
   }
 

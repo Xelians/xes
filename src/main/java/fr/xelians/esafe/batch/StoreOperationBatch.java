@@ -9,8 +9,8 @@ package fr.xelians.esafe.batch;
 import static java.util.stream.Collectors.groupingBy;
 
 import fr.xelians.esafe.archive.service.*;
-import fr.xelians.esafe.cluster.domain.NodeFeature;
-import fr.xelians.esafe.cluster.service.ServerNodeService;
+import fr.xelians.esafe.cluster.domain.JobType;
+import fr.xelians.esafe.cluster.service.ClusterService;
 import fr.xelians.esafe.common.exception.technical.InternalException;
 import fr.xelians.esafe.common.utils.Utils;
 import fr.xelians.esafe.logbook.service.LogbookService;
@@ -26,7 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-// All methods in this class must be idempotent
+/*
+ * All methods in this class must be idempotent
+ *
+ * @author Emmanuel Deviller
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,10 +40,12 @@ public class StoreOperationBatch {
   // TODO configure CPUs number
   private static final ForkJoinPool RUN_POOL = new ForkJoinPool(Utils.CPUS);
 
-  private final ServerNodeService serverNodeService;
+  private final ClusterService clusterService;
   private final OperationService operationService;
   private final ReclassificationService reclassificationService;
   private final EliminationService eliminationService;
+  private final TransferService transferService;
+  private final TransferReplyService transferReplyService;
   private final UpdateService updateService;
   private final UpdateRulesService updateRulesService;
   private final IndexService unitIngestService;
@@ -54,7 +60,7 @@ public class StoreOperationBatch {
     try {
       // TODO affecter 1 thread par Tenant et ne pas bloquer les autres tenants si une thread n'a
       // pas fini
-      if (serverNodeService.hasFeature(NodeFeature.STORE)) {
+      if (clusterService.isActive(JobType.STORE)) {
         Collection<List<OperationDb>> groupList =
             operationService.findByStatus(OperationStatus.STORE, OperationStatus.INDEX).stream()
                 .collect(groupingBy(OperationDb::getTenant))
@@ -79,6 +85,8 @@ public class StoreOperationBatch {
         case UPDATE_ARCHIVE_RULES -> updateArchiveRules(operation);
         case RECLASSIFY_ARCHIVE -> reclassifyArchive(operation);
         case ELIMINATE_ARCHIVE -> eliminateArchive(operation);
+        case TRANSFER_ARCHIVE -> transferArchive(operation);
+        case TRANSFER_REPLY -> transferReply(operation);
         case INGEST_ARCHIVE, INGEST_FILING, INGEST_HOLDING -> unitIngestService.indexOperation(
             operation);
         case TRACEABILITY -> indexSecuring(operation);
@@ -156,6 +164,26 @@ public class StoreOperationBatch {
     } else {
       throw new InternalException(
           "Eliminate archive batch failed",
+          String.format(BAD_OPERATION_STATUS, operation.getId(), operation.getStatus()));
+    }
+  }
+
+  private void transferArchive(OperationDb operation) {
+    if (operation.getStatus() == OperationStatus.STORE) {
+      transferService.storeOperation(operation);
+    } else {
+      throw new InternalException(
+          "Transfer archive batch failed",
+          String.format(BAD_OPERATION_STATUS, operation.getId(), operation.getStatus()));
+    }
+  }
+
+  private void transferReply(OperationDb operation) {
+    if (operation.getStatus() == OperationStatus.STORE) {
+      transferReplyService.storeOperation(operation);
+    } else {
+      throw new InternalException(
+          "Transfer reply archive batch failed",
           String.format(BAD_OPERATION_STATUS, operation.getId(), operation.getStatus()));
     }
   }

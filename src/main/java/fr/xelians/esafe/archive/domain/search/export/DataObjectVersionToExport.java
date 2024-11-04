@@ -11,5 +11,8 @@ import fr.xelians.esafe.archive.domain.unit.object.BinaryQualifier;
 import jakarta.validation.constraints.Size;
 import java.util.Set;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record DataObjectVersionToExport(
     @JsonProperty("dataObjectVersions") @Size(max = 4) Set<BinaryQualifier> dataObjectVersions) {}

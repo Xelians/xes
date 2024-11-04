@@ -19,6 +19,9 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.greenrobot.essentials.hash.Murmur3F;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class HashUtils {
 
   private HashUtils() {}

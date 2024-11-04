@@ -6,29 +6,30 @@
 
 package fr.xelians.esafe.storage.domain.pack;
 
-import fr.xelians.esafe.storage.domain.Aes;
+import fr.xelians.esafe.storage.domain.GcmCipher;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import org.apache.commons.lang3.Validate;
 
+// This class is not thread safe
+/*
+ * @author Emmanuel Deviller
+ */
 public class EncryptFilePacker implements Packer {
 
   private final Path dstPath;
   private OutputStream dstStream;
   private long end;
-  private SecretKey secretKey;
+  private GcmCipher cipher;
 
   public EncryptFilePacker(SecretKey secretKey, Path dstPath) {
     Validate.notNull(dstPath, "dstPath");
     this.dstPath = dstPath;
-    this.secretKey = secretKey;
+    this.cipher = GcmCipher.create(secretKey);
   }
 
   @Override
@@ -36,45 +37,15 @@ public class EncryptFilePacker implements Packer {
     if (dstStream == null) {
       dstStream = Files.newOutputStream(dstPath);
     }
-
-    try {
-      return doWrite(srcPath);
-    } catch (IllegalBlockSizeException | BadPaddingException e) {
-      throw new IOException(e);
-    }
+    return doWrite(srcPath);
   }
 
-  private long[] doWrite(Path srcPath)
-      throws IOException, IllegalBlockSizeException, BadPaddingException {
+  private long[] doWrite(Path srcPath) throws IOException {
     long start = end;
-    long size = 0;
+    long size;
 
-    byte[] buffer = new byte[16 * 128];
-    byte[] output;
-
-    Cipher cipher = Aes.createCipher();
-    byte[] ivBytes = Aes.initWriteCipher(cipher, secretKey);
-
-    try (InputStream is = Files.newInputStream(srcPath)) {
-
-      // Prepend initialization vector
-      dstStream.write(ivBytes);
-      size += ivBytes.length;
-
-      // Encrypt stream
-      int bytesRead;
-      while ((bytesRead = is.read(buffer)) != -1) {
-        output = cipher.update(buffer, 0, bytesRead);
-        if (output != null) {
-          dstStream.write(output);
-          size += output.length;
-        }
-      }
-      output = cipher.doFinal();
-      if (output != null) {
-        dstStream.write(output);
-        size += output.length;
-      }
+    try (InputStream srcStream = Files.newInputStream(srcPath)) {
+      size = cipher.encrypt(srcStream, dstStream);
     }
 
     if (size > 0) {
@@ -86,7 +57,7 @@ public class EncryptFilePacker implements Packer {
 
   @Override
   public void close() throws IOException {
-    secretKey = null;
+    cipher = null;
     if (dstStream != null) {
       dstStream.close();
     }

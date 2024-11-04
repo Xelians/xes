@@ -34,6 +34,8 @@ import java.util.Map.Entry;
  * }
  * {@code </script>}
  * </pre>
+ *
+ * @author Emmanuel Deviller
  */
 public class Add extends Reclassification {
 

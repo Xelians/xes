@@ -19,11 +19,8 @@ import fr.xelians.sipg.model.ArchiveTransfer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import nu.xom.ParsingException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
@@ -31,19 +28,17 @@ import org.springframework.http.ResponseEntity;
 
 class ArchiveRuleUpdateIT extends BaseIT {
 
-  final int identifier = 1;
-  final String acIdentifier = "AC-" + TestUtils.pad(identifier);
+  public static final String APPRAISALRULE = "APPRAISALRULE-";
 
+  private final int identifier = 1;
+  private final String acIdentifier = "AC-" + TestUtils.pad(identifier);
   private UserDto userDto;
 
   @BeforeAll
-  void beforeAll() throws IOException, ParsingException {
+  void beforeAll() {
     SetupDto setupDto = setup();
     userDto = setupDto.userDto();
   }
-
-  @BeforeEach
-  void beforeEach() {}
 
   @Test
   void updateRuleTest(@TempDir Path tmpDir) throws IOException, ParsingException {
@@ -55,37 +50,36 @@ class ArchiveRuleUpdateIT extends BaseIT {
     ArchiveTransfer sip = SipFactory.createComplexSip(tmpDir, 1);
     ArchiveTransfer[] sips = new ArchiveTransfer[10];
     Arrays.fill(sips, 0, sips.length, sip);
-    List<Map<String, Long>> ids = Scenario.uploadSips(restClient, tenant, tmpDir, sips);
-    List<Long> id1s = ids.stream().map(m -> m.get("UNIT_ID1")).toList();
+    Scenario.uploadSips(restClient, tenant, tmpDir, sips);
 
     // Execute tests
-    updateRule1(tenant, tmpDir, id1s);
-    updateRule2(tenant, tmpDir, id1s);
-    updateRule3(tenant, tmpDir, id1s);
+    updateRule1(tenant);
+    updateRule2(tenant);
+    updateRule3(tenant);
   }
 
-  private void updateRule1(Long tenant, Path tmpDir, List<Long> id1s) throws IOException {
+  private void updateRule1(Long tenant) {
 
-    String rule1 = "APPRAISALRULE-" + TestUtils.pad(1);
-    String rule2 = "APPRAISALRULE-" + TestUtils.pad(2);
-    String rule3 = "APPRAISALRULE-" + TestUtils.pad(3);
+    String rule1 = APPRAISALRULE + TestUtils.pad(1);
+    String rule2 = APPRAISALRULE + TestUtils.pad(2);
+    String rule3 = APPRAISALRULE + TestUtils.pad(3);
 
     // Eliminate
     String updateQuery =
         """
-                   {
-                   "dslRequest": {
-                     "$roots": [],
-                     "$query": [ { "$match": { "Title": "MyTitle1" } } ]
-                   },
-                   "ruleActions": {
-                     "delete": [ {
-                        "AppraisalRule": {
-                          "Rules": [ { "Rule": "%s" },  { "Rule": "%s" },  { "Rule": "%s" } ]
-                    } } ]
-                   }
-                  }
-                  """
+           {
+           "dslRequest": {
+             "$roots": [],
+             "$query": [ { "$match": { "Title": "MyTitle1" } } ]
+           },
+           "ruleActions": {
+             "delete": [ {
+                "AppraisalRule": {
+                  "Rules": [ { "Rule": "%s" },  { "Rule": "%s" },  { "Rule": "%s" } ]
+            } } ]
+           }
+          }
+          """
             .formatted(rule1, rule2, rule3);
 
     ResponseEntity<String> r1 = restClient.updateRulesArchive(tenant, acIdentifier, updateQuery);
@@ -139,11 +133,11 @@ class ArchiveRuleUpdateIT extends BaseIT {
     }
   }
 
-  private void updateRule2(Long tenant, Path tmpDir, List<Long> id1s) throws IOException {
+  private void updateRule2(Long tenant) {
 
-    String rule1 = "APPRAISALRULE-" + TestUtils.pad(1);
-    String rule2 = "APPRAISALRULE-" + TestUtils.pad(2);
-    String rule3 = "APPRAISALRULE-" + TestUtils.pad(3);
+    String rule1 = APPRAISALRULE + TestUtils.pad(1);
+    String rule2 = APPRAISALRULE + TestUtils.pad(2);
+    String rule3 = APPRAISALRULE + TestUtils.pad(3);
 
     // Eliminate
     String updateQuery =
@@ -245,11 +239,11 @@ class ArchiveRuleUpdateIT extends BaseIT {
     }
   }
 
-  private void updateRule3(Long tenant, Path tmpDir, List<Long> id1s) throws IOException {
+  private void updateRule3(Long tenant) {
 
-    String rule1 = "APPRAISALRULE-" + TestUtils.pad(1);
-    String rule2 = "APPRAISALRULE-" + TestUtils.pad(2);
-    String rule3 = "APPRAISALRULE-" + TestUtils.pad(3);
+    String rule1 = APPRAISALRULE + TestUtils.pad(1);
+    String rule2 = APPRAISALRULE + TestUtils.pad(2);
+    String rule3 = APPRAISALRULE + TestUtils.pad(3);
 
     // Eliminate
     String updateQuery =
@@ -276,6 +270,16 @@ class ArchiveRuleUpdateIT extends BaseIT {
                           {
                             "OldRule": "%s",
                             "DeleteStartDate": true
+                          },
+                          {
+                            "OldRule": "F5-1",
+                            "Rule": "I6-1",
+                            "StartDate": "1990-02-01"
+                          },
+                          {
+                            "OldRule": "F1-1",
+                            "Rule": "I6-1",
+                            "StartDate": "1990-02-01"
                           }
                         ]
                       }

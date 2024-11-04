@@ -7,18 +7,21 @@ spring:
       enabled: false
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: 1000MB
+      max-request-size: 1000MB
       enabled: true
   application:
     name: eSafe (Prod)
   datasource:
     driverClassName: org.postgresql.Driver
+    hikari:
+      auto-commit: false
   jackson:
     deserialization:
       fail-on-unknown-properties: true
   jpa:
     show-sql: false
+    open-in-view: false
   sql:
     init:
       mode: always
@@ -26,12 +29,11 @@ spring:
     drop-first: false
     contexts: prod
 
-elasticsearch:
-  host: localhost
-  password: elastic
-  port: 9200
-  username: elastic
-
+jdbc:
+  datasource-proxy:
+    query:
+      logger-name: fr.xelians.esafe.jpa.query
+    include-parameter-values: true
 # Actuator config
 # We keep readiness and liveness checks on the server servlet.
 # Management servlet can continue to answer whereas server's one don't.
@@ -48,6 +50,12 @@ management:
         enabled: true
         add-additional-paths: true
       show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
   tracing:
     baggage:
       correlation:
@@ -55,6 +63,7 @@ management:
       remote-fields: x-application-id, x-tenant-id
     sampling:
       probability: 1
+    enabled: false
   endpoints:
     web:
       exposure:
@@ -65,11 +74,7 @@ management:
 
 ## Properties specific to app (functional properties)
 app:
-  # JWT Authentification (seconds)
-  jwt:
-    accessTokenExpiration: 900
-    refreshTokenExpiration: 36000
-    secret: Voiciungrandmotdepassecomposede1065765caracteresIlestdonctressolide
+  version: '@project.version@'
   # Processing properties
   processing:
     threads: 0
@@ -82,8 +87,9 @@ app:
   # Tenant encryption (seconds)
   tenant:
     encryption:
-      expiration: 0
       secret: Voici un petit mot de passe composé de @10453265 caractères !! Il est donc super solide car de plus j'ai ajouté des caractères spéciaux comme des $ & des \#. J'adore!
+      salt: 56, 16, -15, 89, 65, -106, -17, 77
+      expiration: 0
   # Dip export properties (byte)
   dipexport:
     maxSize: 1_000_000_000
@@ -105,6 +111,7 @@ app:
         - accessKeyId: hvA0vo3Nu8yruvQ3_
           concurrency: 32
           endpoint: http://192.168.1.82:9000
+          provider: MINIO
           name: minio01
           region: US_EAST_1
           secretAccessKey: VYo8QiN40bd4PKyC
@@ -118,30 +125,24 @@ app:
       running: 48   # Delay in hours before updating operations with init and run status to error
       succeeded: 48 # Delay in hours before deleting successful operations from database
       failed: 168   # Delay in hours before deleting failed operations from database
-  retry:
-    fixedDelay: 900000
-    initialDelay: 1000
-  secure:
-    fixedDelay: PT3600S
-    initialDelay: PT60S
-  servernode:
-    fixedDelay: 60000
-    initialDelay: 0
-  store:
-    operation:
-      fixedDelay: 2000
+    retry:
+      fixedDelay: 900000
       initialDelay: 1000
-
-antivirus:
-  name: None
-  hosts: localhost:3310,127.0.0.1:3310
-  timeout: 10000
-  scanLength: 2048
+    secure:
+      fixedDelay: PT3600S
+      initialDelay: PT60S
+    cluster:
+      fixedDelay: 120000 # 120 seconds
+      initialDelay: 0
+    store:
+      operation:
+        fixedDelay: 2000
+        initialDelay: 1000
+  logging:
+    request:
+      path-to-ignore: /actuator,/v3/api-docs,/swagger-ui,/readyz,/livez
 
 springdoc:
   swagger-ui:
     disable-swagger-default-url: true
 
-logging:
-  request:
-    path-to-ignore: /actuator,/v3/api-docs,/swagger-ui,/readyz,/livez

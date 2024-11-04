@@ -14,6 +14,9 @@ import fr.xelians.esafe.referential.entity.RuleDb;
 import java.nio.file.Path;
 import java.util.Map;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public record Context(
     OperationDb operationDb,
     TenantDb tenantDb,

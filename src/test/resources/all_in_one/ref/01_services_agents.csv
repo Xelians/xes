@@ -1,0 +1,10 @@
+Identifier,Name,Description
+Identifier0,Service producteur,description du service
+Identifier1,Service Archives,description du service des archives
+IdProdDLab,Service producteur DLab,description du service DLab
+IdArcDLab,Service Archives DLab,description du service des archives DLab
+IdProdCommerce,Service producteur Commerce,description du service Commerce
+IdArcCommerce,Service Archives Commerce,description du service des archives Commerce
+IdArcPhyFirstDLab,Service Archives Physique 1 DLab,description du premier service des archives physique DLab
+IdArcPhySecondDLab,Service Archives Physique 2 DLab,description du deuxieme service des archives physique DLab
+IdProdPhyDLab,Service producteur Physique DLab,description du service logistique DLab

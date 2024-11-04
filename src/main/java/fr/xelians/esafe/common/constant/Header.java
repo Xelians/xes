@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.common.constant;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public final class Header {
 
   public static final String X_TENANT_ID = "X-Tenant-Id";
@@ -14,7 +17,7 @@ public final class Header {
   public static final String X_CONTEXT_ID = "X-Context-Id";
   public static final String X_ACCESS_CONTRACT_ID = "X-Access-Contract-Id";
 
-  public static final String X_API_KEY_ID = "X-Api-Key";
+  public static final String X_ACCESS_KEY_ID = "X-Access-Key";
 
   public static final String X_QUALIFIER = "X-Qualifier";
   public static final String X_VERSION = "X-Version";

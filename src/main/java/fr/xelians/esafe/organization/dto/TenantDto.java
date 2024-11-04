@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
+/*
+ * @author Emmanuel Deviller
+ */
 @Setter
 @Getter
 @EqualsAndHashCode(callSuper = true)

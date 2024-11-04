@@ -6,6 +6,9 @@
 
 package fr.xelians.esafe.archive.domain.unit.rules;
 
+/*
+ * @author Emmanuel Deviller
+ */
 public interface DurationRule {
 
   String getDuration();
